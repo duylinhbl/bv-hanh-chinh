@@ -1,7 +1,9 @@
 (()=>{
 const $=s=>document.querySelector(s), app=$('#app');
 const sb=supabase.createClient(BV.URL,BV.KEY,{auth:{persistSession:true,autoRefreshToken:true}});
-let me=null, tab='toi';
+let me=null, tab='toi', DB={};
+const ten=id=>(DB[id]&&DB[id].ho_ten)||'(không rõ)';
+async function napDanhBa(){const {data}=await sb.from('danh_ba').select('id,ho_ten,chuc_vu').order('ho_ten');DB={};(data||[]).forEach(u=>DB[u.id]=u);return data||[]}
 const TT={moi:'Mới',dang_lam:'Đang làm',cho_xac_nhan:'Chờ xác nhận',da_dong:'Đã đóng',huy:'Hủy'};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=d=>d?new Date(d).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
@@ -67,6 +69,7 @@ function khung(){
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
   ve();day();
 }
+window.addEventListener('unhandledrejection',e=>{const n=$('#nd');if(n)n.innerHTML='<p class="mut">Lỗi: '+esc(e.reason&&e.reason.message||e.reason)+'</p>'});
 function ve(){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   ({toi:dsToi,giao:dsGiao,moi:formViec,tk:taiKhoan})[tab]();
@@ -74,22 +77,22 @@ function ve(){
 const the=v=>`<div class="card" data-id="${v.id}"><h3>${esc(v.tieu_de)}</h3><div class="row">${tag(v.trang_thai)}${v.uu_tien==2?'<span class="tag red">Gấp</span>':''}${v.han?`<span class="mut">Hạn ${fmt(v.han)}</span>`:''}</div>${v.ben?`<div class="mut">${esc(v.ben)}</div>`:''}</div>`;
 async function dsToi(){
   $('#nd').innerHTML='Đang tải…';
-  const {data,error}=await sb.from('viec').select('*,giao:nguoi_giao(ho_ten)').eq('nguoi_nhan',me.id).not('trang_thai','in','(da_dong,huy)').order('han',{nullsFirst:false});
+  const {data,error}=await sb.from('viec').select('*').eq('nguoi_nhan',me.id).not('trang_thai','in','(da_dong,huy)').order('han',{nullsFirst:false});
   if(error)return $('#nd').textContent=error.message;
-  $('#nd').innerHTML=data.length?data.map(v=>the({...v,ben:v.tu_giao?'Tự giao':'Giao bởi '+v.giao.ho_ten})).join(''):'<p class="mut">Không có việc đang mở.</p>';
+  $('#nd').innerHTML=data.length?data.map(v=>the({...v,ben:v.tu_giao?'Tự giao':'Giao bởi '+ten(v.nguoi_giao)})).join(''):'<p class="mut">Không có việc đang mở.</p>';
   gan();
 }
 async function dsGiao(){
   $('#nd').innerHTML='Đang tải…';
-  const {data,error}=await sb.from('viec').select('*,nhan:nguoi_nhan(ho_ten)').neq('trang_thai','huy').order('tao_luc',{ascending:false}).limit(100);
+  const {data,error}=await sb.from('viec').select('*').neq('trang_thai','huy').order('tao_luc',{ascending:false}).limit(100);
   if(error)return $('#nd').textContent=error.message;
-  $('#nd').innerHTML=data.map(v=>the({...v,ben:'Người nhận: '+v.nhan.ho_ten})).join('')||'<p class="mut">Chưa có việc.</p>';
+  $('#nd').innerHTML=data.map(v=>the({...v,ben:'Người nhận: '+ten(v.nguoi_nhan)})).join('')||'<p class="mut">Chưa có việc.</p>';
   gan();
 }
 const gan=()=>document.querySelectorAll('.card[data-id]').forEach(c=>c.onclick=()=>chiTiet(c.dataset.id));
 
 async function formViec(){
-  const {data:ds}=await sb.from('nguoi_dung').select('id,ho_ten,chuc_vu').eq('hoat_dong',true).order('ho_ten');
+  const ds=(await napDanhBa()).filter(u=>me.vai_tro!=='nhan_vien'||u.id===me.id);
   $('#nd').innerHTML=`<div class="card"><label>Việc cần làm</label><input id="tt"><label>Mô tả</label><textarea id="ms"></textarea>
   <label>Người nhận</label><select id="nn">${(ds||[]).map(u=>`<option value="${u.id}" ${u.id===me.id?'selected':''}>${esc(u.ho_ten)}${u.id===me.id?' (tôi)':''}</option>`).join('')}</select>
   <label>Hạn</label><input id="han" type="datetime-local"><label>Mức độ</label><select id="ut"><option value="1">Thường</option><option value="2">Gấp</option><option value="0">Thấp</option></select>
@@ -104,8 +107,8 @@ async function formViec(){
 
 async function chiTiet(id){
   const [{data:v},{data:cn}]=await Promise.all([
-    sb.from('viec').select('*,nhan:nguoi_nhan(ho_ten),giao:nguoi_giao(ho_ten)').eq('id',id).single(),
-    sb.from('cap_nhat_hien_trang').select('*,ng:nguoi_id(ho_ten)').eq('viec_id',id).order('gio_bam',{ascending:false})]);
+    sb.from('viec').select('*').eq('id',id).single(),
+    sb.from('cap_nhat_hien_trang').select('*').eq('viec_id',id).order('gio_bam',{ascending:false})]);
   const urls={};
   for(const c of cn||[])if(c.anh_path){const r=await sb.storage.from('anh').createSignedUrl(c.anh_path,3600);urls[c.id]=r.data?.signedUrl}
   const laNhan=v.nguoi_nhan===me.id, laGiao=v.nguoi_giao===me.id||me.vai_tro==='tchc'||me.vai_tro==='bgd';
@@ -113,11 +116,11 @@ async function chiTiet(id){
   if(laGiao&&v.nguoi_giao===me.id)opts.push(['da_dong','Xác nhận đóng việc']);
   $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button>
   <div class="card" style="margin-top:10px"><h3>${esc(v.tieu_de)}</h3>${tag(v.trang_thai)}<p>${esc(v.mo_ta||'')}</p>
-  <div class="mut">Giao: ${esc(v.giao.ho_ten)} → ${esc(v.nhan.ho_ten)}${v.han?'<br>Hạn '+fmt(v.han):''}</div></div>
+  <div class="mut">Giao: ${esc(ten(v.nguoi_giao))} → ${esc(ten(v.nguoi_nhan))}${v.han?'<br>Hạn '+fmt(v.han):''}</div></div>
   ${(laNhan||opts.length)?`<div class="card"><label>Cập nhật hiện trạng</label><select id="st"><option value="">Giữ nguyên trạng thái</option>${opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select>
   <label>Ghi chú</label><textarea id="gc"></textarea><label>Ảnh (chụp tại chỗ)</label><input id="anh" type="file" accept="image/*" capture="environment">
   <button class="full" id="gui">Gửi cập nhật</button><p class="mut">Vị trí GPS chỉ lấy tại lúc bấm Gửi.</p></div>`:''}
-  <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(c.ng.ho_ten)}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.co_vi_tri?`<div class="mut"><a href="https://maps.google.com/?q=${c.vi_do},${c.kinh_do}" target="_blank" rel="noopener">📍 Xem vị trí</a></div>`:''}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
+  <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.co_vi_tri?`<div class="mut"><a href="https://maps.google.com/?q=${c.vi_do},${c.kinh_do}" target="_blank" rel="noopener">📍 Xem vị trí</a></div>`:''}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   $('#lui').onclick=ve;
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
 }
@@ -142,7 +145,7 @@ async function khoiDong(){
   if(!session)return manHinhDangNhap();
   const {data,error}=await sb.from('nguoi_dung').select('*').eq('auth_id',session.user.id).single();
   if(error||!data){await sb.auth.signOut();return manHinhDangNhap()}
-  me=data;me.phai_doi_mat_khau?manHinhDoiMK():khung();
+  me=data;await napDanhBa();me.phai_doi_mat_khau?manHinhDoiMK():khung();
 }
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 khoiDong();
