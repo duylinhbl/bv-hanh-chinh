@@ -63,7 +63,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small id="hang"></small></header>
+  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v3</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi">Việc của tôi</button>${lanh?'<button data-t="giao">Đã giao</button>':''}<button data-t="moi">+ Giao việc</button><button data-t="tk">Tài khoản</button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -76,7 +76,8 @@ function ve(){
 }
 const the=v=>`<div class="card" data-id="${v.id}"><h3>${esc(v.tieu_de)}</h3><div class="row">${tag(v.trang_thai)}${v.uu_tien==2?'<span class="tag red">Gấp</span>':''}${v.han?`<span class="mut">Hạn ${fmt(v.han)}</span>`:''}</div>${v.ben?`<div class="mut">${esc(v.ben)}</div>`:''}</div>`;
 async function dsToi(){
-  $('#nd').innerHTML='Đang tải…';
+  $('#nd').innerHTML='Đang tải…';try{await dsToi2()}catch(e){$('#nd').innerHTML='<p class="mut">Lỗi: '+esc(e.message||e)+'</p>'}}
+async function dsToi2(){
   const {data,error}=await sb.from('viec').select('*').eq('nguoi_nhan',me.id).not('trang_thai','in','(da_dong,huy)').order('han',{nullsFirst:false});
   if(error)return $('#nd').textContent=error.message;
   $('#nd').innerHTML=data.length?data.map(v=>the({...v,ben:v.tu_giao?'Tự giao':'Giao bởi '+ten(v.nguoi_giao)})).join(''):'<p class="mut">Không có việc đang mở.</p>';
