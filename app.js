@@ -1,7 +1,7 @@
 (()=>{
 const $=s=>document.querySelector(s), app=$('#app');
 const sb=supabase.createClient(BV.URL,BV.KEY,{auth:{persistSession:true,autoRefreshToken:true}});
-let me=null, tab='toi', DB={};
+let me=null, tab='toi', DB={}, PHAT=false;
 const ten=id=>(DB[id]&&DB[id].ho_ten)||'(không rõ)';
 async function napDanhBa(){const {data}=await sb.from('danh_ba').select('id,ho_ten,chuc_vu').order('ho_ten');DB={};(data||[]).forEach(u=>DB[u.id]=u);return data||[]}
 const TT={moi:'Mới',dang_lam:'Đang làm',cho_xac_nhan:'Chờ xác nhận',da_dong:'Đã đóng',huy:'Hủy'};
@@ -63,16 +63,16 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v3</small></header>
+  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v4</small></header>
   <main id="nd"></main>
-  <nav><button data-t="toi">Việc của tôi</button>${lanh?'<button data-t="giao">Đã giao</button>':''}<button data-t="moi">+ Giao việc</button><button data-t="tk">Tài khoản</button></nav>`;
+  <nav><button data-t="toi">Việc của tôi</button>${lanh?'<button data-t="giao">Đã giao</button>':''}<button data-t="tb">Thông báo<span id="dem" class="tag red" style="display:none;margin-left:4px"></span></button><button data-t="moi">+ Giao việc</button><button data-t="tk">Tài khoản</button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
-  ve();day();
+  ve();day();demTB();sb.channel('tb').on('postgres_changes',{event:'*',schema:'public',table:'thong_bao_nguoi_nhan',filter:'nguoi_id=eq.'+me.id},()=>{demTB();if(tab==='tb')dsTB();else toast('Có thông báo mới')}).subscribe();
 }
 window.addEventListener('unhandledrejection',e=>{const n=$('#nd');if(n)n.innerHTML='<p class="mut">Lỗi: '+esc(e.reason&&e.reason.message||e.reason)+'</p>'});
 function ve(){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
-  ({toi:dsToi,giao:dsGiao,moi:formViec,tk:taiKhoan})[tab]();
+  ({toi:dsToi,giao:dsGiao,tb:dsTB,moi:formViec,tk:taiKhoan})[tab]();
 }
 const the=v=>`<div class="card" data-id="${v.id}"><h3>${esc(v.tieu_de)}</h3><div class="row">${tag(v.trang_thai)}${v.uu_tien==2?'<span class="tag red">Gấp</span>':''}${v.han?`<span class="mut">Hạn ${fmt(v.han)}</span>`:''}</div>${v.ben?`<div class="mut">${esc(v.ben)}</div>`:''}</div>`;
 async function dsToi(){
@@ -136,6 +136,54 @@ async function guiCapNhat(id){
   toast((await qAll()).length?'Đã lưu, sẽ gửi khi có mạng':gps.vi_do?'Đã gửi (có vị trí)':'Đã gửi (không lấy được vị trí)');
   chiTiet(id);
 }
+
+async function demTB(){
+  const {count}=await sb.from('thong_bao_nguoi_nhan').select('*',{count:'exact',head:true}).eq('nguoi_id',me.id).is('da_doc_luc',null);
+  const e=$('#dem');if(!e)return;e.textContent=count||'';e.style.display=count?'inline-block':'none';
+  try{navigator.setAppBadge&&(count?navigator.setAppBadge(count):navigator.clearAppBadge())}catch(_){}
+}
+async function dsTB(){
+  $('#nd').innerHTML='Đang tải…';
+  try{
+    const [{data:tbs,error},{data:rc}]=await Promise.all([
+      sb.from('thong_bao').select('*').order('tao_luc',{ascending:false}).limit(50),
+      sb.from('thong_bao_nguoi_nhan').select('thong_bao_id,da_doc_luc').eq('nguoi_id',me.id)]);
+    if(error)throw error;
+    const doc={};(rc||[]).forEach(r=>doc[r.thong_bao_id]=r.da_doc_luc);
+    $('#nd').innerHTML=(PHAT?'<button class="full" id="pt">+ Phát thông báo</button><div style="height:10px"></div>':'')+
+      ((tbs||[]).map(t=>{const chua=(t.id in doc)&&!doc[t.id];
+        return `<div class="card" data-tb="${t.id}" style="${chua?'border-color:var(--pri);border-width:2px':''}"><h3>${t.khan?'🔴 ':''}${esc(t.tieu_de)}</h3><div class="mut">${esc(ten(t.nguoi_phat))} · ${fmt(t.tao_luc)} ${chua?'<span class="tag red">Chưa đọc</span>':''}</div></div>`}).join('')||'<p class="mut">Chưa có thông báo.</p>');
+    document.querySelectorAll('[data-tb]').forEach(c=>c.onclick=()=>chiTietTB(c.dataset.tb));
+    if($('#pt'))$('#pt').onclick=formTB;
+  }catch(e){$('#nd').innerHTML='<p class="mut">Lỗi: '+esc(e.message||e)+'</p>'}
+}
+async function chiTietTB(id){
+  const {data:t}=await sb.from('thong_bao').select('*').eq('id',id).single();
+  const {data:r}=await sb.from('thong_bao_nguoi_nhan').select('da_doc_luc').eq('thong_bao_id',id).eq('nguoi_id',me.id).maybeSingle();
+  $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><h3>${t.khan?'🔴 ':''}${esc(t.tieu_de)}</h3><div class="mut">${esc(ten(t.nguoi_phat))} · ${fmt(t.tao_luc)}</div><p style="white-space:pre-wrap">${esc(t.noi_dung)}</p>
+  ${r&&!r.da_doc_luc?'<button class="full" id="doc">Đã đọc, đã hiểu</button>':r?`<div class="mut">Bạn đã đọc lúc ${fmt(r.da_doc_luc)}</div>`:''}</div><div id="th"></div>`;
+  $('#lui').onclick=dsTB;
+  if($('#doc'))$('#doc').onclick=async()=>{const {error}=await sb.from('thong_bao_nguoi_nhan').update({da_doc_luc:new Date().toISOString()}).eq('thong_bao_id',id).eq('nguoi_id',me.id);if(error)return toast('Lỗi: '+error.message);toast('Đã xác nhận');demTB();chiTietTB(id)};
+  const {data:th}=await sb.rpc('tinh_hinh_doc',{p_tb:id});
+  if(th&&th.length){const d=th.filter(x=>x.da_doc_luc).length;
+    $('#th').innerHTML=`<div class="card"><h3>Tình hình đọc: ${d}/${th.length}</h3>${th.map(x=>`<div class="row" style="justify-content:space-between"><span>${x.da_doc_luc?'✅':'⬜'} ${esc(x.ho_ten)} <span class="mut">${esc(x.khoa||'')}</span></span><span class="mut">${x.da_doc_luc?fmt(x.da_doc_luc):'chưa đọc'}</span></div>`).join('')}</div>`}
+}
+async function formTB(){
+  const {data:ks}=await sb.rpc('ds_khoa');
+  $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><label>Tiêu đề</label><input id="tt"><label>Nội dung</label><textarea id="nd2" style="min-height:140px"></textarea>
+  <label>Nơi nhận</label><select id="pv"><option value="all">Toàn viện</option><option value="chon">Chọn khoa/phòng…</option></select>
+  <div id="ks" style="display:none">${(ks||[]).map(k=>`<label style="font-weight:400;margin:6px 0"><input type="checkbox" value="${k.id}" style="width:auto"> ${esc(k.ten)}</label>`).join('')}</div>
+  <label style="font-weight:400"><input id="kh" type="checkbox" style="width:auto"> Khẩn (nhắc lại sớm)</label>
+  <button class="full" id="ph">Phát thông báo</button><p class="mut" id="loi"></p></div>`;
+  $('#lui').onclick=dsTB;$('#pv').onchange=()=>$('#ks').style.display=$('#pv').value==='chon'?'block':'none';
+  $('#ph').onclick=async()=>{
+    const toan=$('#pv').value==='all', ids=[...document.querySelectorAll('#ks input:checked')].map(x=>x.value);
+    $('#ph').disabled=true;
+    const {error}=await sb.rpc('phat_thong_bao',{p_tieu_de:$('#tt').value,p_noi_dung:$('#nd2').value,p_khan:$('#kh').checked,p_nhac_gio:$('#kh').checked?2:24,p_toan_vien:toan,p_khoa:ids});
+    $('#ph').disabled=false;if(error)return $('#loi').textContent=error.message;
+    toast('Đã phát thông báo');dsTB();
+  };
+}
 function taiKhoan(){
   $('#nd').innerHTML=`<div class="card"><h3>${esc(me.ho_ten)}</h3><div class="mut">${esc(me.chuc_vu||'')}<br>${esc(me.so_dien_thoai)}</div><button class="sec full" id="ra">Đăng xuất</button></div>`;
   $('#ra').onclick=async()=>{await sb.auth.signOut();me=null;manHinhDangNhap()};
@@ -146,7 +194,7 @@ async function khoiDong(){
   if(!session)return manHinhDangNhap();
   const {data,error}=await sb.from('nguoi_dung').select('*').eq('auth_id',session.user.id).single();
   if(error||!data){await sb.auth.signOut();return manHinhDangNhap()}
-  me=data;await napDanhBa();me.phai_doi_mat_khau?manHinhDoiMK():khung();
+  me=data;await napDanhBa();PHAT=!!(await sb.rpc('duoc_phat')).data;me.phai_doi_mat_khau?manHinhDoiMK():khung();
 }
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 khoiDong();
