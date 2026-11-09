@@ -6,7 +6,7 @@ const pd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
 const add=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return iso(d)};
 const dm=s=>{const d=pd(s);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')};
 const days=(a,b)=>{const r=[];for(let d=a;d<=b;d=add(d,1))r.push(d);return r};
-const isBS=p=>p&&/\bbs\b|bác s/i.test(p.chuc_vu||'');
+const isBS=p=>p&&/\bbs\b|bác s/i.test((p.chuc_vu||'')+' '+(p.chuyen_mon||''));
 let P=[],PM={},VT=[],CAM=[],NAME={},duocXep=false;
 
 async function nap(){
