@@ -58,13 +58,23 @@ async function ve(){
       A().sb.from('lich_truc_ky').select('*').order('tu_ngay',{ascending:false}).limit(12)]);
     const vtn=Object.fromEntries(VT.map(v=>[v.id,v.ten]));
     q('#nd').innerHTML=`<div class="card"><h3>Ca trực sắp tới của tôi</h3>${(mine.data||[]).map(r=>`<div class="row" style="justify-content:space-between;padding:4px 0"><b>${TH[pd(r.ngay).getDay()]} ${dm(r.ngay)}</b><span>${esc(vtn[r.vi_tri_id]||'')}</span></div>`).join('')||'<p class="mut">Chưa có ca nào được công bố.</p>'}</div>
-    <div class="card"><h3>Lịch trực toàn viện</h3>${(ks.data||[]).map(k=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span>${dm(k.tu_ngay)} – ${dm(k.den_ngay)} ${k.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</span><span><button class="sec" data-xem="${k.id}">Xem</button> ${duocXep?`<button data-sua="${k.id}">Sửa</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có kỳ lịch.</p>'}
+    <div class="card"><h3>Lịch trực toàn viện</h3>${(ks.data||[]).map(k=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span>${dm(k.tu_ngay)} – ${dm(k.den_ngay)} ${k.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</span><span><button class="sec" data-xem="${k.id}">Xem</button> ${duocXep?`<button data-sua="${k.id}">Sửa</button>`:''} ${A().me.la_quan_tri?`<button class="dng" data-xoa="${k.id}">Xóa</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có kỳ lịch.</p>'}
     ${duocXep?'<button class="full" id="moiky">+ Tạo kỳ lịch mới</button>':''}</div>`;
     const kmap=Object.fromEntries((ks.data||[]).map(k=>[k.id,k]));
     document.querySelectorAll('[data-xem]').forEach(b=>b.onclick=()=>xem(kmap[b.dataset.xem]));
     document.querySelectorAll('[data-sua]').forEach(b=>b.onclick=()=>soan(kmap[b.dataset.sua]));
+    document.querySelectorAll('[data-xoa]').forEach(b=>b.onclick=()=>xoaKy(kmap[b.dataset.xoa]));
     if($('#moiky'))$('#moiky').onclick=()=>kyMoi(ks.data||[]);
   }catch(e){q('#nd').innerHTML='<p class="mut">Lỗi: '+A().esc(e.message||e)+'</p>'}
+}
+async function xoaKy(ky){
+  if(!A().me.la_quan_tri)return;
+  if(!confirm(`Xóa kỳ lịch ${dm(ky.tu_ngay)} – ${dm(ky.den_ngay)} cùng toàn bộ phân công trong kỳ? Không khôi phục được.`))return;
+  const a=await A().sb.from('lich_truc').delete().gte('ngay',ky.tu_ngay).lte('ngay',ky.den_ngay);
+  if(a.error)return A().toast('Lỗi: '+a.error.message);
+  const b=await A().sb.from('lich_truc_ky').delete().eq('id',ky.id);
+  if(b.error)return A().toast('Lỗi: '+b.error.message);
+  A().toast('Đã xóa kỳ lịch');ve();
 }
 function kyMoi(ds){
   const {$:q}=A();
