@@ -49,7 +49,7 @@ async function dung(){
 async function form(e){
   const {esc,toast}=A();
   const {data:ks}=await A().sb.rpc('ds_khoa');
-  let sel=new Set(e?e.tp:[]),kh=new Set();
+  const sua=!!e;let sel=new Set(e?e.tp:[]),kh=new Set();
   const ui=()=>{
     $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px">
     <label>Ngày</label><input id="ng" type="date" value="${e?e.ngay:chon}">
@@ -60,7 +60,7 @@ async function form(e){
     <div class="mut" style="margin-top:8px">Từng người:</div><div id="chips" style="margin:4px 0">${[...sel].map(i=>`<span class="tag" data-x="${i}" style="margin:2px;padding:4px 10px">${esc((ten[i]||{}).ho_ten||'?')} ✕</span>`).join('')||'<span class="mut">Chưa chọn</span>'}</div>
     <input id="tim" placeholder="Gõ tên để thêm…"><div id="kq"></div>
     <label style="font-weight:400;margin-top:10px"><input id="rt" type="checkbox" style="width:auto" ${e&&e.rieng_tu?'checked':''}> Lịch riêng (chỉ thành phần mới thấy)</label>
-    <button class="full" id="luu">${e?'Lưu và nhắn người liên quan':'Tạo lịch và nhắn thành phần'}</button>${e?'<button class="full dng" id="huy">Hủy lịch này</button>':''}<p class="mut" id="loi"></p></div>`;
+    <button class="full" id="luu">${sua?'Lưu và nhắn người liên quan':'Tạo lịch và nhắn thành phần'}</button>${sua?'<button class="full dng" id="huy">Hủy lịch này</button>':''}<p class="mut" id="loi"></p></div>`;
     $('#lui').onclick=dung;
     document.querySelectorAll('[data-k]').forEach(c=>c.onchange=()=>{c.checked?kh.add(c.dataset.k):kh.delete(c.dataset.k)});
     document.querySelectorAll('[data-x]').forEach(c=>c.onclick=()=>{sel.delete(c.dataset.x);keep();ui()});
@@ -68,7 +68,7 @@ async function form(e){
       document.querySelectorAll('[data-a]').forEach(c=>c.onclick=()=>{sel.add(c.dataset.a);keep();ui()})};
     const gui=async huy=>{
       keep();$('#loi').textContent='';
-      const {error}=await A().sb.rpc('luu_lich_cong_tac',{p_id:e?e.id:null,p_ngay:$('#ng').value,p_gio_bd:$('#g1').value||null,p_gio_kt:$('#g2').value||null,p_noi_dung:$('#nd2').value,p_dia_diem:$('#dd').value,p_nguoi:[...sel],p_khoa:[...kh],p_rieng:$('#rt').checked,p_huy:!!huy});
+      const {error}=await A().sb.rpc('luu_lich_cong_tac',{p_id:sua?e.id:null,p_ngay:$('#ng').value,p_gio_bd:$('#g1').value||null,p_gio_kt:$('#g2').value||null,p_noi_dung:$('#nd2').value,p_dia_diem:$('#dd').value,p_nguoi:[...sel],p_khoa:[...kh],p_rieng:$('#rt').checked,p_huy:!!huy});
       if(error)return $('#loi').textContent=error.message;
       chon=$('#ng').value;toast(huy?'Đã hủy lịch, đã báo thành phần':'Đã lưu, đã nhắn thành phần');ve();
     };
