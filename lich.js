@@ -14,7 +14,7 @@ async function nap(){
   P=a.data||[];PM={};P.forEach(p=>PM[p.id]=p);VT=b.data||[];CAM=c.data||[];duocXep=!!d.data;
   const last=p=>p.ho_ten.trim().split(/\s+/);const cnt={};
   P.filter(p=>!p.khong_truc).forEach(p=>{const k=last(p).slice(-1)[0];cnt[k]=(cnt[k]||0)+1});
-  P.forEach(p=>{const w=last(p),k=w.slice(-1)[0];NAME[p.id]=cnt[k]>1&&!p.khong_truc?w.slice(-2).join(' '):k});
+  P.forEach(p=>{const w=last(p),k=w.slice(-1)[0];NAME[p.id]=p.ten_goi||(cnt[k]>1&&!p.khong_truc?w.slice(-2).join(' '):k)});
 }
 const nm=id=>{const p=PM[id];return p?(isBS(p)?'BS ':'')+NAME[id]:'?'};
 
