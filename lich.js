@@ -91,7 +91,7 @@ async function soan(ky){
   const dsNgay=days(ky.tu_ngay,ky.den_ngay);
   const opt=(vt,cur)=>{
     const g=P.filter(p=>!p.khong_truc),goiy=g.filter(p=>(vt.goi_y_khoa||[]).includes(p.khoa)),rest=g.filter(p=>!(vt.goi_y_khoa||[]).includes(p.khoa));
-    const o=p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(nm(p.id))} · ${esc(p.khoa||'')}</option>`;
+    const o=p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(nm(p.id))} · ${esc((p.khoa||'').replace(/^(KHOA|PHÒNG) /,''))}${p.nam_sinh?' · '+p.nam_sinh:''}</option>`;
     const bad=cur&&PM[cur]&&PM[cur].khong_truc?`<option value="${cur}" selected>${esc(NAME[cur])} (không trực)</option>`:'';
     return `<option value="">—</option>${bad}${goiy.length?`<optgroup label="Gợi ý">${goiy.map(o).join('')}</optgroup>`:''}<optgroup label="Tất cả">${rest.map(o).join('')}</optgroup>`;
   };
