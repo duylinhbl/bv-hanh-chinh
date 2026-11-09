@@ -95,7 +95,8 @@ async function soan(ky){
     if(!tatca&&vt.nhom!=='cbvc'){
       const gy=vt.goi_y_khoa||[];
       if(gy.length)g=g.filter(p=>gy.includes(p.khoa));
-      if(vt.ma==='lanh_dao'||vt.ma==='truc_vien')g=g.filter(isBS);
+      if(vt.nguoi_cho_phep&&vt.nguoi_cho_phep.length)g=g.filter(p=>vt.nguoi_cho_phep.includes(p.id));
+      else if(vt.ma==='truc_vien')g=g.filter(isBS);
     }
     if(cur&&PM[cur]&&!g.some(p=>p.id===cur))g=[PM[cur],...g];
     const o=p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(nm(p.id))} · ${esc((p.khoa||'').replace(/^(KHOA|PHÒNG) /,''))}${p.nam_sinh?' · '+p.nam_sinh:''}${p.khong_truc?' (không trực)':''}</option>`;
