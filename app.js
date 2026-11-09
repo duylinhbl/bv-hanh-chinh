@@ -64,16 +64,16 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v9</small></header>
+  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v10</small></header>
   <main id="nd"></main>
-  <nav><button data-t="toi">Việc của tôi</button>${lanh?'<button data-t="giao">Đã giao</button>':''}<button data-t="lt">Lịch trực</button><button data-t="tb">Thông báo<span id="dem" class="tag red" style="display:none;margin-left:4px"></span></button><button data-t="moi">+ Giao việc</button><button data-t="tk">Tài khoản</button></nav>`;
+  <nav><button data-t="toi">Việc</button>${lanh?'<button data-t="giao">Giao</button>':''}<button data-t="ct">Lịch</button><button data-t="lt">Trực</button><button data-t="tb">Tin<span id="dem" class="tag red" style="display:none;margin-left:4px"></span></button><button data-t="moi">+ Việc</button><button data-t="tk">Tôi</button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
   ve();day();demTB();sb.channel('tb').on('postgres_changes',{event:'*',schema:'public',table:'thong_bao_nguoi_nhan',filter:'nguoi_id=eq.'+me.id},()=>{demTB();if(tab==='tb')dsTB();else toast('Có thông báo mới')}).subscribe();
 }
 window.addEventListener('unhandledrejection',e=>{const n=$('#nd');if(n)n.innerHTML='<p class="mut">Lỗi: '+esc(e.reason&&e.reason.message||e.reason)+'</p>'});
 function ve(){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
-  ({toi:dsToi,giao:dsGiao,lt:()=>window.LICH.ve(),tb:dsTB,moi:formViec,tk:taiKhoan})[tab]();
+  ({toi:dsToi,giao:dsGiao,ct:()=>window.LICHCT.ve(),lt:()=>window.LICH.ve(),tb:dsTB,moi:formViec,tk:taiKhoan})[tab]();
 }
 const the=v=>`<div class="card" data-id="${v.id}"><h3>${esc(v.tieu_de)}</h3><div class="row">${tag(v.trang_thai)}${v.uu_tien==2?'<span class="tag red">Gấp</span>':''}${v.han?`<span class="mut">Hạn ${fmt(v.han)}</span>`:''}</div>${v.ben?`<div class="mut">${esc(v.ben)}</div>`:''}</div>`;
 async function dsToi(){
