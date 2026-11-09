@@ -89,22 +89,30 @@ async function soan(ky){
   const {$:q,esc,toast}=A();
   let m=await taiKy(ky);
   const dsNgay=days(ky.tu_ngay,ky.den_ngay);
+  let tatca=false;
   const opt=(vt,cur)=>{
-    const g=P.filter(p=>!p.khong_truc),goiy=g.filter(p=>(vt.goi_y_khoa||[]).includes(p.khoa)),rest=g.filter(p=>!(vt.goi_y_khoa||[]).includes(p.khoa));
-    const o=p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(nm(p.id))} · ${esc((p.khoa||'').replace(/^(KHOA|PHÒNG) /,''))}${p.nam_sinh?' · '+p.nam_sinh:''}</option>`;
-    const bad=cur&&PM[cur]&&PM[cur].khong_truc?`<option value="${cur}" selected>${esc(NAME[cur])} (không trực)</option>`:'';
-    return `<option value="">—</option>${bad}${goiy.length?`<optgroup label="Gợi ý">${goiy.map(o).join('')}</optgroup>`:''}<optgroup label="Tất cả">${rest.map(o).join('')}</optgroup>`;
+    let g=P.filter(p=>!p.khong_truc);
+    if(!tatca&&vt.nhom!=='cbvc'){
+      const gy=vt.goi_y_khoa||[];
+      if(gy.length)g=g.filter(p=>gy.includes(p.khoa));
+      if(vt.ma==='lanh_dao'||vt.ma==='truc_vien')g=g.filter(isBS);
+    }
+    if(cur&&PM[cur]&&!g.some(p=>p.id===cur))g=[PM[cur],...g];
+    const o=p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(nm(p.id))} · ${esc((p.khoa||'').replace(/^(KHOA|PHÒNG) /,''))}${p.nam_sinh?' · '+p.nam_sinh:''}${p.khong_truc?' (không trực)':''}</option>`;
+    return `<option value="">—</option>${g.map(o).join('')}`;
   };
   const dung=()=>{
     q('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button>
     <div class="card" style="margin-top:10px"><h3>${dm(ky.tu_ngay)} – ${dm(ky.den_ngay)} ${ky.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</h3>
-    <div class="row"><button class="sec" id="cp">Sao chép từ kỳ trước</button><button class="sec" id="in">In</button></div></div>
+    <div class="row"><button class="sec" id="cp">Sao chép từ kỳ trước</button><button class="sec" id="in">In</button></div>
+    <label style="font-weight:400;margin-top:8px"><input id="ta" type="checkbox" style="width:auto" ${tatca?'checked':''}> Hiện toàn bộ nhân sự (bỏ lọc theo khoa)</label></div>
     ${dsNgay.map(n=>{const cb=pd(n).getDay()===0||pd(n).getDay()===6;
       return `<div class="card" data-n="${n}"><h3>${TH[pd(n).getDay()]} ${dm(n)}</h3>${VT.filter(v=>v.nhom==='truc'||(cb&&v.nhom==='cbvc')).map(v=>`<label>${esc(v.ten)}</label>`+Array.from({length:v.so_nguoi},(_,i)=>`<select data-k="${n}|${v.id}|${i}" style="margin-bottom:4px">${opt(v,m[`${n}|${v.id}|${i}`])}</select>`).join('')).join('')}<div class="cb" style="color:var(--red);font-size:14px;margin-top:6px"></div></div>`}).join('')}
     <div class="card"><button class="full" id="luu">Lưu</button>${ky.trang_thai==='nhap'?'<button class="full" id="cb">Công bố lịch</button>':''}<p class="mut" id="loi"></p></div>`;
     const wr=()=>document.querySelectorAll('[data-n]').forEach(c=>{const w=canhBao(m,c.dataset.n);c.querySelector('.cb').innerHTML=w.map(x=>'⚠ '+esc(x)).join('<br>')});
     document.querySelectorAll('[data-k]').forEach(s=>s.onchange=()=>{m[s.dataset.k]=s.value||null;wr()});wr();
     $('#lui').onclick=ve;
+    $('#ta').onchange=()=>{tatca=$('#ta').checked;dung()};
     $('#in').onclick=()=>inLich(ky,m);
     $('#cp').onclick=async()=>{
       const {data}=await A().sb.from('lich_truc_ky').select('*').lt('tu_ngay',ky.tu_ngay).order('tu_ngay',{ascending:false}).limit(1);
