@@ -64,7 +64,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v16</small></header>
+  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v17</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi">Việc</button>${lanh?'<button data-t="giao">Giao</button>':''}<button data-t="ct">Lịch</button><button data-t="lt">Trực</button><button data-t="tb">Tin<span id="dem" class="tag red" style="display:none;margin-left:4px"></span></button><button data-t="moi">+ Việc</button><button data-t="tk">Tôi</button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -166,7 +166,7 @@ async function chiTietTB(id){
   $('#lui').onclick=dsTB;
   if($('#doc'))$('#doc').onclick=async()=>{const {error}=await sb.from('thong_bao_nguoi_nhan').update({da_doc_luc:new Date().toISOString()}).eq('thong_bao_id',id).eq('nguoi_id',me.id);if(error)return toast('Lỗi: '+error.message);toast('Đã xác nhận');demTB();chiTietTB(id)};
   const {data:th}=await sb.rpc('tinh_hinh_doc',{p_tb:id});
-  if(th&&th.length){const d=th.filter(x=>x.da_doc_luc).length;
+  if(th&&th.length&&$('#th')){const d=th.filter(x=>x.da_doc_luc).length;
     $('#th').innerHTML=`<div class="card"><h3>Tình hình đọc: ${d}/${th.length}</h3>${th.map(x=>`<div class="row" style="justify-content:space-between"><span>${x.da_doc_luc?'✅':'⬜'} ${esc(x.ho_ten)} <span class="mut">${esc(x.khoa||'')}</span></span><span class="mut">${x.da_doc_luc?fmt(x.da_doc_luc):'chưa đọc'}</span></div>`).join('')}</div>`}
 }
 async function formTB(){
