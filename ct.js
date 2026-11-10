@@ -9,6 +9,46 @@ const hm=t=>t?t.slice(0,5):'';
 const monday=s=>{const d=pd(s),w=(d.getDay()+6)%7;return add(s,-w)};
 let ten={},quyen=false,view={y:0,m:0},chon=iso(new Date());
 
+
+// ---- dán nhanh: tách ngày, giờ, địa điểm, thành phần từ 1 dòng văn bản ----
+const f=s=>[...s.normalize('NFC')].map(c=>c==='đ'?'d':c==='Đ'?'D':c.normalize('NFD')[0]).join('').toLowerCase();
+const p2=x=>String(x).padStart(2,'0');
+function phanTich(raw,homIso){
+  let t=raw.normalize('NFC').replace(/\s+/g,' ').trim(),n=f(t);const o={};
+  let tpText='';const mm=/(thanh phan|\btp\b)\s*[:\-]?\s*/.exec(n);
+  if(mm){tpText=t.slice(mm.index+mm[0].length);t=t.slice(0,mm.index);n=n.slice(0,mm.index)}
+  let idx=-1,len=0;const dd=/(dia diem\s*[:\-]?\s*)/.exec(n);
+  if(dd){idx=dd.index;len=dd[0].length}else{const re=/\btai\s+/g;let x;while((x=re.exec(n))){idx=x.index;len=x[0].length}}
+  if(idx>=0){o.dia_diem=t.slice(idx+len).replace(/[\s.,;]+$/,'').trim();t=t.slice(0,idx);n=n.slice(0,idx)}
+  const cut=(m)=>{t=t.slice(0,m.index)+' '+t.slice(m.index+m[0].length);n=n.slice(0,m.index)+' '+n.slice(m.index+m[0].length)};
+  let m=/(\d{1,2})\s*(?:h|:|gio)\s*(\d{1,2})?\s*(?:-|–|den|toi)\s*(\d{1,2})\s*(?:h|:|gio)?\s*(\d{1,2})?/.exec(n);
+  if(m&&+m[1]<24&&+m[3]<24){o.gio_bd=p2(m[1])+':'+p2(m[2]||0);o.gio_kt=p2(m[3])+':'+p2(m[4]||0);cut(m)}
+  else{m=/(\d{1,2})\s*(?:h|:|gio)\s*(\d{1,2})?/.exec(n);if(m&&+m[1]<24){o.gio_bd=p2(m[1])+':'+p2(m[2]||0);cut(m)}}
+  const hom=new Date(homIso+'T00:00:00');
+  m=/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})(?:\s*[\/\-.]\s*(\d{4}|\d{2}))?/.exec(n);
+  if(m&&+m[1]>=1&&+m[1]<=31&&+m[2]>=1&&+m[2]<=12){let y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):hom.getFullYear();o.ngay=`${y}-${p2(m[2])}-${p2(m[1])}`;cut(m)}
+  else if((m=/\bngay mai\b/.exec(n))){const d=new Date(hom);d.setDate(d.getDate()+1);o.ngay=iso(d);cut(m)}
+  else if((m=/\bhom nay\b/.exec(n))){o.ngay=homIso;cut(m)}
+  else if((m=/\b(?:thu\s*([2-7])|chu nhat|cn)\b/.exec(n))){const w=m[1]?+m[1]-1:0;const d=new Date(hom);while(d.getDay()!==w)d.setDate(d.getDate()+1);o.ngay=iso(d);cut(m)}
+  t=t.replace(/\s+/g,' ').trim();
+  for(let i=0;i<3;i++)t=t.replace(/^(lúc|vào|ngày|từ|vào lúc)\s+/i,'').replace(/\s+(lúc|vào|ngày|từ|đến|tới|vào lúc)$/i,'').replace(/^[\s,;:\-–.]+|[\s,;:\-–.]+$/g,'');
+  o.noi_dung=t;
+  o.tp=tpText.split(/,|;|\n|&|\bvà\b/i).map(x=>x.replace(/[\s.]+$/,'').trim()).filter(Boolean);
+  return o;
+}
+const PREFIX=/^(bs|ds|ys|ktv|kt|dd|nhs|cn|ths|cki|ckii|pgd|gd|pho giam doc|giam doc|truong khoa|truong phong|bac si|duoc si|y si|dieu duong|ho sinh|thac si)\.?\s+/;
+const HINT={bs:/bac s|\bbs\b/,'bac si':/bac s|\bbs\b/,ds:/duoc/,'duoc si':/duoc/,nhs:/nhs|ho sinh/,'ho sinh':/nhs|ho sinh/,dd:/dieu duong|\bdd\b/,'dieu duong':/dieu duong|\bdd\b/,ys:/y s[yi]|\bys\b/,'y si':/y s[yi]|\bys\b/,ktv:/ky thuat|ktv/,kt:/ky thuat|ktv/};
+function timNguoi(tok,PL,khoa){
+  let nt=f(tok).replace(/\./g,' ').replace(/\s+/g,' ').trim();const hints=[];
+  for(;;){const m=PREFIX.exec(nt);if(!m)break;hints.push(m[1]);nt=nt.slice(m[0].length)}
+  if(nt==='toan vien'||nt==='toan benh vien')return{khoa:khoa.map(k=>k.id)};
+  const kk=khoa.find(k=>k.al.includes(nt));if(kk)return{khoa:[kk.id]};
+  let c=PL.filter(p=>{const full=f(p.ho_ten);return full===nt||(' '+full+' ').includes(' '+nt+' ')||f(p.ten_goi||'')===nt});
+  const ex=c.filter(p=>f(p.ho_ten)===nt||f(p.ten_goi||'')===nt);if(ex.length)c=ex;
+  for(const h of hints){const re=HINT[h];if(!re)continue;const c2=c.filter(p=>re.test(f((p.chuc_vu||'')+' '+(p.chuyen_mon||''))));if(c2.length)c=c2}
+  return{ids:c.map(p=>p.id)};
+}
+
 async function nap(){
   const [d,q]=await Promise.all([A().sb.from('danh_ba').select('id,ho_ten,chuc_vu').order('ho_ten'),A().sb.rpc('duoc_phat')]);
   ten={};(d.data||[]).forEach(p=>ten[p.id]=p);quyen=!!q.data||!!A().me.la_quan_tri;
@@ -48,10 +88,15 @@ async function dung(){
 
 async function form(e){
   const {esc,toast}=A();
-  const {data:ks}=await A().sb.rpc('ds_khoa');
+  const [{data:ks},{data:PL}]=await Promise.all([A().sb.rpc('ds_khoa'),A().sb.rpc('ds_nguoi_truc')]);
+  const khoa=(ks||[]).map(k=>{const b=f(k.ten).replace(/^(khoa|phong) /,'');return{id:k.id,al:[b,f(k.ten),...(b==='ban giam doc'?['bgd','ban giam doc']:[]),...(b==='kham benh'?['kb']:[])]}});
+  let amb=[],thieu=[],ghi='';
   const sua=!!e;let sel=new Set(e?e.tp:[]),kh=new Set();
   const ui=()=>{
     $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px">
+    ${sua?'':`<label>Dán nhanh (app tự tách ngày, giờ, địa điểm, thành phần)</label><textarea id="dan" placeholder="Ví dụ: Họp giao ban 8h-9h ngày 12/11 tại phòng họp. Thành phần: BS Quốc, DS Thành, KHTH"></textarea><button class="sec" id="pt" style="margin-top:6px">Phân tích</button>${ghi?`<div class="mut" style="margin-top:6px">${esc(ghi)}</div>`:''}
+    ${amb.map((a,i)=>`<div class="card" style="margin:8px 0"><div class="mut">Có nhiều người tên "${esc(a.tok)}", chọn đúng người:</div>${a.ids.map(id=>{const p=PL.find(x=>x.id===id);return `<button class="sec" data-pick="${i}|${id}" style="margin:4px 4px 0 0">${esc(p.ho_ten)} · ${esc((p.khoa||'').replace(/^(KHOA|PHÒNG) /,''))}${p.nam_sinh?' · '+p.nam_sinh:''}</button>`}).join('')}</div>`).join('')}
+    ${thieu.length?`<div class="banner">Không tìm thấy: ${thieu.map(esc).join(', ')}. Thêm tay ở phần Thành phần bên dưới.</div>`:''}`}
     <label>Ngày</label><input id="ng" type="date" value="${e?e.ngay:chon}">
     <div class="row"><div style="flex:1"><label>Từ giờ</label><input id="g1" type="time" value="${e?hm(e.gio_bd):''}"></div><div style="flex:1"><label>Đến giờ</label><input id="g2" type="time" value="${e?hm(e.gio_kt):''}"></div></div>
     <label>Nội dung</label><textarea id="nd2">${e?esc(e.noi_dung):''}</textarea><label>Địa điểm</label><input id="dd" value="${e?esc(e.dia_diem||''):''}">
@@ -62,6 +107,20 @@ async function form(e){
     <label style="font-weight:400;margin-top:10px"><input id="rt" type="checkbox" style="width:auto" ${e&&e.rieng_tu?'checked':''}> Lịch riêng (chỉ thành phần mới thấy)</label>
     <button class="full" id="luu">${sua?'Lưu và nhắn người liên quan':'Tạo lịch và nhắn thành phần'}</button>${sua?'<button class="full dng" id="huy">Hủy lịch này</button>':''}<p class="mut" id="loi"></p></div>`;
     $('#lui').onclick=dung;
+    if($('#pt'))$('#pt').onclick=()=>{
+      const txt=$('#dan').value;if(!txt.trim())return;keep();
+      const r=phanTich(txt,iso(new Date()));
+      if(r.ngay)e.ngay=r.ngay;if(r.gio_bd)e.gio_bd=r.gio_bd;if(r.gio_kt)e.gio_kt=r.gio_kt;if(r.dia_diem)e.dia_diem=r.dia_diem;if(r.noi_dung)e.noi_dung=r.noi_dung;
+      amb=[];thieu=[];let ok=0;
+      for(const tok of r.tp){const x=timNguoi(tok,PL,khoa);
+        if(x.khoa){x.khoa.forEach(i=>kh.add(i));ok++}
+        else if(x.ids.length===1){sel.add(x.ids[0]);ok++}
+        else if(x.ids.length>1)amb.push({tok,ids:x.ids});
+        else thieu.push(tok)}
+      ghi=`Đã tách: ${r.ngay?'ngày '+r.ngay.split('-').reverse().join('/'):'chưa thấy ngày'}${r.gio_bd?', '+r.gio_bd+(r.gio_kt?'–'+r.gio_kt:''):', chưa thấy giờ'}; thành phần: ${ok} khớp${amb.length?', '+amb.length+' cần chọn':''}${thieu.length?', '+thieu.length+' không thấy':''}. Kiểm tra lại các ô bên dưới.`;
+      ui();
+    };
+    document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{const [i,id]=b.dataset.pick.split('|');keep();sel.add(id);amb.splice(+i,1);ui()});
     document.querySelectorAll('[data-k]').forEach(c=>c.onchange=()=>{c.checked?kh.add(c.dataset.k):kh.delete(c.dataset.k)});
     document.querySelectorAll('[data-x]').forEach(c=>c.onclick=()=>{sel.delete(c.dataset.x);keep();ui()});
     $('#tim').oninput=()=>{const q=$('#tim').value.trim().toLowerCase();$('#kq').innerHTML=q?Object.values(ten).filter(p=>p.ho_ten.toLowerCase().includes(q)&&!sel.has(p.id)).slice(0,8).map(p=>`<div class="card" data-a="${p.id}" style="padding:8px 12px;margin:4px 0">${esc(p.ho_ten)} <span class="mut">${esc(p.chuc_vu||'')}</span></div>`).join(''):'';

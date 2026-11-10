@@ -64,7 +64,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v14</small></header>
+  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v15</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi">Việc</button>${lanh?'<button data-t="giao">Giao</button>':''}<button data-t="ct">Lịch</button><button data-t="lt">Trực</button><button data-t="tb">Tin<span id="dem" class="tag red" style="display:none;margin-left:4px"></span></button><button data-t="moi">+ Việc</button><button data-t="tk">Tôi</button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -81,8 +81,8 @@ async function dsToi(){
 async function dsToi2(){
   const {data,error}=await sb.from('viec').select('*').eq('nguoi_nhan',me.id).not('trang_thai','in','(da_dong,huy)').order('han',{nullsFirst:false});
   if(error)return $('#nd').textContent=error.message;
-  $('#nd').innerHTML=data.length?data.map(v=>the({...v,ben:v.tu_giao?'Tự giao':'Giao bởi '+ten(v.nguoi_giao)})).join(''):'<p class="mut">Không có việc đang mở.</p>';
-  gan();
+  $('#nd').innerHTML=(await theBatPush())+(data.length?data.map(v=>the({...v,ben:v.tu_giao?'Tự giao':'Giao bởi '+ten(v.nguoi_giao)})).join(''):'<p class="mut">Không có việc đang mở.</p>');
+  gan();ganNutPush();
 }
 async function dsGiao(){
   $('#nd').innerHTML='Đang tải…';
@@ -185,8 +185,47 @@ async function formTB(){
     toast('Đã phát thông báo');dsTB();
   };
 }
-function taiKhoan(){
-  $('#nd').innerHTML=`<div class="card"><h3>${esc(me.ho_ten)}</h3><div class="mut">${esc(me.chuc_vu||'')}<br>${esc(me.so_dien_thoai)}</div><button class="sec full" id="ra">Đăng xuất</button></div>`;
+// ---- thông báo đẩy ----
+const b64=s=>{const p='='.repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
+const pushHoTro=()=>'serviceWorker'in navigator&&'PushManager'in window&&'Notification'in window;
+async function pushTrangThai(){
+  if(!pushHoTro())return /iphone|ipad/i.test(navigator.userAgent)?'ios':'khong';
+  if(Notification.permission==='denied')return 'chan';
+  const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+  return sub&&Notification.permission==='granted'?'bat':'tat';
+}
+async function batPush(){
+  const p=await Notification.requestPermission();if(p!=='granted')throw new Error('Bạn chưa cho phép thông báo');
+  const reg=await navigator.serviceWorker.ready;
+  let sub=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(BV.VAPID)});
+  const j=sub.toJSON();
+  const {error}=await sb.rpc('dang_ky_push',{p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth,p_ua:navigator.userAgent});
+  if(error)throw error;
+}
+async function tatPush(){const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub){await sb.rpc('huy_dang_ky_push',{p_endpoint:sub.endpoint});await sub.unsubscribe()}}
+async function theBatPush(){
+  const st=await pushTrangThai();
+  if(st==='bat')return'';
+  const msg={ios:'Trên iPhone: bấm nút Chia sẻ → "Thêm vào Màn hình chính", rồi mở app từ biểu tượng đó để bật thông báo.',chan:'Thông báo đang bị chặn. Vào Cài đặt của trình duyệt/máy để cho phép lại.',khong:'Máy này chưa hỗ trợ thông báo đẩy.'}[st];
+  return `<div class="banner">${msg?esc(msg):'<b>Bật thông báo</b> để máy báo ngay khi có việc, lịch trực, lịch họp.'}${st==='tat'?'<div><button id="bpush" style="margin-top:8px">Bật thông báo trên máy này</button></div>':''}</div>`;
+}
+function ganNutPush(){const b=$('#bpush');if(b)b.onclick=async()=>{b.disabled=true;try{await batPush();toast('Đã bật thông báo');ve()}catch(e){toast(e.message||'Không bật được');b.disabled=false}}}
+function diDen(u){
+  try{const q=new URL(u,location.href).searchParams;
+    if(q.get('tb')){tab='tb';ve();chiTietTB(q.get('tb'))}
+    else if(q.get('v')){tab='toi';ve();chiTiet(q.get('v'))}
+    else if(q.get('t')==='lt'){tab='lt';ve()}
+    else if(q.get('ct')){tab='ct';ve()}
+  }catch(_){}
+}
+if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.di&&me)diDen(e.data.di)});
+async function taiKhoan(){
+  const st=await pushTrangThai();
+  $('#nd').innerHTML=`<div class="card"><h3>${esc(me.ho_ten)}</h3><div class="mut">${esc(me.chuc_vu||'')}<br>${esc(me.so_dien_thoai)}</div></div>
+  <div class="card"><h3>Thông báo trên máy này</h3><div class="mut">${{bat:'Đang bật',tat:'Chưa bật',chan:'Đang bị chặn',ios:'Cần thêm app vào Màn hình chính',khong:'Máy không hỗ trợ'}[st]}</div>${st==='tat'?'<button class="full" id="bp">Bật thông báo</button>':st==='bat'?'<button class="sec full" id="tp">Tắt thông báo trên máy này</button>':''}</div>
+  <button class="sec full" id="ra">Đăng xuất</button>`;
+  if($('#bp'))$('#bp').onclick=async()=>{try{await batPush();toast('Đã bật thông báo');taiKhoan()}catch(e){toast(e.message||'Không bật được')}};
+  if($('#tp'))$('#tp').onclick=async()=>{await tatPush();toast('Đã tắt');taiKhoan()};
   $('#ra').onclick=async()=>{await sb.auth.signOut();me=null;manHinhDangNhap()};
 }
 
@@ -198,5 +237,5 @@ async function khoiDong(){
   me=data;await napDanhBa();PHAT=!!(await sb.rpc('duoc_phat')).data;me.phai_doi_mat_khau?manHinhDoiMK():khung();
 }
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
-khoiDong();
+khoiDong().then(()=>{if(me&&location.search){const u=location.search;history.replaceState(null,'',location.pathname);diDen(u)}});
 })();

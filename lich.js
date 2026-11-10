@@ -92,7 +92,7 @@ function kyMoi(ds){
 // ----- soạn lịch -----
 async function soan(ky){
   const {$:q,esc,toast}=A();
-  let m=await taiKy(ky);
+  let m=await taiKy(ky),m0={...m};
   const dsNgay=days(ky.tu_ngay,ky.den_ngay);
   let tatca=false;
   const opt=(vt,cur)=>{
@@ -140,14 +140,19 @@ async function soan(ky){
       m={};for(const [k,v] of Object.entries(src)){const [n,vt,tt]=k.split('|'),nn=add(n,off);if(nn<=ky.den_ngay&&!(PM[v]&&PM[v].khong_truc))m[`${nn}|${vt}|${tt}`]=v}
       dung();toast('Đã chép, bồ kiểm tra lại rồi Lưu');
     };
-    const sv=async()=>{$('#loi').textContent='';try{await luu(ky,m);toast('Đã lưu');return true}catch(e){$('#loi').textContent='Lỗi lưu: '+e.message;return false}};
+    const dsCa=mm=>{const r={};for(const [k,v] of Object.entries(mm)){if(!v)continue;const [n,vt]=k.split('|');(r[v]=r[v]||new Set()).add(n+'|'+vt)}return r};
+    const sv=async()=>{$('#loi').textContent='';try{await luu(ky,m);
+      let bao=0;
+      if(ky.trang_thai==='cong_bo'){const a=dsCa(m0),b=dsCa(m),ids=new Set([...Object.keys(a),...Object.keys(b)]),dd=[...ids].filter(i=>[...(a[i]||[])].sort().join()!==[...(b[i]||[])].sort().join());
+        if(dd.length){const r=await A().sb.rpc('bao_dieu_chinh_truc',{p_nguoi:dd,p_tu:ky.tu_ngay,p_den:ky.den_ngay});if(r.error)throw r.error;bao=dd.length}}
+      m0={...m};toast(bao?`Đã lưu, đã báo ${bao} người bị thay đổi`:'Đã lưu');return true}catch(e){$('#loi').textContent='Lỗi lưu: '+e.message;return false}};
     $('#luu').onclick=sv;
     if($('#cb'))$('#cb').onclick=async()=>{
       const co=dsNgay.filter(n=>canhBao(m,n).length).length;
       if(co&&!confirm(`Còn ${co} ngày có cảnh báo quy tắc. Vẫn công bố?`))return;
       if(!await sv())return;
-      const {error}=await A().sb.from('lich_truc_ky').update({trang_thai:'cong_bo',ngay_ky:iso(new Date())}).eq('id',ky.id);
-      if(error)return $('#loi').textContent=error.message;ky.trang_thai='cong_bo';toast('Đã công bố');ve();
+      const {error}=await A().sb.rpc('cong_bo_lich_truc',{p_ky:ky.id});
+      if(error)return $('#loi').textContent=error.message;ky.trang_thai='cong_bo';toast('Đã công bố và báo cho người có ca');ve();
     };
   };
   dung();
