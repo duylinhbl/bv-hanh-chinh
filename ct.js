@@ -88,7 +88,7 @@ async function dung(){
 
 async function form(e){
   const {esc,toast}=A();
-  const [{data:ks},{data:PL}]=await Promise.all([A().sb.rpc('ds_khoa'),A().sb.rpc('ds_nguoi_truc')]);
+  const [{data:ks},{data:PL},{data:LD}]=await Promise.all([A().sb.rpc('ds_khoa'),A().sb.rpc('ds_nguoi_truc'),A().sb.rpc('ds_lanh_dao')]);
   const khoa=(ks||[]).map(k=>{const b=f(k.ten).replace(/^(khoa|phong) /,'');return{id:k.id,al:[b,f(k.ten),...(b==='ban giam doc'?['bgd','ban giam doc']:[]),...(b==='kham benh'?['kb']:[])]}});
   let amb=[],thieu=[],ghi='';
   const sua=!!e;let sel=new Set(e?e.tp:[]),kh=new Set();
@@ -101,7 +101,9 @@ async function form(e){
     <div class="row"><div style="flex:1"><label>Từ giờ</label><input id="g1" type="time" value="${e?hm(e.gio_bd):''}"></div><div style="flex:1"><label>Đến giờ</label><input id="g2" type="time" value="${e?hm(e.gio_kt):''}"></div></div>
     <label>Nội dung</label><textarea id="nd2">${e?esc(e.noi_dung):''}</textarea><label>Địa điểm</label><input id="dd" value="${e?esc(e.dia_diem||''):''}">
     <label>Thành phần tham dự (app sẽ nhắn cho từng người)</label>
-    <div class="mut">Cả khoa/phòng:</div>${(ks||[]).map(k=>`<label style="font-weight:400;margin:4px 0"><input type="checkbox" data-k="${k.id}" style="width:auto" ${kh.has(k.id)?'checked':''}> ${esc(k.ten)}</label>`).join('')}
+    <div class="mut">Khoa/phòng (chỉ nhắn trưởng khoa và ĐD trưởng):</div>
+    <div id="kchips" style="margin:4px 0">${[...kh].map(i=>{const k=(ks||[]).find(x=>x.id===i);const l=(LD||[]).filter(x=>x.khoa_id===i).map(x=>x.ho_ten).join(', ');return `<span class="tag" data-xk="${i}" style="margin:2px;padding:4px 10px">${esc(k?k.ten:'?')}${l?' → '+esc(l):''} ✕</span>`}).join('')||'<span class="mut">Chưa chọn</span>'}</div>
+    <input id="timk" placeholder="Gõ tên khoa/phòng để thêm…"><div id="kqk"></div>
     <div class="mut" style="margin-top:8px">Từng người:</div><div id="chips" style="margin:4px 0">${[...sel].map(i=>`<span class="tag" data-x="${i}" style="margin:2px;padding:4px 10px">${esc((ten[i]||{}).ho_ten||'?')} ✕</span>`).join('')||'<span class="mut">Chưa chọn</span>'}</div>
     <input id="tim" placeholder="Gõ tên để thêm…"><div id="kq"></div>
     <label style="font-weight:400;margin-top:10px"><input id="rt" type="checkbox" style="width:auto" ${e&&e.rieng_tu?'checked':''}> Lịch riêng (chỉ thành phần mới thấy)</label>
@@ -121,7 +123,9 @@ async function form(e){
       ui();
     };
     document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{const [i,id]=b.dataset.pick.split('|');keep();sel.add(id);amb.splice(+i,1);ui()});
-    document.querySelectorAll('[data-k]').forEach(c=>c.onchange=()=>{c.checked?kh.add(c.dataset.k):kh.delete(c.dataset.k)});
+    document.querySelectorAll('[data-xk]').forEach(c=>c.onclick=()=>{kh.delete(c.dataset.xk);keep();ui()});
+    $('#timk').oninput=()=>{const q=f($('#timk').value.trim());$('#kqk').innerHTML=q?(ks||[]).filter(k=>f(k.ten).includes(q)&&!kh.has(k.id)).slice(0,8).map(k=>`<div class="card" data-ak="${k.id}" style="padding:8px 12px;margin:4px 0">${esc(k.ten)}</div>`).join(''):'';
+      document.querySelectorAll('[data-ak]').forEach(c=>c.onclick=()=>{kh.add(c.dataset.ak);keep();ui()})};
     document.querySelectorAll('[data-x]').forEach(c=>c.onclick=()=>{sel.delete(c.dataset.x);keep();ui()});
     $('#tim').oninput=()=>{const q=$('#tim').value.trim().toLowerCase();$('#kq').innerHTML=q?Object.values(ten).filter(p=>p.ho_ten.toLowerCase().includes(q)&&!sel.has(p.id)).slice(0,8).map(p=>`<div class="card" data-a="${p.id}" style="padding:8px 12px;margin:4px 0">${esc(p.ho_ten)} <span class="mut">${esc(p.chuc_vu||'')}</span></div>`).join(''):'';
       document.querySelectorAll('[data-a]').forEach(c=>c.onclick=()=>{sel.add(c.dataset.a);keep();ui()})};
