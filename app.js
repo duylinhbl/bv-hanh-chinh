@@ -64,7 +64,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v17</small></header>
+  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v18</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi">Việc</button>${lanh?'<button data-t="giao">Giao</button>':''}<button data-t="ct">Lịch</button><button data-t="lt">Trực</button><button data-t="tb">Tin<span id="dem" class="tag red" style="display:none;margin-left:4px"></span></button><button data-t="moi">+ Việc</button><button data-t="tk">Tôi</button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -94,13 +94,19 @@ async function dsGiao(){
 const gan=()=>document.querySelectorAll('.card[data-id]').forEach(c=>c.onclick=()=>chiTiet(c.dataset.id));
 
 async function formViec(){
-  const ds=(await napDanhBa()).filter(u=>me.vai_tro!=='nhan_vien'||u.id===me.id);
+  const {data:nd}=await sb.from('nguoi_dung').select('id,ho_ten,chuc_vu,khoa_phong(ten)').eq('hoat_dong',true).order('ho_ten');
+  const ds=(nd||[]).filter(u=>me.vai_tro!=='nhan_vien'||u.id===me.id);
+  const kt=u=>((u.khoa_phong&&u.khoa_phong.ten)||'').replace(/^(KHOA|PHÒNG) /,'');
+  const fx=t=>(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
   $('#nd').innerHTML=`<div class="card"><label>Việc cần làm</label><input id="tt"><label>Mô tả</label><textarea id="ms"></textarea>
-  <label>Người nhận</label><select id="nn">${(ds||[]).map(u=>`<option value="${u.id}" ${u.id===me.id?'selected':''}>${esc(u.ho_ten)}${u.id===me.id?' (tôi)':''}</option>`).join('')}</select>
+  <label>Người nhận ${me.vai_tro==='nhan_vien'?'':'(chỉ hiện người trong khoa/phòng bạn phụ trách)'}</label>
+  <input id="nq" placeholder="Gõ tên để lọc…" autocomplete="off"><select id="nn"></select>
   <label>Hạn</label><input id="han" type="datetime-local"><label>Mức độ</label><select id="ut"><option value="1">Thường</option><option value="2">Gấp</option><option value="0">Thấp</option></select>
   <button class="full" id="g">Giao việc</button><p class="mut" id="loi"></p></div>`;
+  const dien=q=>{const x=fx(q);const l=ds.filter(u=>!x||fx(u.ho_ten+' '+kt(u)).includes(x));$('#nn').innerHTML=l.map(u=>`<option value="${u.id}" ${u.id===me.id?'selected':''}>${esc(u.ho_ten)}${u.id===me.id?' (tôi)':''}${kt(u)?' · '+esc(kt(u)):''}</option>`).join('')||'<option value="">Không có ai khớp</option>';if(x&&l.length)$('#nn').value=l[0].id};
+  dien('');$('#nq').oninput=()=>dien($('#nq').value);
   $('#g').onclick=async()=>{
-    if(!$('#tt').value.trim())return $('#loi').textContent='Nhập tên việc';
+    if(!$('#tt').value.trim())return $('#loi').textContent='Nhập tên việc';if(!$('#nn').value)return $('#loi').textContent='Chọn người nhận';
     const {error}=await sb.from('viec').insert({tieu_de:$('#tt').value.trim(),mo_ta:$('#ms').value||null,nguoi_giao:me.id,nguoi_nhan:$('#nn').value,han:$('#han').value?new Date($('#han').value).toISOString():null,uu_tien:+$('#ut').value});
     if(error)return $('#loi').textContent='Không giao được: '+error.message;
     toast('Đã giao việc');tab='toi';ve();
