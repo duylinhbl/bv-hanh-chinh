@@ -74,8 +74,7 @@ async function dung(){
   const tuan=Array.from({length:7},(_,i)=>add(monday(chon),i));
   const mine=A().me.id;
   const the=e=>{const ps=tp[e.id]||[],toi=ps.includes(mine),qt=A().me.la_quan_tri;return `<div class="card" data-ex="${e.id}" style="cursor:pointer;${toi?'border-color:var(--pri);border-width:2px;':''}${e.huy?'opacity:.55;':''}">
-    <div style="${e.huy?'text-decoration:line-through':''}"><b>${gioTxt(e)}</b> · ${esc(ngan(e.noi_dung,70))} ${e.huy?'<span class="tag red">Đã hủy</span>':toi?'<span class="tag grn">Có tên bạn</span>':''}${e.rieng_tu?'<span class="tag">Riêng</span>':''}</div>
-    <div class="mut">${e.dia_diem?'📍 '+esc(ngan(e.dia_diem,40))+' · ':''}👥 ${ps.length} người</div>
+    <div style="${e.huy?'text-decoration:line-through':''}"><b>${gioTxt(e)}</b> · ${esc(ngan(e.noi_dung,60))} ${e.huy?'<span class="tag red">Đã hủy</span>':toi?'<span class="tag grn">Có tên bạn</span>':''}${e.rieng_tu?'<span class="tag">Riêng</span>':''}</div>
     <div class="ct" id="ct-${e.id}" style="display:none;margin-top:8px;border-top:1px solid var(--line);padding-top:8px">
       <div style="white-space:pre-wrap">${esc(e.noi_dung)}</div>${e.dia_diem?`<div class="mut" style="white-space:pre-wrap">📍 ${esc(e.dia_diem)}</div>`:''}
       <div class="mut">👥 ${ps.length?ps.map(i=>esc((ten[i]||{}).ho_ten||'?')).join(', '):'—'}</div>
