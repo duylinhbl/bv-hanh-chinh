@@ -7,10 +7,12 @@ const add=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return iso(d)};
 const dm=s=>{const d=pd(s);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')};
 const days=(a,b)=>{const r=[];for(let d=a;d<=b;d=add(d,1))r.push(d);return r};
 const isBS=p=>p&&/\bbs\b|bác s/i.test((p.chuc_vu||'')+' '+(p.chuyen_mon||''));
-let P=[],PM={},VT=[],CAM=[],NAME={},duocXep=false;
+let P=[],PM={},VT=[],CAM=[],NAME={},duocXep=false,NHOM={};
+const idTen=t=>(P.find(p=>p.ho_ten===t)||{}).id;
 
 async function nap(){
-  const [a,b,c,d]=await Promise.all([A().sb.rpc('ds_nguoi_truc'),A().sb.from('vi_tri_truc').select('*').order('id'),A().sb.from('cam_truc_chung').select('a,b'),A().sb.rpc('duoc_xep')]);
+  const [a,b,c,d,e]=await Promise.all([A().sb.rpc('ds_nguoi_truc'),A().sb.from('vi_tri_truc').select('*').order('id'),A().sb.from('cam_truc_chung').select('a,b'),A().sb.rpc('duoc_xep'),A().sb.from('nhom_truc').select('*').order('thu_tu')]);
+  NHOM={};(e.data||[]).forEach(g=>(NHOM[g.vi_tri_id]=NHOM[g.vi_tri_id]||[]).push(g));
   P=a.data||[];PM={};P.forEach(p=>PM[p.id]=p);VT=b.data||[];CAM=c.data||[];duocXep=!!d.data;
   const last=p=>p.ho_ten.trim().split(/\s+/);const cnt={};
   P.filter(p=>!p.khong_truc).forEach(p=>{const k=last(p).slice(-1)[0];cnt[k]=(cnt[k]||0)+1});
@@ -31,6 +33,9 @@ function canhBao(m,ngay){
       if(kx&&kx===ky&&kx!=='KHOA KHÁM BỆNH')w.push(`Trực viện: cùng ${kx} (chỉ Khoa Khám bệnh được 2 bác sĩ)`);
     }
   }
+  const ld=m[`${ngay}|1|0`],BS3=['Nguyễn Đắc Lộc','Nguyễn Hữu Danh','Tô Văn Châu'].map(idTen),CH=idTen('Tô Văn Châu');
+  if(ld&&BS3.includes(ld)&&!ids.includes(ld))w.push(`${NAME[ld]} trực lãnh đạo thì cũng là bác sĩ trực viện (cột 1)`);
+  if(CH&&ids.includes(CH)&&![0,1].map(i=>m[`${ngay}|4|${i}`]).includes(CH))w.push('Châu trực viện thì trực luôn Siêu âm');
   return [...new Set(w)];
 }
 
@@ -102,16 +107,29 @@ async function soan(ky){
     const o=p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(nm(p.id))} · ${esc((p.khoa||'').replace(/^(KHOA|PHÒNG) /,''))}${p.nam_sinh?' · '+p.nam_sinh:''}${p.khong_truc?' (không trực)':''}</option>`;
     return `<option value="">—</option>${g.map(o).join('')}`;
   };
+  const nhomOpt=(v,n)=>{
+    const cur=Array.from({length:v.so_nguoi},(_,i)=>m[`${n}|${v.id}|${i}`]||'').join(',');
+    return '<option value="">— Chọn nhóm —</option>'+NHOM[v.id].map(g=>{const ds=g.thanh_vien.slice(0,v.so_nguoi);
+      return `<option value="${g.id}" ${ds.join(',')===cur?'selected':''}>${g.ten} · NT ${esc(NAME[ds[0]]||'?')}: ${esc(ds.map(i=>NAME[i]||'?').join(', '))}</option>`}).join('');
+  };
+  const setCell=(key,id)=>{m[key]=id||null;const el=document.querySelector(`[data-k="${key}"]`);if(!el)return;
+    if(id&&![...el.options].some(o=>o.value===id)){const o=document.createElement('option');o.value=id;o.textContent=nm(id);el.appendChild(o)}el.value=id||''};
+  const tuDong=key=>{const [n,vt]=key.split('|');
+    if(vt==='1'){const v=m[key],B=['Nguyễn Đắc Lộc','Nguyễn Hữu Danh','Tô Văn Châu'].map(idTen);if(v&&B.includes(v))setCell(`${n}|2|0`,v)}
+    if(vt==='1'||vt==='2'){const CH=idTen('Tô Văn Châu');if(CH&&[0,1].some(i=>m[`${n}|2|${i}`]===CH)&&![0,1].some(i=>m[`${n}|4|${i}`]===CH))setCell(`${n}|4|0`,CH)}
+  };
   const dung=()=>{
     q('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button>
     <div class="card" style="margin-top:10px"><h3>${dm(ky.tu_ngay)} – ${dm(ky.den_ngay)} ${ky.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</h3>
     <div class="row"><button class="sec" id="cp">Sao chép từ kỳ trước</button><button class="sec" id="in">In</button></div>
     <label style="font-weight:400;margin-top:8px"><input id="ta" type="checkbox" style="width:auto" ${tatca?'checked':''}> Hiện toàn bộ nhân sự (bỏ lọc theo khoa)</label></div>
     ${dsNgay.map(n=>{const cb=pd(n).getDay()===0||pd(n).getDay()===6;
-      return `<div class="card" data-n="${n}"><h3>${TH[pd(n).getDay()]} ${dm(n)}</h3>${VT.filter(v=>v.nhom==='truc'||(cb&&v.nhom==='cbvc')).map(v=>`<label>${esc(v.ten)}</label>`+Array.from({length:v.so_nguoi},(_,i)=>`<select data-k="${n}|${v.id}|${i}" style="margin-bottom:4px">${opt(v,m[`${n}|${v.id}|${i}`])}</select>`).join('')).join('')}<div class="cb" style="color:var(--red);font-size:14px;margin-top:6px"></div></div>`}).join('')}
+      return `<div class="card" data-n="${n}"><h3>${TH[pd(n).getDay()]} ${dm(n)}</h3>${VT.filter(v=>v.nhom==='truc'||(cb&&v.nhom==='cbvc')).map(v=>`<label>${esc(v.ten)}</label>`+(NHOM[v.id]?`<select data-g="${n}|${v.id}" style="margin-bottom:4px">${nhomOpt(v,n)}</select>`:'')+Array.from({length:v.so_nguoi},(_,i)=>`<select data-k="${n}|${v.id}|${i}" style="margin-bottom:4px">${opt(v,m[`${n}|${v.id}|${i}`])}</select>`).join('')).join('')}<div class="cb" style="color:var(--red);font-size:14px;margin-top:6px"></div></div>`}).join('')}
     <div class="card"><button class="full" id="luu">Lưu</button>${ky.trang_thai==='nhap'?'<button class="full" id="cb">Công bố lịch</button>':''}<p class="mut" id="loi"></p></div>`;
     const wr=()=>document.querySelectorAll('[data-n]').forEach(c=>{const w=canhBao(m,c.dataset.n);c.querySelector('.cb').innerHTML=w.map(x=>'⚠ '+esc(x)).join('<br>')});
-    document.querySelectorAll('[data-k]').forEach(s=>s.onchange=()=>{m[s.dataset.k]=s.value||null;wr()});wr();
+    document.querySelectorAll('[data-k]').forEach(s=>s.onchange=()=>{m[s.dataset.k]=s.value||null;tuDong(s.dataset.k);wr()});
+    document.querySelectorAll('[data-g]').forEach(s=>s.onchange=()=>{const [n,vt]=s.dataset.g.split('|'),v=VT.find(x=>x.id===+vt),g=(NHOM[vt]||[]).find(x=>String(x.id)===s.value);
+      for(let i=0;i<v.so_nguoi;i++)setCell(`${n}|${vt}|${i}`,g?g.thanh_vien[i]:null);wr()});wr();
     $('#lui').onclick=ve;
     $('#ta').onchange=()=>{tatca=$('#ta').checked;dung()};
     $('#in').onclick=()=>inLich(ky,m);
@@ -146,7 +164,7 @@ async function xem(ky){
 // ----- in đúng mẫu -----
 function inLich(ky,m){
   const ds=days(ky.tu_ngay,ky.den_ngay),cols=VT.filter(v=>v.nhom==='truc');
-  const cell=(n,v)=>[0,1,2].map(i=>m[`${n}|${v.id}|${i}`]).filter(Boolean).map(nm).join('<br>');
+  const cell=(n,v)=>[0,1,2].map(i=>m[`${n}|${v.id}|${i}`]).filter(Boolean).map((id,i)=>NHOM[v.id]&&i===0?`<b>${nm(id)}</b>`:nm(id)).join('<br>');
   const cb=VT.filter(v=>v.nhom==='cbvc');
   const rows=ds.map((n,i)=>(i&&i%7===0?`<tr class="sp"><td colspan="${2+cols.length}"></td></tr>`:'')+`<tr><td>${TH[pd(n).getDay()]==='CN'?'CN':TH[pd(n).getDay()]}</td><td>${dm(n)}</td>${cols.map(v=>`<td>${cell(n,v)}</td>`).join('')}</tr>`).join('');
   const cbr=ds.filter(n=>[0,6].includes(pd(n).getDay())).map(n=>`<tr><td>${TH[pd(n).getDay()]}</td><td>${dm(n)}</td>${cb.map(v=>`<td>${cell(n,v)}</td>`).join('')}</tr>`).join('');
