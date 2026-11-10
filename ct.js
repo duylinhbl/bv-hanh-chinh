@@ -6,6 +6,9 @@ const pd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
 const add=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return iso(d)};
 const dm=s=>{const d=pd(s);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')};
 const hm=t=>t?t.slice(0,5):'';
+const gioTxt=e=>e.gio_bd?hm(e.gio_bd)+(e.gio_kt?'–'+hm(e.gio_kt):''):e.gio_kt?'đến '+hm(e.gio_kt):'Cả ngày';
+const gioParse=s=>{const m=[...(s||'').toLowerCase().matchAll(/(\d{1,2})\s*(?:h|:|giờ)\s*(\d{1,2})?/g)].map(x=>String(Math.min(23,+x[1])).padStart(2,'0')+':'+String(Math.min(59,+(x[2]||0))).padStart(2,'0'));return{bd:m[0]||null,kt:m[1]||null}};
+const ngan=(t,n)=>{t=(t||'').replace(/\s+/g,' ').trim();return t.length>n?t.slice(0,n).replace(/\s\S*$/,'')+'…':t};
 const monday=s=>{const d=pd(s),w=(d.getDay()+6)%7;return add(s,-w)};
 let ten={},quyen=false,view={y:0,m:0},chon=iso(new Date());
 
@@ -70,10 +73,13 @@ async function dung(){
     grid+=`<button data-d="${d}" style="padding:8px 0;border-radius:8px;background:${d===chon?'var(--pri)':t?'var(--line)':'transparent'};color:${d===chon?'#fff':ngoai?'var(--mut)':'var(--tx)'};${d===hom?'font-weight:800;outline:1px solid var(--pri)':'font-weight:500'}">${x.getDate()}<div style="height:6px;font-size:8px;line-height:6px">${co[d]?'●'.repeat(Math.min(co[d],3)):''}</div></button>`}
   const tuan=Array.from({length:7},(_,i)=>add(monday(chon),i));
   const mine=A().me.id;
-  const the=e=>{const ps=tp[e.id]||[],toi=ps.includes(mine);return `<div class="card" style="${toi?'border-color:var(--pri);border-width:2px;':''}${e.huy?'opacity:.55;':''}"><div class="row" style="justify-content:space-between"><b>${hm(e.gio_bd)}${e.gio_kt?'–'+hm(e.gio_kt):''}</b>${e.huy?'<span class="tag red">Đã hủy</span>':toi?'<span class="tag grn">Có tên bạn</span>':''}${e.rieng_tu?'<span class="tag">Riêng</span>':''}</div>
-    <div style="${e.huy?'text-decoration:line-through':''}">${esc(e.noi_dung)}</div>${e.dia_diem?`<div class="mut">📍 ${esc(e.dia_diem)}</div>`:''}
-    <div class="mut">👥 ${ps.length?ps.map(i=>esc((ten[i]||{}).ho_ten||'?')).join(', '):'—'}</div>
-    ${(e.nguoi_tao===mine||A().me.la_quan_tri)&&!e.huy?`<div class="row" style="margin-top:6px"><button class="sec" data-sua="${e.id}">Sửa</button>${A().me.la_quan_tri?`<button class="sec dng" data-xoa="${e.id}" style="margin-left:6px">Xóa</button>`:''}</div>`:A().me.la_quan_tri?`<div class="row" style="margin-top:6px"><button class="sec dng" data-xoa="${e.id}">Xóa</button></div>`:''}</div>`};
+  const the=e=>{const ps=tp[e.id]||[],toi=ps.includes(mine),qt=A().me.la_quan_tri;return `<div class="card" data-ex="${e.id}" style="cursor:pointer;${toi?'border-color:var(--pri);border-width:2px;':''}${e.huy?'opacity:.55;':''}">
+    <div style="${e.huy?'text-decoration:line-through':''}"><b>${gioTxt(e)}</b> · ${esc(ngan(e.noi_dung,70))} ${e.huy?'<span class="tag red">Đã hủy</span>':toi?'<span class="tag grn">Có tên bạn</span>':''}${e.rieng_tu?'<span class="tag">Riêng</span>':''}</div>
+    <div class="mut">${e.dia_diem?'📍 '+esc(ngan(e.dia_diem,40))+' · ':''}👥 ${ps.length} người</div>
+    <div class="ct" id="ct-${e.id}" style="display:none;margin-top:8px;border-top:1px solid var(--line);padding-top:8px">
+      <div style="white-space:pre-wrap">${esc(e.noi_dung)}</div>${e.dia_diem?`<div class="mut" style="white-space:pre-wrap">📍 ${esc(e.dia_diem)}</div>`:''}
+      <div class="mut">👥 ${ps.length?ps.map(i=>esc((ten[i]||{}).ho_ten||'?')).join(', '):'—'}</div>
+      ${(e.nguoi_tao===mine||qt)?`<div class="row" style="margin-top:6px">${!e.huy?`<button class="sec" data-sua="${e.id}">Sửa</button>`:''}${qt?`<button class="sec dng" data-xoa="${e.id}" style="margin-left:6px">Xóa</button>`:''}</div>`:''}</div></div>`};
   const emap=Object.fromEntries((ev||[]).map(e=>[e.id,{...e,tp:tp[e.id]||[]}]));
   A().$('#nd').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><button class="sec" id="pv">‹</button><b>Tháng ${view.m+1}/${view.y}</b><button class="sec" id="nx">›</button></div>
    <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:2px"><div class="mut">T2</div><div class="mut">T3</div><div class="mut">T4</div><div class="mut">T5</div><div class="mut">T6</div><div class="mut">T7</div><div class="mut">CN</div>${grid}</div></div>
@@ -83,6 +89,7 @@ async function dung(){
   $('#pv').onclick=()=>{view.m--;if(view.m<0){view.m=11;view.y--}chon=iso(new Date(view.y,view.m,1));dung()};
   $('#nx').onclick=()=>{view.m++;if(view.m>11){view.m=0;view.y++}chon=iso(new Date(view.y,view.m,1));dung()};
   if($('#them'))$('#them').onclick=()=>form(null);
+  document.querySelectorAll('[data-ex]').forEach(d=>d.onclick=ev=>{if(ev.target.closest('button'))return;const x=document.getElementById('ct-'+d.dataset.ex);x.style.display=x.style.display==='none'?'block':'none'});
   document.querySelectorAll('[data-xoa]').forEach(b=>b.onclick=()=>A().xoaMuc('lich_cong_tac',b.dataset.xoa,'Xóa vĩnh viễn lịch này?',ve));
   document.querySelectorAll('[data-sua]').forEach(b=>b.onclick=()=>form(emap[b.dataset.sua]));
 }
@@ -99,7 +106,7 @@ async function form(e){
     ${amb.map((a,i)=>`<div class="card" style="margin:8px 0"><div class="mut">Có nhiều người tên "${esc(a.tok)}", chọn đúng người:</div>${a.ids.map(id=>{const p=PL.find(x=>x.id===id);return `<button class="sec" data-pick="${i}|${id}" style="margin:4px 4px 0 0">${esc(p.ho_ten)} · ${esc((p.khoa||'').replace(/^(KHOA|PHÒNG) /,''))}${p.nam_sinh?' · '+p.nam_sinh:''}</button>`}).join('')}</div>`).join('')}
     ${thieu.length?`<div class="banner">Không tìm thấy: ${thieu.map(esc).join(', ')}. Thêm tay ở phần Thành phần bên dưới.</div>`:''}`}
     <label>Ngày</label><input id="ng" type="date" value="${e?e.ngay:chon}">
-    <div class="row"><div style="flex:1"><label>Từ giờ</label><input id="g1" type="time" value="${e?hm(e.gio_bd):''}"></div><div style="flex:1"><label>Đến giờ</label><input id="g2" type="time" value="${e?hm(e.gio_kt):''}"></div></div>
+    <label>Giờ (ví dụ 8h-9h30, 14h; để trống nếu cả ngày)</label><input id="gio" placeholder="8h-9h" value="${e&&(e.gio_bd||e.gio_kt)?gioTxt(e).replace('đến ','-'):''}">
     <label>Nội dung</label><textarea id="nd2">${e?esc(e.noi_dung):''}</textarea><label>Địa điểm</label><input id="dd" value="${e?esc(e.dia_diem||''):''}">
     <label>Thành phần tham dự (app sẽ nhắn cho từng người)</label>
     <div class="mut">Khoa/phòng (chỉ nhắn trưởng khoa và ĐD trưởng):</div>
@@ -132,13 +139,13 @@ async function form(e){
       document.querySelectorAll('[data-a]').forEach(c=>c.onclick=()=>{sel.add(c.dataset.a);keep();ui()})};
     const gui=async huy=>{
       keep();$('#loi').textContent='';
-      const {error}=await A().sb.rpc('luu_lich_cong_tac',{p_id:sua?e.id:null,p_ngay:$('#ng').value,p_gio_bd:$('#g1').value||null,p_gio_kt:$('#g2').value||null,p_noi_dung:$('#nd2').value,p_dia_diem:$('#dd').value,p_nguoi:[...sel],p_khoa:[...kh],p_rieng:$('#rt').checked,p_huy:!!huy});
+      const {error}=await A().sb.rpc('luu_lich_cong_tac',{p_id:sua?e.id:null,p_ngay:$('#ng').value,p_gio_bd:gioParse($('#gio').value).bd,p_gio_kt:gioParse($('#gio').value).kt,p_noi_dung:$('#nd2').value,p_dia_diem:$('#dd').value,p_nguoi:[...sel],p_khoa:[...kh],p_rieng:$('#rt').checked,p_huy:!!huy});
       if(error)return $('#loi').textContent=error.message;
       chon=$('#ng').value;toast(huy?'Đã hủy lịch, đã báo thành phần':'Đã lưu, đã nhắn thành phần');ve();
     };
     $('#luu').onclick=()=>gui(false);if($('#huy'))$('#huy').onclick=()=>{if(confirm('Hủy lịch này và báo cho thành phần?'))gui(true)};
   };
-  const keep=()=>{const v=id=>$(id)?$(id).value:'';e=e?{...e,ngay:v('#ng')||e.ngay,gio_bd:v('#g1'),gio_kt:v('#g2'),noi_dung:v('#nd2'),dia_diem:v('#dd'),rieng_tu:$('#rt')?$('#rt').checked:e.rieng_tu}:{id:null,ngay:v('#ng')||chon,gio_bd:v('#g1'),gio_kt:v('#g2'),noi_dung:v('#nd2'),dia_diem:v('#dd'),rieng_tu:$('#rt')?$('#rt').checked:false,tp:[]};e.tp=[...sel]};
+  const keep=()=>{const v=id=>$(id)?$(id).value:'';e=e?{...e,ngay:v('#ng')||e.ngay,gio_bd:gioParse(v('#gio')).bd,gio_kt:gioParse(v('#gio')).kt,noi_dung:v('#nd2'),dia_diem:v('#dd'),rieng_tu:$('#rt')?$('#rt').checked:e.rieng_tu}:{id:null,ngay:v('#ng')||chon,gio_bd:gioParse(v('#gio')).bd,gio_kt:gioParse(v('#gio')).kt,noi_dung:v('#nd2'),dia_diem:v('#dd'),rieng_tu:$('#rt')?$('#rt').checked:false,tp:[]};e.tp=[...sel]};
   if(!e)e=null;ui();
 }
 window.LICHCT={ve};
