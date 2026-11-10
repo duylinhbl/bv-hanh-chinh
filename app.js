@@ -8,7 +8,7 @@ const TT={moi:'Mới',dang_lam:'Đang làm',cho_xac_nhan:'Chờ xác nhận',da_
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=d=>d?new Date(d).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
 const uid=()=>crypto.randomUUID();
-window.BVAPP={sb,$,esc,fmt,toast,get me(){return me}};
+window.BVAPP={xoaMuc,sb,$,esc,fmt,toast,get me(){return me}};
 function toast(m){const t=$('#toast');t.textContent=m;t.className='on';setTimeout(()=>t.className='',2600)}
 const tag=s=>`<span class="tag ${s==='da_dong'?'grn':s==='cho_xac_nhan'?'amb':''}">${TT[s]||s}</span>`;
 
@@ -64,7 +64,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v19</small></header>
+  app.innerHTML=`<header><span>${esc(me.ho_ten)}<br><small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v20</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi">Việc</button>${lanh?'<button data-t="giao">Giao</button>':''}<button data-t="ct">Lịch</button><button data-t="lt">Trực</button><button data-t="tb">Tin<span id="dem" class="tag red" style="display:none;margin-left:4px"></span></button><button data-t="moi">+ Việc</button><button data-t="tk">Tôi</button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -93,6 +93,7 @@ async function dsGiao(){
 }
 const gan=()=>document.querySelectorAll('.card[data-id]').forEach(c=>c.onclick=()=>chiTiet(c.dataset.id));
 
+async function xoaMuc(loai,id,hoi,sau){if(!confirm(hoi))return;const {error}=await sb.rpc('xoa_muc',{p_loai:loai,p_id:id});if(error)return toast('Lỗi: '+error.message);toast('Đã xóa');sau()}
 async function formViec(){
   const {data:nd}=await sb.from('nguoi_dung').select('id,ho_ten,chuc_vu,khoa_phong(ten)').eq('hoat_dong',true).order('ho_ten');
   const ds=(nd||[]).filter(u=>me.vai_tro!=='nhan_vien'||u.id===me.id);
@@ -129,6 +130,7 @@ async function chiTiet(id){
   <label>Ghi chú</label><textarea id="gc"></textarea><label>Ảnh (chụp tại chỗ)</label><input id="anh" type="file" accept="image/*" capture="environment">
   <button class="full" id="gui">Gửi cập nhật</button><p class="mut">Vị trí GPS chỉ lấy tại lúc bấm Gửi.</p></div>`:''}
   <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.co_vi_tri?`<div class="mut"><a href="https://maps.google.com/?q=${c.vi_do},${c.kinh_do}" target="_blank" rel="noopener">📍 Xem vị trí</a></div>`:''}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
+  if(me.la_quan_tri){$('#nd').insertAdjacentHTML('beforeend','<button class="full dng" id="xoa" style="margin-top:10px">Xóa việc này (quản trị)</button>');$('#xoa').onclick=()=>xoaMuc('viec',id,'Xóa vĩnh viễn việc này cùng lịch sử cập nhật?',ve)}
   $('#lui').onclick=ve;
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
 }
@@ -169,6 +171,7 @@ async function chiTietTB(id){
   const {data:r}=await sb.from('thong_bao_nguoi_nhan').select('da_doc_luc').eq('thong_bao_id',id).eq('nguoi_id',me.id).maybeSingle();
   $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><h3>${t.khan?'🔴 ':''}${esc(t.tieu_de)}</h3><div class="mut">${esc(ten(t.nguoi_phat))} · ${fmt(t.tao_luc)}</div><p style="white-space:pre-wrap">${esc(t.noi_dung)}</p>
   ${r&&!r.da_doc_luc?'<button class="full" id="doc">Đã đọc, đã hiểu</button>':r?`<div class="mut">Bạn đã đọc lúc ${fmt(r.da_doc_luc)}</div>`:''}</div><div id="th"></div>`;
+  if(me.la_quan_tri){$('#nd').insertAdjacentHTML('beforeend','<button class="full dng" id="xoa" style="margin-top:10px">Xóa thông báo này (quản trị)</button>');$('#xoa').onclick=()=>xoaMuc('thong_bao',id,'Xóa vĩnh viễn thông báo này, người nhận sẽ không còn thấy?',dsTB)}
   $('#lui').onclick=dsTB;
   if($('#doc'))$('#doc').onclick=async()=>{const {error}=await sb.from('thong_bao_nguoi_nhan').update({da_doc_luc:new Date().toISOString()}).eq('thong_bao_id',id).eq('nguoi_id',me.id);if(error)return toast('Lỗi: '+error.message);toast('Đã xác nhận');demTB();chiTietTB(id)};
   const {data:th}=await sb.rpc('tinh_hinh_doc',{p_tb:id});

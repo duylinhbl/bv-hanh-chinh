@@ -73,7 +73,7 @@ async function dung(){
   const the=e=>{const ps=tp[e.id]||[],toi=ps.includes(mine);return `<div class="card" style="${toi?'border-color:var(--pri);border-width:2px;':''}${e.huy?'opacity:.55;':''}"><div class="row" style="justify-content:space-between"><b>${hm(e.gio_bd)}${e.gio_kt?'–'+hm(e.gio_kt):''}</b>${e.huy?'<span class="tag red">Đã hủy</span>':toi?'<span class="tag grn">Có tên bạn</span>':''}${e.rieng_tu?'<span class="tag">Riêng</span>':''}</div>
     <div style="${e.huy?'text-decoration:line-through':''}">${esc(e.noi_dung)}</div>${e.dia_diem?`<div class="mut">📍 ${esc(e.dia_diem)}</div>`:''}
     <div class="mut">👥 ${ps.length?ps.map(i=>esc((ten[i]||{}).ho_ten||'?')).join(', '):'—'}</div>
-    ${(e.nguoi_tao===mine||A().me.la_quan_tri)&&!e.huy?`<div class="row" style="margin-top:6px"><button class="sec" data-sua="${e.id}">Sửa</button></div>`:''}</div>`};
+    ${(e.nguoi_tao===mine||A().me.la_quan_tri)&&!e.huy?`<div class="row" style="margin-top:6px"><button class="sec" data-sua="${e.id}">Sửa</button>${A().me.la_quan_tri?`<button class="sec dng" data-xoa="${e.id}" style="margin-left:6px">Xóa</button>`:''}</div>`:A().me.la_quan_tri?`<div class="row" style="margin-top:6px"><button class="sec dng" data-xoa="${e.id}">Xóa</button></div>`:''}</div>`};
   const emap=Object.fromEntries((ev||[]).map(e=>[e.id,{...e,tp:tp[e.id]||[]}]));
   A().$('#nd').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><button class="sec" id="pv">‹</button><b>Tháng ${view.m+1}/${view.y}</b><button class="sec" id="nx">›</button></div>
    <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:2px"><div class="mut">T2</div><div class="mut">T3</div><div class="mut">T4</div><div class="mut">T5</div><div class="mut">T6</div><div class="mut">T7</div><div class="mut">CN</div>${grid}</div></div>
@@ -83,6 +83,7 @@ async function dung(){
   $('#pv').onclick=()=>{view.m--;if(view.m<0){view.m=11;view.y--}chon=iso(new Date(view.y,view.m,1));dung()};
   $('#nx').onclick=()=>{view.m++;if(view.m>11){view.m=0;view.y++}chon=iso(new Date(view.y,view.m,1));dung()};
   if($('#them'))$('#them').onclick=()=>form(null);
+  document.querySelectorAll('[data-xoa]').forEach(b=>b.onclick=()=>A().xoaMuc('lich_cong_tac',b.dataset.xoa,'Xóa vĩnh viễn lịch này?',ve));
   document.querySelectorAll('[data-sua]').forEach(b=>b.onclick=()=>form(emap[b.dataset.sua]));
 }
 
