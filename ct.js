@@ -78,11 +78,11 @@ async function dung(){
     <div class="ct" id="ct-${e.id}" style="display:none;margin-top:8px;border-top:1px solid var(--line);padding-top:8px">
       <div style="white-space:pre-wrap">${esc(e.noi_dung)}</div>${e.dia_diem?`<div class="mut" style="white-space:pre-wrap">📍 ${esc(e.dia_diem)}</div>`:''}
       <div class="mut">👥 ${ps.length?ps.map(i=>esc((ten[i]||{}).ho_ten||'?')).join(', '):'—'}</div>
-      ${(e.nguoi_tao===mine||qt)?`<div class="row" style="margin-top:6px">${!e.huy?`<button class="sec" data-sua="${e.id}">Sửa</button>`:''}${qt?`<button class="sec dng" data-xoa="${e.id}" style="margin-left:6px">Xóa</button>`:''}</div>`:''}</div></div>`};
+      ${(e.nguoi_tao===mine||qt)?`<div class="row" style="margin-top:6px">${!e.huy?`<button class="sec" data-sua="${e.id}">✏️ Sửa</button>`:''}${qt?`<button class="sec dng" data-xoa="${e.id}" style="margin-left:6px">🗑 Xóa</button>`:''}</div>`:''}</div></div>`};
   const emap=Object.fromEntries((ev||[]).map(e=>[e.id,{...e,tp:tp[e.id]||[]}]));
   A().$('#nd').innerHTML=`<div class="ctwrap"><div class="ctl"><div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><button class="sec" id="pv">‹</button><b>Tháng ${view.m+1}/${view.y}</b><button class="sec" id="nx">›</button></div>
    <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:2px"><div class="mut">T2</div><div class="mut">T3</div><div class="mut">T4</div><div class="mut">T5</div><div class="mut">T6</div><div class="mut">T7</div><div class="mut">CN</div>${grid}</div></div><div id="ctdet" class="card ctdet"></div></div>
-   <div class="ctr"><div class="row" style="justify-content:space-between;margin:4px 0 8px"><b>Tuần ${dm(tuan[0])} – ${dm(tuan[6])}</b>${quyen?'<button id="them">+ Thêm lịch</button>':''}</div>
+   <div class="ctr"><div class="row" style="justify-content:space-between;margin:4px 0 8px"><b>Tuần ${dm(tuan[0])} – ${dm(tuan[6])}</b>${quyen?'<button id="them">➕ Thêm lịch</button>':''}</div>
    ${tuan.map(d=>{const l=(ev||[]).filter(e=>e.ngay===d);return `<div class="dayh${d===hom?' hom':''}${d===chon?' chon':''}">${TH[pd(d).getDay()]} ${dm(d)}${d===hom?' · Hôm nay':''}</div>${l.map(the).join('')||'<div class="mut" style="margin-bottom:6px">Chưa có lịch</div>'}`}).join('')}</div></div>`;
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{chon=b.dataset.d;const n=pd(chon);view={y:n.getFullYear(),m:n.getMonth()};dung()});
   $('#pv').onclick=()=>{view.m--;if(view.m<0){view.m=11;view.y--}chon=iso(new Date(view.y,view.m,1));dung()};
@@ -107,7 +107,7 @@ async function form(e){
   const sua=!!e;let sel=new Set(e?e.tp:[]),kh=new Set();
   const ui=()=>{
     $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px">
-    ${sua?'':`<label>Dán nhanh (app tự tách ngày, giờ, địa điểm, thành phần)</label><textarea id="dan" placeholder="Ví dụ: Họp giao ban 8h-9h ngày 12/11 tại phòng họp. Thành phần: BS Quốc, DS Thành, KHTH"></textarea><button class="sec" id="pt" style="margin-top:6px">Phân tích</button>${ghi?`<div class="mut" style="margin-top:6px">${esc(ghi)}</div>`:''}
+    ${sua?'':`<label>Dán nhanh (app tự tách ngày, giờ, địa điểm, thành phần)</label><textarea id="dan" placeholder="Ví dụ: Họp giao ban 8h-9h ngày 12/11 tại phòng họp. Thành phần: BS Quốc, DS Thành, KHTH"></textarea><button class="sec" id="pt" style="margin-top:6px">✨ Phân tích</button>${ghi?`<div class="mut" style="margin-top:6px">${esc(ghi)}</div>`:''}
     ${amb.map((a,i)=>`<div class="card" style="margin:8px 0"><div class="mut">Có nhiều người tên "${esc(a.tok)}", chọn đúng người:</div>${a.ids.map(id=>{const p=PL.find(x=>x.id===id);return `<button class="sec" data-pick="${i}|${id}" style="margin:4px 4px 0 0">${esc(p.ho_ten)} · ${esc((p.khoa||'').replace(/^(KHOA|PHÒNG) /,''))}${p.nam_sinh?' · '+p.nam_sinh:''}</button>`}).join('')}</div>`).join('')}
     ${thieu.length?`<div class="banner">Không tìm thấy: ${thieu.map(esc).join(', ')}. Thêm tay ở phần Thành phần bên dưới.</div>`:''}`}
     <label>Ngày</label><input id="ng" type="date" value="${e?e.ngay:chon}">
@@ -120,7 +120,7 @@ async function form(e){
     <div class="mut" style="margin-top:8px">Từng người:</div><div id="chips" style="margin:4px 0">${[...sel].map(i=>`<span class="tag" data-x="${i}" style="margin:2px;padding:4px 10px">${esc((ten[i]||{}).ho_ten||'?')} ✕</span>`).join('')||'<span class="mut">Chưa chọn</span>'}</div>
     <input id="tim" placeholder="Gõ tên để thêm…"><div id="kq"></div>
     <label style="font-weight:400;margin-top:10px"><input id="rt" type="checkbox" style="width:auto" ${e&&e.rieng_tu?'checked':''}> Lịch riêng (chỉ thành phần mới thấy)</label>
-    <button class="full" id="luu">${sua?'Lưu và nhắn người liên quan':'Tạo lịch và nhắn thành phần'}</button>${sua?'<button class="full dng" id="huy">Hủy lịch này</button>':''}<p class="mut" id="loi"></p></div>`;
+    <button class="full" id="luu">${sua?'💾 Lưu và nhắn người liên quan':'💾 Tạo lịch và nhắn thành phần'}</button>${sua?'<button class="full dng" id="huy">⛔ Hủy lịch này</button>':''}<p class="mut" id="loi"></p></div>`;
     $('#lui').onclick=dung;
     if($('#pt'))$('#pt').onclick=()=>{
       const txt=$('#dan').value;if(!txt.trim())return;keep();

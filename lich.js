@@ -63,8 +63,8 @@ async function ve(){
       A().sb.from('lich_truc_ky').select('*').order('tu_ngay',{ascending:false}).limit(12)]);
     const vtn=Object.fromEntries(VT.map(v=>[v.id,v.ten]));
     q('#nd').innerHTML=`<div class="card"><h3>Ca trực sắp tới của tôi</h3>${(mine.data||[]).map(r=>`<div class="row" style="justify-content:space-between;padding:4px 0"><b>${TH[pd(r.ngay).getDay()]} ${dm(r.ngay)}</b><span>${esc(vtn[r.vi_tri_id]||'')}</span></div>`).join('')||'<p class="mut">Chưa có ca nào được công bố.</p>'}</div>
-    <div class="card"><h3>Lịch trực toàn viện</h3>${(ks.data||[]).map(k=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span>${dm(k.tu_ngay)} – ${dm(k.den_ngay)} ${k.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</span><span><button class="sec" data-xem="${k.id}">Xem</button> ${duocXep?`<button data-sua="${k.id}">Sửa</button>`:''} ${A().me.la_quan_tri?`<button class="dng" data-xoa="${k.id}">Xóa</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có kỳ lịch.</p>'}
-    ${duocXep?'<button class="full" id="moiky">+ Tạo kỳ lịch mới</button>':''}</div>`;
+    <div class="card"><h3>Lịch trực toàn viện</h3>${(ks.data||[]).map(k=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span>${dm(k.tu_ngay)} – ${dm(k.den_ngay)} ${k.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</span><span><button class="sec" data-xem="${k.id}">👁 Xem</button> ${duocXep?`<button data-sua="${k.id}">✏️ Sửa</button>`:''} ${A().me.la_quan_tri?`<button class="dng" data-xoa="${k.id}">🗑 Xóa</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có kỳ lịch.</p>'}
+    ${duocXep?'<button class="full" id="moiky">🗓 Tạo kỳ lịch mới</button>':''}</div>`;
     const kmap=Object.fromEntries((ks.data||[]).map(k=>[k.id,k]));
     document.querySelectorAll('[data-xem]').forEach(b=>b.onclick=()=>xem(kmap[b.dataset.xem]));
     document.querySelectorAll('[data-sua]').forEach(b=>b.onclick=()=>soan(kmap[b.dataset.sua]));
@@ -84,7 +84,7 @@ async function xoaKy(ky){
 function kyMoi(ds){
   const {$:q}=A();
   const last=ds.length?add(ds[0].den_ngay,1):iso(new Date());
-  q('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><label>Từ ngày (thường là thứ Hai)</label><input id="tu" type="date" value="${last}"><label>Đến ngày</label><input id="den" type="date" value="${add(last,13)}"><button class="full" id="tao">Tạo kỳ lịch</button><p class="mut" id="loi"></p></div>`;
+  q('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><label>Từ ngày (thường là thứ Hai)</label><input id="tu" type="date" value="${last}"><label>Đến ngày</label><input id="den" type="date" value="${add(last,13)}"><button class="full" id="tao">🗓 Tạo kỳ lịch</button><p class="mut" id="loi"></p></div>`;
   $('#lui').onclick=ve;
   $('#tao').onclick=async()=>{const {data,error}=await A().sb.from('lich_truc_ky').insert({tu_ngay:$('#tu').value,den_ngay:$('#den').value}).select().single();if(error)return $('#loi').textContent=error.message;soan(data)}
 }
@@ -121,11 +121,11 @@ async function soan(ky){
   const dung=()=>{
     q('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button>
     <div class="card" style="margin-top:10px"><h3>${dm(ky.tu_ngay)} – ${dm(ky.den_ngay)} ${ky.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</h3>
-    <div class="row"><button class="sec" id="cp">Sao chép từ kỳ trước</button><button class="sec" id="in">In</button></div>
+    <div class="row"><button class="sec" id="cp">📋 Sao chép từ kỳ trước</button><button class="sec" id="in">🖨 In</button></div>
     <label style="font-weight:400;margin-top:8px"><input id="ta" type="checkbox" style="width:auto" ${tatca?'checked':''}> Hiện toàn bộ nhân sự (bỏ lọc theo khoa)</label></div>
     ${dsNgay.map(n=>{const cb=pd(n).getDay()===0||pd(n).getDay()===6;
       return `<div class="card" data-n="${n}"><h3>${TH[pd(n).getDay()]} ${dm(n)}</h3>${VT.filter(v=>v.nhom==='truc'||(cb&&v.nhom==='cbvc')).map(v=>`<label>${esc(v.ten)}</label>`+(NHOM[v.id]?`<select data-g="${n}|${v.id}" style="margin-bottom:4px">${nhomOpt(v,n)}</select>`:'')+Array.from({length:v.so_nguoi},(_,i)=>`<select data-k="${n}|${v.id}|${i}" style="margin-bottom:4px">${opt(v,m[`${n}|${v.id}|${i}`])}</select>`).join('')).join('')}<div class="cb" style="color:var(--red);font-size:14px;margin-top:6px"></div></div>`}).join('')}
-    <div class="card"><button class="full" id="luu">Lưu</button>${ky.trang_thai==='nhap'?'<button class="full" id="cb">Công bố lịch</button>':''}<p class="mut" id="loi"></p></div>`;
+    <div class="card"><button class="full" id="luu">Lưu</button>${ky.trang_thai==='nhap'?'<button class="full" id="cb">📣 Công bố lịch</button>':''}<p class="mut" id="loi"></p></div>`;
     const wr=()=>document.querySelectorAll('[data-n]').forEach(c=>{const w=canhBao(m,c.dataset.n);c.querySelector('.cb').innerHTML=w.map(x=>'⚠ '+esc(x)).join('<br>')});
     document.querySelectorAll('[data-k]').forEach(s=>s.onchange=()=>{m[s.dataset.k]=s.value||null;tuDong(s.dataset.k);wr()});
     document.querySelectorAll('[data-g]').forEach(s=>s.onchange=()=>{const [n,vt]=s.dataset.g.split('|'),v=VT.find(x=>x.id===+vt),g=(NHOM[vt]||[]).find(x=>String(x.id)===s.value);
@@ -165,7 +165,7 @@ async function soan(ky){
 // ----- xem (chỉ đọc) -----
 async function xem(ky){
   const m=await taiKy(ky);
-  A().$('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><h3>${dm(ky.tu_ngay)} – ${dm(ky.den_ngay)}</h3><button class="sec" id="in">In / lưu PDF</button></div>`+
+  A().$('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><h3>${dm(ky.tu_ngay)} – ${dm(ky.den_ngay)}</h3><button class="sec" id="in">🖨 In / lưu PDF</button></div>`+
    days(ky.tu_ngay,ky.den_ngay).map(n=>`<div class="card"><h3>${TH[pd(n).getDay()]} ${dm(n)}</h3>${VT.filter(v=>v.nhom==='truc').map(v=>{const l=[0,1,2].map(i=>m[`${n}|${v.id}|${i}`]).filter(Boolean).map(nm).join(', ');return l?`<div class="row" style="justify-content:space-between"><span class="mut">${A().esc(v.ten)}</span><span>${A().esc(l)}</span></div>`:''}).join('')}</div>`).join('');
   $('#lui').onclick=ve;$('#in').onclick=()=>inLich(ky,m);
 }
