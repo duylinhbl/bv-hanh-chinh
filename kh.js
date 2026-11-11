@@ -77,7 +77,7 @@ async function nhap(){
       if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
       if(loi)throw new Error(loi);
       x.tam=data.tam;x.so=data.best||0;x.cands=(data.cands||[]).filter(c=>c!==data.best);
-      x.msg=data.best?'Đã đọc số tiền, bồ kiểm lại cho đúng':(data.loi_doc?'Chưa đọc được số tiền ('+data.loi_doc.slice(0,80)+'). Nhập tay.':'Không thấy số tiền, nhập tay.');
+      x.msg=data.khop?'✓ Số tiền khớp với số bằng chữ trên phiếu':data.chu&&data.best&&data.chu!==data.best?'⚠ Số bằng chữ ('+Number(data.chu).toLocaleString('vi-VN')+') khác số đọc được, kiểm lại':data.best?'Đã đọc số tiền, bồ kiểm lại cho đúng':(data.loi_doc?'Chưa đọc được số tiền ('+data.loi_doc.slice(0,80)+'). Nhập tay.':'Không thấy số tiền, nhập tay.');
     }catch(e){x.msg='Lỗi: '+(e.message||e);F.splice(F.indexOf(x),1);toast(x.msg)}
     x.st='ok';dsF()}};
   const dz=$('#dz'),fi=$('#fi');
