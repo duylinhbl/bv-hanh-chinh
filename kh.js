@@ -27,25 +27,40 @@ async function nhap(){
   const {sb,$,esc,toast}=A();
   const i0=rows.findIndex(r=>r.stt==='II'&&r.cap===1),i1=rows.findIndex(r=>r.stt==='D');
   const ds=rows.filter((r,i)=>i>i0&&i<i1&&r.cap>=2&&!['Lần','Lượt'].includes(r.dvt)&&!(rows[i+1]&&r.stt&&String(rows[i+1].stt).startsWith(r.stt+'.')));
-  const t0=new Date().getMonth()+1;let tk='';
-  const dsHtml=()=>{const q=f(tk);return ds.filter(r=>!q||f(r.hang_muc+' '+(r.stt||'')).includes(q)).map(r=>`<label class="card" style="display:flex;gap:8px;align-items:center;padding:8px;margin:4px 0"><input type="radio" name="nk" value="${r.id}"><span><b>${esc(r.stt||'')}</b> ${esc(r.hang_muc)}<br><span class="mut" style="font-size:12px">KH ${n(r.kh_nam)} · tháng này ${n((r.thang||[])[+($('#nt')?$('#nt').value:t0)-1])||'—'}</span></span></label>`).join('')||'<p class="mut">Không thấy khoản nào</p>'};
+  const cha=r=>{const k=String(r.stt||'').split('.')[0];const p=rows.find(x=>x.stt===k&&x.cap===2);return p?p.hang_muc:'Khác'};
+  const t0=new Date().getMonth()+1;let tk='',chon=null;
+  const st=document.createElement('style');st.id='khst';st.textContent=`
+  .nh-t{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px}.nh-t button{flex:0 0 auto;border:1px solid #cfdcd3;background:#fff;color:#334;border-radius:16px;padding:6px 12px;font-size:13px;width:auto;margin:0}
+  .nh-t button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+  .nh-g{font-size:12px;font-weight:700;color:var(--pri2);text-transform:uppercase;letter-spacing:.4px;margin:12px 2px 4px}
+  .nh-r{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:1.5px solid transparent;border-radius:12px;padding:10px 12px;margin:4px 0;box-shadow:0 1px 3px rgba(0,60,30,.08);cursor:pointer}
+  .nh-r.on{border-color:var(--pri);background:#eef8f1}.nh-r b{color:var(--pri2);margin-right:4px}
+  .nh-r .m{font-size:12px;color:#6b7a70;text-align:right;white-space:nowrap}.nh-r .m i{font-style:normal;color:var(--pri);font-weight:600}
+  .nh-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #cfdcd3;padding:10px 4px;margin:10px -4px 0;box-shadow:0 -4px 12px rgba(0,60,30,.08)}
+  .nh-bar .sel{font-size:13px;margin-bottom:6px;color:#334}.nh-bar input{margin:0 0 6px}`;
+  document.getElementById('khst')?.remove();document.head.appendChild(st);
+  const dsHtml=()=>{const q=f(tk),m=+document.querySelector('.nh-t .on')?.dataset.m||t0;let g='',h='';
+    ds.filter(r=>!q||f(r.hang_muc+' '+(r.stt||'')).includes(q)).forEach(r=>{const c=cha(r);if(c!==g){g=c;h+=`<div class="nh-g">${esc(c)}</div>`}
+      const v=(r.thang||[])[m-1];h+=`<div class="nh-r ${chon===r.id?'on':''}" data-k="${r.id}"><span><b>${esc(r.stt||'')}</b>${esc(r.hang_muc)}</span><span class="m">KH ${n(r.kh_nam)}<br>T${m}: <i>${v?n(v):'—'}</i></span></div>`});
+    return h||'<p class="mut">Không thấy khoản nào</p>'};
   $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3><div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
-  <label>Tháng<select id="nt">${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${i+1===t0?'selected':''}>Tháng ${i+1}</option>`).join('')}</select></label>
-  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div id="nl" style="max-height:38vh;overflow:auto">${dsHtml()}</div>
-  <label>Số tiền phiếu (đồng)<input id="ns" inputmode="numeric" placeholder="vd 12500000"></label>
-  <label>Nội dung / số phiếu (không bắt buộc)<input id="ng2" placeholder="vd DNTT số 123 - mua văn phòng phẩm"></label>
-  <button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button>`;
-  $('#nq').oninput=e=>{tk=e.target.value;$('#nl').innerHTML=dsHtml()};
-  $('#nt').onchange=()=>$('#nl').innerHTML=dsHtml();
-  $('#nv').onclick=ve2;
+  <div class="nh-t">${[...Array(12)].map((_,i)=>`<button data-m="${i+1}" class="${i+1===t0?'on':''}">Tháng ${i+1}</button>`).join('')}</div>
+  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div id="nl">${dsHtml()}</div>
+  <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" placeholder="Số tiền phiếu (đồng)"><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
+  const bind=()=>document.querySelectorAll('.nh-r').forEach(e=>e.onclick=()=>{chon=+e.dataset.k;const r=rows.find(x=>x.id===chon);$('#nsel').innerHTML='Đã chọn: <b>'+esc((r.stt||'')+' '+r.hang_muc)+'</b>';$('#nl').innerHTML=dsHtml();bind();$('#ns').focus()});
+  const ve3=()=>{$('#nl').innerHTML=dsHtml();bind()};bind();
+  $('#nq').oninput=e=>{tk=e.target.value;ve3()};
+  document.querySelectorAll('.nh-t button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nh-t button').forEach(x=>x.classList.remove('on'));b.classList.add('on');ve3()});
+  $('#ns').oninput=e=>{const d=e.target.value.replace(/\D/g,'');e.target.value=d?Number(d).toLocaleString('vi-VN'):''};
+  $('#nv').onclick=()=>{document.getElementById('khst')?.remove();ve2()};
   $('#ng').onclick=async()=>{
-    const ch=document.querySelector('input[name=nk]:checked');if(!ch)return toast('Chọn khoản chi');
-    const so=Number(String($('#ns').value).replace(/[.,\s]/g,''));
+    if(!chon)return toast('Chọn khoản chi');
+    const so=Number($('#ns').value.replace(/\D/g,''));
     if(!(so>0))return toast('Nhập số tiền');
-    const r=rows.find(x=>x.id==ch.value);
-    if(!confirm('Cộng '+n(so)+' đ vào\n'+(r.stt||'')+' '+r.hang_muc+'\nTháng '+$('#nt').value+'?'))return;
+    const r=rows.find(x=>x.id===chon),th=+document.querySelector('.nh-t .on').dataset.m;
+    if(!confirm('Cộng '+n(so)+' đ vào\n'+(r.stt||'')+' '+r.hang_muc+'\nTháng '+th+'?'))return;
     const b=$('#ng');b.disabled=true;b.textContent='Đang ghi…';
-    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{id:r.id,thang:+$('#nt').value,so,ghi_chu:$('#ng2').value}});
+    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{id:r.id,thang:th,so,ghi_chu:$('#ng2').value}});
     b.disabled=false;b.textContent='Cộng vào tháng';
     let loi=error?(data&&data.loi)||error.message:data&&data.loi;
     if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
