@@ -9,6 +9,19 @@ async function ve(){
   if(error)return $('#nd').innerHTML='<p class="mut">Lỗi: '+esc(error.message)+'</p>';
   rows=data;ve2();
 }
+
+function bars(vals,lab,mau){
+  const mx=Math.max(1,...vals.map(v=>v||0)),W=300,H=110,w=W/vals.length;
+  return `<svg viewBox="0 0 ${W} ${H+16}" style="width:100%">${vals.map((v,i)=>{const h=(v||0)/mx*H;return `<rect x="${i*w+3}" y="${H-h}" width="${w-6}" height="${h}" rx="2" fill="${mau||'var(--pri)'}"/><text x="${i*w+w/2}" y="${H+12}" font-size="8" text-anchor="middle" fill="#667">${lab[i]}</text>${v?`<text x="${i*w+w/2}" y="${H-h-2}" font-size="7" text-anchor="middle" fill="#334">${(v/1e6).toFixed(v>=1e8?0:1)}</text>`:''}`}).join('')}</svg>`}
+function bieuDo(){
+  const T=['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
+  const leaf=rows.filter(r=>r.thang&&!['Lần','Lượt'].includes(r.dvt)&&!/dự kiến/.test(r.ghi_chu||''));
+  const tot=T.map((_,i)=>leaf.reduce((a,r)=>a+(r.thang[i]||0),0)),k=tot.filter(v=>v).length||10;
+  const sel=rows.find(r=>r.id===mo);
+  const nhom=['I','II','III','IV'].map(c=>rows.find(r=>r.stt===c&&r.cap===1)).filter(Boolean);
+  return `<div class="card"><b>Chi theo tháng (triệu đồng)</b>${bars(tot.slice(0,k),T,'var(--pri)')}<div class="mut" style="font-size:12px">Cộng các khoản có số liệu tháng, chưa gồm lương/khấu hao.</div></div>
+  <div class="card"><b>Kế hoạch năm theo nhóm chi (tỷ đồng)</b>${nhom.map(r=>{const mx=Math.max(...nhom.map(x=>x.kh_nam||0));return `<div style="margin:6px 0"><div class="mut" style="font-size:12px">${A().esc(r.stt+'. '+r.hang_muc)} — ${(r.kh_nam/1e9).toFixed(2)}</div><div style="height:10px;background:#dde7e0;border-radius:5px"><div style="height:10px;width:${(r.kh_nam||0)/mx*100}%;background:var(--gold);border-radius:5px"></div></div></div>`}).join('')}</div>
+  ${sel?`<div class="card"><b>${A().esc(sel.hang_muc)}</b>${bars(sel.thang.slice(0,12),T.slice(0,sel.thang.length),'var(--pri2)')}</div>`:''}`}
 function ve2(){
   const {$,esc}=A();
   const L=rows.filter(r=>r.cap<=(ds?9:2)||false);
@@ -17,12 +30,13 @@ function ve2(){
   const hien=r=>{
     const t=r.sd_nam!=null&&r.sd_nam!==0?r.sd_nam:(r.thang?r.thang.reduce((a,b)=>a+(b||0),0):null);
     const p=ty(t,r.kh_nam);
-    return `<div class="card" style="margin-left:${Math.min(r.cap,3)*8}px;padding:10px"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc((r.stt||'')+' '+r.hang_muc)}</b><span class="tag">${p==null?'':p+'%'}</span></div>
+    return `<div class="card" data-k="${r.id}" style="margin-left:${Math.min(r.cap,3)*8}px;padding:10px"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc((r.stt||'')+' '+r.hang_muc)}</b><span class="tag">${p==null?'':p+'%'}</span></div>
     <div class="mut">KH ${n(r.kh_nam)} · Đã dùng ${n(t)} ${esc(r.dvt||'')}</div>${p!=null?`<div style="height:6px;background:#dde7e0;border-radius:3px;margin-top:4px"><div style="height:6px;width:${Math.min(p,100)}%;background:${p>100?'#c0392b':'var(--pri)'};border-radius:3px"></div></div>`:''}
     ${r.ghi_chu?`<div class="mut" style="font-size:12px">${esc(r.ghi_chu)}</div>`:''}</div>`};
   $('#nd').innerHTML=`<h3>Kế hoạch – sử dụng 2026</h3><div class="mut">Nguồn: Bảng thu chi (tab KH 2026). Số đã dùng đến tháng gần nhất có dữ liệu.</div>
   <div class="kpi" style="display:flex;gap:8px;margin:8px 0">${[thu,chi].filter(Boolean).map(r=>`<div class="card" style="flex:1"><div class="mut">${esc(r.hang_muc)}</div><b>${n(r.kh_nam)}</b></div>`).join('')}</div>
-  <label><input type="checkbox" id="khct" ${ds?'checked':''}> Hiện chi tiết</label>${L.map(hien).join('')}`;
+  ${bieuDo()}<label><input type="checkbox" id="khct" ${ds?'checked':''}> Hiện chi tiết</label>${L.map(hien).join('')}`;
+  document.querySelectorAll('[data-k]').forEach(e=>e.onclick=()=>{const r=rows.find(x=>x.id==e.dataset.k);if(r.thang){mo=r.id;ve2();scrollTo(0,0)}});
   $('#khct').onchange=e=>{ds=e.target.checked;ve2()};
 }
 window.KH={ve};

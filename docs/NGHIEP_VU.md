@@ -43,3 +43,5 @@
 - Quyền xem: admin, BGĐ, TCHC (hàm `xem_tai_chinh()`); chỉ admin sửa. Menu: Tôi → "Kế hoạch – sử dụng chi phí".
 - Số trong sheet định dạng lẫn lộn (chấm/phẩy) → hàm `vn_num()`. Một số dòng tháng lệch vị trí (ghi chú trong cột ghi_chu).
 - Chưa nạp: KH 2026 2, Thanh toán, EMS, Quỹ phòng, Công ty thành viên, Hợp đồng, TT đối tác, DNTT, Chiến sỹ TĐ, Theo dõi TT tháng, DNTT cũ 2025. Chờ Linh hướng dẫn cách kết nối.
+- (v30) Thêm biểu đồ: chi theo tháng, kế hoạch theo nhóm, bấm 1 dòng có số tháng để xem biểu đồ tháng của dòng đó.
+- QUYẾT ĐỊNH của Linh: dữ liệu tài chính KHÔNG lưu chính trên DB; nguồn gốc vẫn là Google Sheet. Nhân viên (Thảo) nhập qua menu trong app → ghi thẳng vào Sheet. Sếp chỉ xem số liệu + chart. Bảng kh_dong chỉ là bản chép tạm để xem.
