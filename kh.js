@@ -37,6 +37,9 @@ async function nhap(){
   .nh-r.on{border-color:var(--pri);background:#eef8f1}.nh-r b{color:var(--pri2);margin-right:4px}
   .nh-r .m{font-size:12px;color:#6b7a70;text-align:right;white-space:nowrap}.nh-r .m i{font-style:normal;color:var(--pri);font-weight:600}
   .nh-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid #cfdcd3;padding:10px 4px;margin:10px -4px 0;box-shadow:0 -4px 12px rgba(0,60,30,.08)}
+  .nh-dz{border:2px dashed #9fb8a6;border-radius:12px;padding:14px;text-align:center;color:#4c5f53;background:#f6faf7;margin:10px 0 6px;cursor:pointer;font-size:14px}.nh-dz.on{background:#e3f3e8;border-color:var(--pri)}
+  .nh-f{background:#fff;border-radius:10px;padding:8px 10px;margin:5px 0;box-shadow:0 1px 3px rgba(0,60,30,.08)}.nh-f .t{display:flex;justify-content:space-between;gap:8px;font-size:13px}.nh-f .t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nh-f input{margin:4px 0 2px}.nh-c{display:flex;gap:5px;flex-wrap:wrap}.nh-c button{width:auto;margin:0;padding:3px 9px;font-size:12px;border-radius:12px;border:1px solid #cfdcd3;background:#fff;color:#334}
   .nh-bar .sel{font-size:13px;margin-bottom:6px;color:#334}.nh-bar input{margin:0 0 6px}`;
   document.getElementById('khst')?.remove();document.head.appendChild(st);
   const dsHtml=()=>{const q=f(tk),m=+document.querySelector('.nh-t .on')?.dataset.m||t0;let g='',h='';
@@ -46,27 +49,59 @@ async function nhap(){
   $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3><div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
   <div class="nh-t">${[...Array(12)].map((_,i)=>`<button data-m="${i+1}" class="${i+1===t0?'on':''}">Tháng ${i+1}</button>`).join('')}</div>
   <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div id="nl">${dsHtml()}</div>
-  <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" autocomplete="off" placeholder="Số tiền phiếu (đồng)"><div id="nsp" style="font-size:20px;font-weight:700;color:var(--pri2);min-height:26px;margin:0 0 6px"></div><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
+  <div class="nh-dz" id="dz">📎 <b>Kéo thả hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF, ảnh, Word, Excel · app tự đọc số tiền, bồ kiểm lại rồi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
+  <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" autocomplete="off" placeholder="Số tiền nhập tay (nếu không có hồ sơ)"><div id="nsp" style="font-size:20px;font-weight:700;color:var(--pri2);min-height:26px;margin:0 0 6px"></div><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
   const bind=()=>document.querySelectorAll('.nh-r').forEach(e=>e.onclick=()=>{chon=+e.dataset.k;const r=rows.find(x=>x.id===chon);$('#nsel').innerHTML='Đã chọn: <b>'+esc((r.stt||'')+' '+r.hang_muc)+'</b>';$('#nl').innerHTML=dsHtml();bind();$('#ns').focus()});
   const ve3=()=>{$('#nl').innerHTML=dsHtml();bind()};bind();
   $('#nq').oninput=e=>{tk=e.target.value;ve3()};
   document.querySelectorAll('.nh-t button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nh-t button').forEach(x=>x.classList.remove('on'));b.classList.add('on');ve3()});
   const fmtS=()=>{const el=$('#ns'),d=el.value.replace(/\D/g,'').replace(/^0+/,'');const t=d?d.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'';el.value=t;$('#nsp').textContent=t?t+' đồng':''};
   ['input','keyup','change','paste'].forEach(ev=>$('#ns').addEventListener(ev,()=>setTimeout(fmtS,0)));
+
+  const F=[];
+  const dsF=()=>{$('#fl').innerHTML=F.map((x,i)=>`<div class="nh-f"><div class="t"><span>📄 ${esc(x.name)}</span><span>${x.st==='dang'?'⏳ đang đọc…':`<a href="#" data-rm="${i}" style="color:#c0392b">✕ bỏ</a>`}</span></div>${x.st==='dang'?'':`<input data-so="${i}" inputmode="numeric" autocomplete="off" placeholder="Số tiền của hồ sơ này" value="${x.so?Number(x.so).toLocaleString('vi-VN'):''}">${x.msg?`<div class="mut" style="font-size:12px">${esc(x.msg)}</div>`:''}<div class="nh-c">${(x.cands||[]).map(c=>`<button data-c="${i}:${c}">${Number(c).toLocaleString('vi-VN')}</button>`).join('')}</div>`}</div>`).join('');
+    document.querySelectorAll('[data-rm]').forEach(a=>a.onclick=e=>{e.preventDefault();F.splice(+a.dataset.rm,1);dsF()});
+    document.querySelectorAll('[data-so]').forEach(inp=>inp.oninput=()=>{const d=inp.value.replace(/\D/g,'').replace(/^0+/,'');F[+inp.dataset.so].so=d?+d:0;inp.value=d?d.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):''});
+    document.querySelectorAll('[data-c]').forEach(bt=>bt.onclick=()=>{const[i,c]=bt.dataset.c.split(':');F[+i].so=+c;dsF()})};
+  const docB64=file=>new Promise((ok,no)=>{
+    const rd=new FileReader();rd.onerror=no;
+    if(/^image\//.test(file.type)&&file.size>2e6){const im=new Image();rd.onload=()=>{im.onload=()=>{const k=Math.min(1,2000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok({b64:c.toDataURL('image/jpeg',.85).split(',')[1],mime:'image/jpeg'})};im.onerror=no;im.src=rd.result};rd.readAsDataURL(file)}
+    else{rd.onload=()=>ok({b64:String(rd.result).split(',')[1],mime:file.type||'application/octet-stream'});rd.readAsDataURL(file)}});
+  const themF=async list=>{for(const file of list){
+    if(file.size>9e6){toast(file.name+' quá lớn (tối đa ~9MB)');continue}
+    const x={name:file.name,st:'dang',so:0,cands:[]};F.push(x);dsF();
+    try{const {b64,mime}=await docB64(file);
+      const {data,error}=await sb.functions.invoke('kh-ghi',{body:{action:'doc',ten_file:file.name,mime,b64}});
+      let loi=error?(data&&data.loi)||error.message:data&&data.loi;
+      if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
+      if(loi)throw new Error(loi);
+      x.tam=data.tam;x.so=data.best||0;x.cands=(data.cands||[]).filter(c=>c!==data.best);
+      x.msg=data.best?'Đã đọc số tiền, bồ kiểm lại cho đúng':(data.loi_doc?'Chưa đọc được số tiền ('+data.loi_doc.slice(0,80)+'). Nhập tay.':'Không thấy số tiền, nhập tay.');
+    }catch(e){x.msg='Lỗi: '+(e.message||e);F.splice(F.indexOf(x),1);toast(x.msg)}
+    x.st='ok';dsF()}};
+  const dz=$('#dz'),fi=$('#fi');
+  dz.onclick=()=>fi.click();fi.onchange=()=>{themF([...fi.files]);fi.value=''};
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on')}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on')}));
+  dz.addEventListener('drop',e=>themF([...e.dataTransfer.files]));
   $('#nv').onclick=()=>{document.getElementById('khst')?.remove();ve2()};
   $('#ng').onclick=async()=>{
     if(!chon)return toast('Chọn khoản chi');
-    const so=Number($('#ns').value.replace(/\D/g,''));
-    if(!(so>0))return toast('Nhập số tiền');
-    const r=rows.find(x=>x.id===chon),th=+document.querySelector('.nh-t .on').dataset.m;
-    if(!confirm('Cộng '+n(so)+' đ vào\n'+(r.stt||'')+' '+r.hang_muc+'\nTháng '+th+'?'))return;
+    if(F.some(x=>x.st==='dang'))return toast('Đợi đọc xong hồ sơ');
+    const items=F.filter(x=>x.so>0).map(x=>({so:x.so,tam:x.tam,ten_file:x.name}));
+    const tay=Number($('#ns').value.replace(/\D/g,''));
+    if(tay>0)items.push({so:tay,ghi_chu:$('#ng2').value});
+    if(F.some(x=>!(x.so>0)))return toast('Có hồ sơ chưa có số tiền, nhập hoặc bỏ nó đi');
+    if(!items.length)return toast('Nhập số tiền hoặc thả hồ sơ');
+    const r=rows.find(x=>x.id===chon),th=+document.querySelector('.nh-t .on').dataset.m,tong=items.reduce((a,x)=>a+x.so,0);
+    if(!confirm('Cộng '+items.map(x=>n(x.so)).join(' + ')+' = '+n(tong)+' đ\nvào '+(r.stt||'')+' '+r.hang_muc+'\nTháng '+th+(F.length?'\nLưu '+F.length+' hồ sơ vào thư mục tương ứng trên Drive':'')+'?'))return;
     const b=$('#ng');b.disabled=true;b.textContent='Đang ghi…';
-    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{id:r.id,thang:th,so,ghi_chu:$('#ng2').value}});
+    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{id:r.id,thang:th,items}});
     b.disabled=false;b.textContent='Cộng vào tháng';
     let loi=error?(data&&data.loi)||error.message:data&&data.loi;
     if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
     if(loi)return toast(loi);
-    toast('Đã cộng vào Sheet');await ve();nhap();
+    toast('Đã cộng vào Sheet'+(data.links&&data.links.length?' · đã lưu '+data.links.length+' hồ sơ vào '+data.thu_muc:''));await ve();nhap();
   };
 }
 const f=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
