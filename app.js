@@ -64,7 +64,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v24</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v25</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -83,7 +83,7 @@ async function dsToi2(){
   const {data,error}=await sb.from('viec').select('*').eq('nguoi_nhan',me.id).not('trang_thai','in','(da_dong,huy)').order('han',{nullsFirst:false});
   if(error)return $('#nd').textContent=error.message;
   const nay=new Date().toDateString(),kq=data.filter(qua).length,kh=data.filter(v=>v.han&&new Date(v.han).toDateString()===nay).length,gio=new Date().getHours(),ch=gio<11?'Chào buổi sáng':gio<14?'Chào buổi trưa':gio<18?'Chào buổi chiều':'Chào buổi tối';
-  const kpi=`<div class="hi"><b>${ch}, ${esc((me.ho_ten||'').split(' ').slice(-1)[0])}</b><span class="mut">${data.length?'Bạn có '+data.length+' việc đang mở':'Hôm nay chưa có việc nào cho bạn'}</span></div><div class="kpi"><div class="r"><b>${kq}</b><span>Quá hạn</span></div><div class="a"><b>${kh}</b><span>Hạn hôm nay</span></div><div><b>${data.length}</b><span>Đang mở</span></div></div>`;
+  const kpi=`<div class="hero"><div class="hi"><b>${ch}, ${esc((me.ho_ten||'').split(' ').slice(-1)[0])}</b><span class="mut">${data.length?'Bạn có '+data.length+' việc đang mở':'Hôm nay chưa có việc nào cho bạn'}</span></div><div class="kpi"><div class="r"><b>${kq}</b><span>Quá hạn</span></div><div class="a"><b>${kh}</b><span>Hạn hôm nay</span></div><div><b>${data.length}</b><span>Đang mở</span></div></div></div>`;
   $('#nd').innerHTML=(await theBatPush())+kpi+(data.length?data.map(v=>the({...v,ben:v.tu_giao?'Tự giao':'Giao bởi '+ten(v.nguoi_giao)})).join(''):'<p class="mut">Không có việc đang mở.</p>');
   gan();ganNutPush();
 }
