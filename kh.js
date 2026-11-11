@@ -27,7 +27,7 @@ async function nhap(){
   const {sb,$,esc,toast}=A();
   const i0=rows.findIndex(r=>r.stt==='II'&&r.cap===1),i1=rows.findIndex(r=>r.stt==='D');
   const ds=rows.filter((r,i)=>i>i0&&i<i1&&r.cap>=2&&!['Lần','Lượt'].includes(r.dvt)&&!(rows[i+1]&&r.stt&&String(rows[i+1].stt).startsWith(r.stt+'.')));
-  const cha=r=>{const k=String(r.stt||'').split('.')[0];const p=rows.find(x=>x.stt===k&&x.cap===2);return p?p.hang_muc:'Khác'};
+  const cha=r=>{const k=String(r.stt||'').split('.')[0];for(let j=rows.indexOf(r);j>=0;j--){const x=rows[j];if(x.cap===1)break;if(x.cap===2&&x.stt===k&&x!==r)return x.hang_muc}const ro=(()=>{for(let j=rows.indexOf(r);j>=0;j--)if(rows[j].cap===1)return rows[j].hang_muc;return 'Khác'})();return ro};
   const t0=new Date().getMonth()+1;let tk='',chon=null;
   const st=document.createElement('style');st.id='khst';st.textContent=`
   .nh-t{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px}.nh-t button{flex:0 0 auto;border:1px solid #cfdcd3;background:#fff;color:#334;border-radius:16px;padding:6px 12px;font-size:13px;width:auto;margin:0}
@@ -48,8 +48,9 @@ async function nhap(){
     return h||'<p class="mut">Không thấy khoản nào</p>'};
   $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3><div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
   <div class="nh-t">${[...Array(12)].map((_,i)=>`<button data-m="${i+1}" class="${i+1===t0?'on':''}">Tháng ${i+1}</button>`).join('')}</div>
-  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div id="nl">${dsHtml()}</div>
-  <div class="nh-dz" id="dz">📎 <b>Kéo thả hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF, ảnh, Word, Excel · app tự đọc số tiền, bồ kiểm lại rồi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
+  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div class="nh-dz" id="dz">📎 <b>Kéo thả hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF, ảnh, Word, Excel · app tự đọc số tiền, bồ kiểm lại rồi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
+  <div id="nl">${dsHtml()}</div>
+
   <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" autocomplete="off" placeholder="Số tiền nhập tay (nếu không có hồ sơ)"><div id="nsp" style="font-size:20px;font-weight:700;color:var(--pri2);min-height:26px;margin:0 0 6px"></div><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
   const bind=()=>document.querySelectorAll('.nh-r').forEach(e=>e.onclick=()=>{chon=+e.dataset.k;const r=rows.find(x=>x.id===chon);$('#nsel').innerHTML='Đã chọn: <b>'+esc((r.stt||'')+' '+r.hang_muc)+'</b>';$('#nl').innerHTML=dsHtml();bind();$('#ns').focus()});
   const ve3=()=>{$('#nl').innerHTML=dsHtml();bind()};bind();
