@@ -25,29 +25,35 @@ function bieuDo(){
 
 async function nhap(){
   const {sb,$,esc,toast}=A();
-  const ds=rows.filter(r=>r.thang||r.cap>=3).filter(r=>!['Lần','Lượt'].includes(r.dvt));
-  const t0=new Date().getMonth()+1;
-  $('#nd').innerHTML=`<h3>Nhập số chi tháng</h3><div class="mut">Ghi thẳng vào Google Sheet "Bảng thu chi".</div>
-  <label>Hạng mục<select id="nh">${ds.map(r=>`<option value="${r.id}">${esc((r.stt||'')+' '+r.hang_muc).slice(0,70)}</option>`).join('')}</select></label>
+  const i0=rows.findIndex(r=>r.stt==='II'&&r.cap===1),i1=rows.findIndex(r=>r.stt==='D');
+  const ds=rows.filter((r,i)=>i>i0&&i<i1&&r.cap>=2&&!['Lần','Lượt'].includes(r.dvt)&&!(rows[i+1]&&r.stt&&String(rows[i+1].stt).startsWith(r.stt+'.')));
+  const t0=new Date().getMonth()+1;let tk='';
+  const dsHtml=()=>{const q=f(tk);return ds.filter(r=>!q||f(r.hang_muc+' '+(r.stt||'')).includes(q)).map(r=>`<label class="card" style="display:flex;gap:8px;align-items:center;padding:8px;margin:4px 0"><input type="radio" name="nk" value="${r.id}"><span><b>${esc(r.stt||'')}</b> ${esc(r.hang_muc)}<br><span class="mut" style="font-size:12px">KH ${n(r.kh_nam)} · tháng này ${n((r.thang||[])[+($('#nt')?$('#nt').value:t0)-1])||'—'}</span></span></label>`).join('')||'<p class="mut">Không thấy khoản nào</p>'};
+  $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3><div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
   <label>Tháng<select id="nt">${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${i+1===t0?'selected':''}>Tháng ${i+1}</option>`).join('')}</select></label>
-  <label>Nguồn<select id="nl"><option value="bhyt">BHYT</option><option value="dv">Dịch vụ</option></select></label>
-  <label>Số tiền (đồng)<input id="ns" inputmode="numeric" placeholder="vd 12500000"></label>
-  <div class="mut" id="nc"></div><button class="full" id="ng">Ghi vào Sheet</button><button class="sec full" id="nv">← Quay lại</button>`;
-  const cu=()=>{const r=rows.find(x=>x.id==$('#nh').value),a=($('#nl').value==='dv'?r.thang_dv:r.thang)||[],v=a[+$('#nt').value-1];$('#nc').textContent='Số hiện có: '+(v==null?'(trống)':n(v))};
-  ['#nh','#nt','#nl'].forEach(i=>$(i).onchange=cu);cu();
+  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div id="nl" style="max-height:38vh;overflow:auto">${dsHtml()}</div>
+  <label>Số tiền phiếu (đồng)<input id="ns" inputmode="numeric" placeholder="vd 12500000"></label>
+  <label>Nội dung / số phiếu (không bắt buộc)<input id="ng2" placeholder="vd DNTT số 123 - mua văn phòng phẩm"></label>
+  <button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button>`;
+  $('#nq').oninput=e=>{tk=e.target.value;$('#nl').innerHTML=dsHtml()};
+  $('#nt').onchange=()=>$('#nl').innerHTML=dsHtml();
   $('#nv').onclick=ve2;
   $('#ng').onclick=async()=>{
+    const ch=document.querySelector('input[name=nk]:checked');if(!ch)return toast('Chọn khoản chi');
     const so=Number(String($('#ns').value).replace(/[.,\s]/g,''));
-    if(!isFinite(so)||$('#ns').value==='')return toast('Nhập số tiền');
+    if(!(so>0))return toast('Nhập số tiền');
+    const r=rows.find(x=>x.id==ch.value);
+    if(!confirm('Cộng '+n(so)+' đ vào\n'+(r.stt||'')+' '+r.hang_muc+'\nTháng '+$('#nt').value+'?'))return;
     const b=$('#ng');b.disabled=true;b.textContent='Đang ghi…';
-    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{id:+$('#nh').value,thang:+$('#nt').value,loai:$('#nl').value,so}});
-    b.disabled=false;b.textContent='Ghi vào Sheet';
+    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{id:r.id,thang:+$('#nt').value,so,ghi_chu:$('#ng2').value}});
+    b.disabled=false;b.textContent='Cộng vào tháng';
     let loi=error?(data&&data.loi)||error.message:data&&data.loi;
     if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
     if(loi)return toast(loi);
-    toast('Đã ghi vào Sheet');await ve();nhap();
+    toast('Đã cộng vào Sheet');await ve();nhap();
   };
 }
+const f=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
 function ve2(){
   const {$,esc}=A();
   const L=rows.filter(r=>r.cap<=(ds?9:2)||false);
