@@ -23,6 +23,19 @@ function bieuDo(){
   <div class="card"><b>Kế hoạch năm theo nhóm chi (tỷ đồng)</b>${nhom.map(r=>{const mx=Math.max(...nhom.map(x=>x.kh_nam||0));return `<div style="margin:6px 0"><div class="mut" style="font-size:12px">${A().esc(r.stt+'. '+r.hang_muc)} — ${(r.kh_nam/1e9).toFixed(2)}</div><div style="height:10px;background:#dde7e0;border-radius:5px"><div style="height:10px;width:${(r.kh_nam||0)/mx*100}%;background:var(--gold);border-radius:5px"></div></div></div>`}).join('')}</div>
   ${sel?`<div class="card"><b>${A().esc(sel.hang_muc)}</b>${bars(sel.thang.slice(0,12),T.slice(0,sel.thang.length),'var(--pri2)')}</div>`:''}`}
 
+
+let pdfP=null;
+const nap=(src)=>new Promise((ok,no)=>{const t=document.createElement('script');t.src=src;t.onload=ok;t.onerror=()=>no(new Error('Không tải được '+src));document.head.appendChild(t)});
+const taiPdfJs=()=>pdfP||(pdfP=nap('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js').then(()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'}));
+async function trang1(file){
+  await taiPdfJs();
+  const pdf=await window.pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  const pg=await pdf.getPage(1),v0=pg.getViewport({scale:1}),sc=Math.min(2.5,2200/Math.max(v0.width,v0.height)),vp=pg.getViewport({scale:sc});
+  const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+  const cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);
+  await pg.render({canvasContext:cx,viewport:vp}).promise;
+  return c.toDataURL('image/jpeg',.85).split(',')[1];
+}
 async function nhap(){
   const {sb,$,esc,toast}=A();
   const i0=rows.findIndex(r=>r.stt==='II'&&r.cap===1),i1=rows.findIndex(r=>r.stt==='D');
@@ -48,7 +61,7 @@ async function nhap(){
     return h||'<p class="mut">Không thấy khoản nào</p>'};
   $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3><div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
   <div class="nh-t">${[...Array(12)].map((_,i)=>`<button data-m="${i+1}" class="${i+1===t0?'on':''}">Tháng ${i+1}</button>`).join('')}</div>
-  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div class="nh-dz" id="dz">📎 <b>Kéo thả hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF, ảnh, Word, Excel · app tự đọc số tiền, bồ kiểm lại rồi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
+  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div class="nh-dz" id="dz">📎 <b>Kéo thả hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF, ảnh, Word, Excel · app đọc số tiền ở TRANG ĐẦU, bồ kiểm lại rồi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
   <div id="nl">${dsHtml()}</div>
 
   <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" autocomplete="off" placeholder="Số tiền nhập tay (nếu không có hồ sơ)"><div id="nsp" style="font-size:20px;font-weight:700;color:var(--pri2);min-height:26px;margin:0 0 6px"></div><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
@@ -72,7 +85,9 @@ async function nhap(){
     if(file.size>9e6){toast(file.name+' quá lớn (tối đa ~9MB)');continue}
     const x={name:file.name,st:'dang',so:0,cands:[]};F.push(x);dsF();
     try{const {b64,mime}=await docB64(file);
-      const {data,error}=await sb.functions.invoke('kh-ghi',{body:{action:'doc',ten_file:file.name,mime,b64}});
+      let b64_doc;
+      if(mime==='application/pdf'||/\.pdf$/i.test(file.name)){try{b64_doc=await trang1(file);x.msg='Đọc trang đầu…'}catch(e){console.warn('pdf.js',e)}}
+      const {data,error}=await sb.functions.invoke('kh-ghi',{body:{action:'doc',ten_file:file.name,mime,b64,b64_doc,mime_doc:b64_doc?'image/jpeg':undefined}});
       let loi=error?(data&&data.loi)||error.message:data&&data.loi;
       if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
       if(loi)throw new Error(loi);
