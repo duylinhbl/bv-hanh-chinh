@@ -45,3 +45,4 @@
 - Chưa nạp: KH 2026 2, Thanh toán, EMS, Quỹ phòng, Công ty thành viên, Hợp đồng, TT đối tác, DNTT, Chiến sỹ TĐ, Theo dõi TT tháng, DNTT cũ 2025. Chờ Linh hướng dẫn cách kết nối.
 - (v30) Thêm biểu đồ: chi theo tháng, kế hoạch theo nhóm, bấm 1 dòng có số tháng để xem biểu đồ tháng của dòng đó.
 - QUYẾT ĐỊNH của Linh: dữ liệu tài chính KHÔNG lưu chính trên DB; nguồn gốc vẫn là Google Sheet. Nhân viên (Thảo) nhập qua menu trong app → ghi thẳng vào Sheet. Sếp chỉ xem số liệu + chart. Bảng kh_dong chỉ là bản chép tạm để xem.
+- (v31) Nhập số chi tháng: app → Edge Function `kh-ghi` → Apps Script gắn trong Sheet → ghi ô tháng (cột H + 2*(tháng-1), +1 nếu Dịch vụ) ở tab KH 2026, tìm dòng theo stt + tên hạng mục (KHÔNG đổi tên hạng mục trong Sheet, sẽ báo "không tìm thấy dòng"). Quyền nhập: admin hoặc nguoi_dung.nhap_tc=true (Thảo). Cấu hình ở bi_mat: kh_token, kh_script_url. Sau khi ghi, cập nhật bản chép kh_dong.
