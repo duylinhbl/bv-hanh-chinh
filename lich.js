@@ -61,16 +61,85 @@ async function ve(){
     const [mine,ks]=await Promise.all([
       A().sb.from('lich_truc').select('ngay,vi_tri_id,thu_tu').eq('nguoi_id',A().me.id).gte('ngay',today).order('ngay').limit(40),
       A().sb.from('lich_truc_ky').select('*').order('tu_ngay',{ascending:false}).limit(12)]);
+    const dts=(await A().sb.from('doi_truc').select('*').gte('tao_luc',new Date(Date.now()-45*864e5).toISOString()).order('tao_luc',{ascending:false}).limit(40)).data||[];
+    const dds=dts.length?((await A().sb.from('doi_truc_duyet').select('*').in('doi_id',dts.map(x=>x.id))).data||[]):[];
     const vtn=Object.fromEntries(VT.map(v=>[v.id,v.ten]));
-    q('#nd').innerHTML=`<div class="card"><h3>Ca trực sắp tới của tôi</h3>${(mine.data||[]).map(r=>`<div class="row" style="justify-content:space-between;padding:4px 0"><b>${TH[pd(r.ngay).getDay()]} ${dm(r.ngay)}</b><span>${esc(vtn[r.vi_tri_id]||'')}</span></div>`).join('')||'<p class="mut">Chưa có ca nào được công bố.</p>'}</div>
+    q('#nd').innerHTML=doiHtml(dts,dds,vtn)+`<div class="card"><h3>Ca trực sắp tới của tôi</h3>${(mine.data||[]).map(r=>`<div class="row" style="justify-content:space-between;padding:4px 0"><b>${TH[pd(r.ngay).getDay()]} ${dm(r.ngay)}</b><span>${esc(vtn[r.vi_tri_id]||'')} ${r.ngay>today?`<button class="sec" style="padding:4px 10px;font-size:13px" data-dt="${r.ngay}|${r.vi_tri_id}|${r.thu_tu}">🔄 Đổi trực</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có ca nào được công bố.</p>'}</div>
     <div class="card"><h3>Lịch trực toàn viện</h3>${(ks.data||[]).map(k=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span>${dm(k.tu_ngay)} – ${dm(k.den_ngay)} ${k.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</span><span><button class="sec" data-xem="${k.id}">👁 Xem</button> ${duocXep?`<button data-sua="${k.id}">✏️ Sửa</button>`:''} ${A().me.la_quan_tri?`<button class="dng" data-xoa="${k.id}">🗑 Xóa</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có kỳ lịch.</p>'}
     ${duocXep?'<button class="full" id="moiky">🗓 Tạo kỳ lịch mới</button>':''}</div>`;
+    ganDoi(dts,dds);
+    document.querySelectorAll('[data-dt]').forEach(b=>b.onclick=()=>formDoi(b.dataset.dt));
     const kmap=Object.fromEntries((ks.data||[]).map(k=>[k.id,k]));
     document.querySelectorAll('[data-xem]').forEach(b=>b.onclick=()=>xem(kmap[b.dataset.xem]));
     document.querySelectorAll('[data-sua]').forEach(b=>b.onclick=()=>soan(kmap[b.dataset.sua]));
     document.querySelectorAll('[data-xoa]').forEach(b=>b.onclick=()=>xoaKy(kmap[b.dataset.xoa]));
     if($('#moiky'))$('#moiky').onclick=()=>kyMoi(ks.data||[]);
   }catch(e){q('#nd').innerHTML='<p class="mut">Lỗi: '+A().esc(e.message||e)+'</p>'}
+}
+
+const TTD={cho_b:['Chờ người kia trả lời','amb'],cho_duyet:['Chờ trưởng khoa/BGĐ duyệt','amb'],cho_khth:['Chờ KHTH xác nhận','amb'],da_doi:['Đã đổi','grn'],tu_choi:['Bị từ chối','red'],huy:['Đã hủy','']};
+const hten=id=>(PM[id]||{}).ho_ten||'?';
+const caTxt=(n,v,vtn)=>n?`${TH[pd(n).getDay()]} ${dm(n)} · ${vtn[v]||''}`:'';
+function doiHtml(dts,dds,vtn){
+  const me=A().me.id,esc=A().esc;
+  const ds=dts.filter(x=>x.nguoi_a===me||x.nguoi_b===me||dds.some(d=>d.doi_id===x.id&&d.nguoi_id===me)||duocXep||A().me.la_quan_tri);
+  if(!ds.length)return '';
+  const cards=ds.map(x=>{const du=dds.filter(d=>d.doi_id===x.id),t=TTD[x.trang_thai];
+    const act=[];
+    if(x.trang_thai==='cho_b'&&x.nguoi_b===me)act.push(['b1','✅ Đồng ý',''],['b0','❌ Từ chối','sec']);
+    if(x.trang_thai==='cho_duyet'&&du.some(d=>d.nguoi_id===me&&!d.kq))act.push(['d1','✅ Đồng ý',''],['d0','❌ Không đồng ý','sec']);
+    if(x.trang_thai==='cho_khth'&&duocXep)act.push(['k1','✅ Xác nhận đổi lịch',''],['k0','❌ Không chấp thuận','sec']);
+    if(x.nguoi_a===me&&['cho_b','cho_duyet','cho_khth'].includes(x.trang_thai))act.push(['h','⛔ Hủy yêu cầu','sec']);
+    return `<div class="card" style="border-left:5px solid var(--gold)"><div class="row" style="justify-content:space-between"><b>🔄 ${esc(hten(x.nguoi_a))} ⇄ ${esc(hten(x.nguoi_b))}</b><span class="tag ${t[1]}">${t[0]}</span></div>
+      <div class="mut">${esc(hten(x.nguoi_a))}: ${esc(caTxt(x.ngay_a,x.vt_a,vtn))}<br>${x.ngay_b?esc(hten(x.nguoi_b))+': '+esc(caTxt(x.ngay_b,x.vt_b,vtn)):esc(hten(x.nguoi_b))+' trực thay (không trả ca)'}${x.ly_do?'<br>Lý do: '+esc(x.ly_do):''}${x.y_kien_tu_choi?'<br><span style="color:var(--red)">'+esc(x.y_kien_tu_choi)+'</span>':''}</div>
+      ${du.length?`<div class="mut" style="margin-top:4px">${du.map(d=>(d.kq==='dong_y'?'✅':d.kq==='tu_choi'?'❌':'⬜')+' '+esc(hten(d.nguoi_id))+(d.nhom==='bgd'?' (BGĐ)':'')).join(' · ')}</div>`:''}
+      ${act.length?`<div class="row" style="margin-top:8px">${act.map(a=>`<button class="${a[2]}" data-da="${a[0]}|${x.id}">${a[1]}</button>`).join('')}</div>`:''}</div>`}).join('');
+  return `<div class="card" style="padding:10px 12px 2px"><h3>Đổi trực</h3>${cards}</div>`;
+}
+function ganDoi(){
+  document.querySelectorAll('[data-da]').forEach(b=>b.onclick=async()=>{
+    const [k,id]=b.dataset.da.split('|'),sb=A().sb;let r;
+    const yk=()=>prompt('Lý do (có thể để trống):')||null;
+    if(k==='b1')r=await sb.rpc('tra_loi_doi_b',{p_id:id,p_dong_y:true});
+    else if(k==='b0'){const y=yk();r=await sb.rpc('tra_loi_doi_b',{p_id:id,p_dong_y:false,p_y_kien:y})}
+    else if(k==='d1')r=await sb.rpc('duyet_doi_truc',{p_id:id,p_dong_y:true});
+    else if(k==='d0'){const y=yk();r=await sb.rpc('duyet_doi_truc',{p_id:id,p_dong_y:false,p_y_kien:y})}
+    else if(k==='k1'){if(!confirm('Xác nhận đổi? Lịch trực sẽ được cập nhật ngay.'))return;r=await sb.rpc('khth_duyet_doi',{p_id:id,p_dong_y:true})}
+    else if(k==='k0'){const y=yk();r=await sb.rpc('khth_duyet_doi',{p_id:id,p_dong_y:false,p_y_kien:y})}
+    else if(k==='h'){if(!confirm('Hủy yêu cầu đổi trực này?'))return;r=await sb.rpc('huy_doi_truc',{p_id:id})}
+    if(r&&r.error)return A().toast('Lỗi: '+r.error.message);
+    A().toast('Đã ghi nhận');ve();
+  });
+}
+async function formDoi(key){
+  const [ng,vt,tt]=key.split('|'),esc=A().esc,me=A().me.id,today=iso(new Date());
+  const vtn=Object.fromEntries(VT.map(v=>[v.id,v.ten]));
+  const fx=t=>(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
+  const ds=P.filter(p=>p.id!==me&&!p.khong_truc);
+  $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><h3>🔄 Đổi trực</h3>
+   <div class="mut">Ca của bạn: <b>${TH[pd(ng).getDay()]} ${dm(ng)} · ${esc(vtn[vt]||'')}</b></div>
+   <label>Đổi với ai</label><input id="nq" placeholder="Gõ tên để lọc…" autocomplete="off"><select id="nb"></select>
+   <label>Ca của người đó mà bạn sẽ nhận lại</label><select id="cb"></select>
+   <label>Lý do (không bắt buộc)</label><textarea id="ld"></textarea>
+   <div class="mut" style="margin-top:8px">Sau khi người kia đồng ý, yêu cầu gửi trưởng khoa, điều dưỡng trưởng khoa và Ban Giám đốc duyệt, cuối cùng KHTH xác nhận thì lịch mới được đổi.</div>
+   <button class="full" id="gd">📤 Gửi đề nghị đổi trực</button><p class="mut" id="loi"></p></div>`;
+  const dien=q=>{const x=fx(q),l=ds.filter(p=>!x||fx(p.ho_ten+' '+(p.khoa||'')).includes(x)).slice(0,60);
+    $('#nb').innerHTML=l.map(p=>`<option value="${p.id}">${esc(p.ho_ten)}${p.khoa?' · '+esc(p.khoa.replace(/^(KHOA|PHÒNG) /,'')):''}${p.nam_sinh?' · '+p.nam_sinh:''}</option>`).join('')||'<option value="">Không có ai khớp</option>';
+    if(x&&l.length)$('#nb').value=l[0].id;caB()};
+  const caB=async()=>{const b=$('#nb').value;$('#cb').innerHTML='<option value="">Không trả ca (nhờ trực thay)</option>';if(!b)return;
+    const {data}=await A().sb.from('lich_truc').select('ngay,vi_tri_id,thu_tu').eq('nguoi_id',b).gt('ngay',today).order('ngay').limit(30);
+    $('#cb').innerHTML+=(data||[]).map(r=>`<option value="${r.ngay}|${r.vi_tri_id}|${r.thu_tu}">${TH[pd(r.ngay).getDay()]} ${dm(r.ngay)} · ${esc(vtn[r.vi_tri_id]||'')}</option>`).join('')};
+  $('#nq').oninput=()=>dien($('#nq').value);$('#nb').onchange=caB;dien('');
+  $('#lui').onclick=ve;
+  $('#gd').onclick=async()=>{
+    if(!$('#nb').value)return $('#loi').textContent='Chọn người đổi';
+    const c=$('#cb').value?$('#cb').value.split('|'):[null,null,null];
+    $('#gd').disabled=true;
+    const r=await A().sb.rpc('tao_doi_truc',{p_ngay_a:ng,p_vt_a:+vt,p_tt_a:+tt,p_nguoi_b:$('#nb').value,p_ngay_b:c[0],p_vt_b:c[1]?+c[1]:null,p_tt_b:c[2]?+c[2]:null,p_ly_do:$('#ld').value});
+    $('#gd').disabled=false;
+    if(r.error)return $('#loi').textContent=r.error.message;
+    A().toast('Đã gửi đề nghị, người kia sẽ nhận thông báo');ve();
+  };
 }
 async function xoaKy(ky){
   if(!A().me.la_quan_tri)return;
