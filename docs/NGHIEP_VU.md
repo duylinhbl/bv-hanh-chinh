@@ -1,0 +1,39 @@
+# Sổ nghiệp vụ & bài học – App Quản lý hành chính BV Đa khoa Cao su Dầu Tiếng
+
+> Người dùng (anh Duy Linh, trưởng phòng TCHC) nói đến đâu làm đến đó, KHÔNG tự ghi chép. File này là bộ nhớ chung: đọc trước khi sửa app, cập nhật sau mỗi yêu cầu mới. Dùng để viết hướng dẫn sử dụng và tránh lặp lại lỗi cũ.
+
+## 1. Hệ thống
+- Web app PWA (vanilla JS) trên GitHub Pages: https://duylinhbl.github.io/bv-hanh-chinh/ (repo duylinhbl/bv-hanh-chinh, nhánh main).
+- Backend Supabase project `fndqxqwgnvrkuzogashv` (ap-southeast-1): Postgres + RLS + Auth (email giả `<sđt>@bv.local`) + Storage (bucket `anh`) + Edge Function `gui-push` + pg_cron + pg_net.
+- Mục tiêu chiến lược: app là KÊNH DUY NHẤT cho chỉ đạo và giao việc; mọi người bắt buộc dùng.
+- Mỗi lần deploy phải tăng số phiên bản ở 3 chỗ: `?v=N` trong index.html, tên cache trong sw.js, nhãn `vN` ở header (app.js). Không tăng thì điện thoại giữ bản cũ.
+- Màu: xanh lá logo BV (#055c2b/#00843a) + vàng đồng (#d9a521); logo lấy từ Drive (thư mục LOGO).
+
+## 2. Vai trò
+- Quản trị (la_quan_tri): Duy Linh. Xóa được việc, thông báo, lịch công tác, kỳ lịch trực.
+- Phát thông báo/ghi lịch công tác (duoc_phat): BGĐ, TCHC, KHTH, TCKT. Thảo (TCHC) nhập lịch công tác.
+- Xếp lịch trực (duoc_xep): Lưu Văn Huy, Hà Huy Thành (KHTH) + quản trị.
+- Trưởng khoa/ĐD trưởng (vai_tro truong_khoa) chỉ thấy và giao việc trong khoa mình; nhân viên chỉ tự giao.
+- Lãnh đạo khoa: Khám bệnh (đã GỘP YTCĐ + YHCT + Khám bệnh): BS Danh phụ trách, BS Lại Kim Hoàng phó phụ trách, ĐD Như Anh ĐD trưởng (anh Lê Anh Chính không còn là lãnh đạo). HSCC: BS Quang phụ trách + ĐD Thu Hương. Sản: NHS Ngô Thị Hải Yến phụ trách. BGĐ: Quốc, Trần Bích Nữ.
+
+## 3. Nghiệp vụ theo mô-đun
+**Giao việc/hiện trạng:** người nhận cập nhật trạng thái + ảnh chụp tại chỗ + GPS chỉ lấy lúc bấm Gửi (không theo dõi liên tục). Có hàng đợi offline. Giao cho người khác mới có push; giao cho chính mình thì không (cố ý). Ô Người nhận có ô gõ tên lọc, chỉ hiện người trong phạm vi quyền.
+**Thông báo:** phát cho cả viện hoặc nhóm; người nhận bấm "Đã đọc, đã hiểu"; người phát xem tình hình đọc; nhắc lại theo giờ cài.
+**Lịch công tác (tháng/tuần):** Thảo nhập TRONG APP (không dùng Google Calendar làm nguồn). Có "dán nhanh" tự tách ngày/giờ/địa điểm/thành phần. Chọn khoa bằng ô gõ tên; chọn khoa chỉ nhắn trưởng khoa + ĐD trưởng + BGĐ (vai truong_khoa/bgd), KHÔNG nhắn cả khoa. Ai được tag đều nhận push. Thẻ lịch hiển thị 1 dòng "giờ · nội dung", chi tiết ẩn/hiện bên phải (máy tính chia 2 cột). Giờ nhập 1 ô (vd 8h-9h30).
+**Lịch trực:** KHTH xếp, công bố; nhân viên thấy ca của mình, nhắc 17h chiều hôm trước và 6h30 sáng hôm trực; in đúng mẫu BV. Quy tắc: BS Sơn và BS Tô Văn Châu không trực chung; 2 bác sĩ cùng khoa không trực chung (trừ Khám bệnh tối đa 2); khoa Sản trực đôi (2 người/ngày); BS nghỉ phép/bệnh/hợp đồng/mang thai không trực (khong_truc); trực lãnh đạo chỉ Quốc, Tô Văn Châu, Danh, Nguyễn Đắc Lộc (3 BS lãnh đạo cũng là trực viện cột 1; Châu trực viện thì trực luôn siêu âm); trực viện/lãnh đạo/siêu âm chỉ gom bác sĩ; nhóm HSCC có nhóm trưởng (tên đầu) N1/N2/N3 và Sản N1–N3. Phân biệt trùng tên bằng năm sinh (Kim Yến 1990 = Yến (N) nhỏ; 1991/1984 như dữ liệu).
+**Đổi trực:** nhân viên bấm "Đổi trực" ở ca của mình → người kia đồng ý → trưởng khoa + ĐD trưởng khoa liên quan + BGĐ (≥1 người) duyệt → KHTH xác nhận → hệ thống tự đổi lịch và báo. Ai từ chối thì báo ngay.
+**Học từ thói quen:** mỗi lần lưu lịch trực và mỗi lần đổi trực ghi vào bảng `nhat_ky_hoc`. Sau vài tháng sẽ gợi ý lịch; chỉ áp dụng cho menu khác khi lịch trực ổn định.
+**Báo cáo tuần:** 10h sáng thứ 5 hằng tuần (scheduled task) tự lập file Word "BÁO CÁO CÔNG TÁC TUẦN" từ lịch công tác trong app (theo mẫu Drive thư mục 139jl_3We-_a-ynCjqjLZn5ntWSnY1a4K), gửi vanphong@caosudautieng.com.vn, tiêu đề "Bệnh viện đa khoa".
+**Đang chờ:** mẫu bảng công của TCKT (anh đang xin) → chấm công GPS (chỉ khi bấm, ngoài khu vực = không có mặt) + bảng công tháng (trưởng khoa duyệt → gửi TCKT); quy chế dùng GPS; Zalo/SMS dự phòng (chưa trả lời); tự gợi ý lịch trực; xác nhận "NHS Phương" (Sản), Bí thư chưa khớp; backup ảnh 6 tháng; xóa file mật khẩu ban đầu sau khi phát.
+
+## 4. Lỗi đã xử lý – KHÔNG để lặp lại
+1. RLS + join tên người gây lỗi "Đang tải" (nhân viên không đọc được tên người giao) → luôn dùng view `danh_ba` hoặc RPC (`ds_nguoi_truc`, `ds_khoa`, `ds_lanh_dao`), không join bảng nguoi_dung từ client.
+2. Cache cũ làm máy không cập nhật → fetch network-first, `?v=N`, tăng phiên bản mỗi lần deploy.
+3. Đóng/ngắt DOM khi bất đồng bộ: truy cập `$('#x').innerHTML` sau khi người dùng đã chuyển màn → lỗi "Cannot set properties of null". Luôn kiểm tra phần tử còn tồn tại sau `await`.
+4. Trigger cho phép nhân viên đóng việc của người khác → đã chặn ở trigger `viec_chuyen_tt`.
+5. Lịch trực: nhầm Võ Minh Hoàng/Lại Thị Kim Hoàng (người mang thai là Lại Thị Kim Hoàng); BS Hoàng "Nhân viên KHTH" vẫn là bác sĩ (nhận diện qua chuyen_mon).
+6. plpgsql: biến trùng tên cột (`ngay`) gây lỗi mơ hồ → đặt tên biến `v_ngay`.
+7. Push iOS cần iOS ≥16.4, mở từ icon "Thêm vào MH chính" trong Safari; trong SW không dùng `renotify` khi không có `tag`.
+8. Thẻ lịch từng bị tách tiêu đề và địa điểm thành 2 khối → người dùng muốn 1 dòng duy nhất, chi tiết ẩn.
+9. Công cụ Supabase `execute_sql` nhiều lệnh chỉ trả kết quả lệnh cuối; kiểm tra RLS cần giao dịch tách riêng; một lần DROP FUNCTION bị treo ở bước xác nhận → thử lại.
+10. Tài khoản phải xác nhận trước khi giao việc cho người khác: kiểm tra phạm vi bằng RLS (đã có `viec_them`).
