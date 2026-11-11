@@ -80,15 +80,21 @@ async function dung(){
       <div class="mut">👥 ${ps.length?ps.map(i=>esc((ten[i]||{}).ho_ten||'?')).join(', '):'—'}</div>
       ${(e.nguoi_tao===mine||qt)?`<div class="row" style="margin-top:6px">${!e.huy?`<button class="sec" data-sua="${e.id}">Sửa</button>`:''}${qt?`<button class="sec dng" data-xoa="${e.id}" style="margin-left:6px">Xóa</button>`:''}</div>`:''}</div></div>`};
   const emap=Object.fromEntries((ev||[]).map(e=>[e.id,{...e,tp:tp[e.id]||[]}]));
-  A().$('#nd').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><button class="sec" id="pv">‹</button><b>Tháng ${view.m+1}/${view.y}</b><button class="sec" id="nx">›</button></div>
-   <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:2px"><div class="mut">T2</div><div class="mut">T3</div><div class="mut">T4</div><div class="mut">T5</div><div class="mut">T6</div><div class="mut">T7</div><div class="mut">CN</div>${grid}</div></div>
-   <div class="row" style="justify-content:space-between;margin:4px 0 8px"><b>Tuần ${dm(tuan[0])} – ${dm(tuan[6])}</b>${quyen?'<button id="them">+ Thêm lịch</button>':''}</div>
-   ${tuan.map(d=>{const l=(ev||[]).filter(e=>e.ngay===d);return `<div style="margin:8px 0 2px;font-weight:700;color:${d===hom?'var(--pri)':'inherit'}">${TH[pd(d).getDay()]} ${dm(d)}</div>${l.map(the).join('')||'<div class="mut" style="margin-bottom:6px">Chưa có lịch</div>'}`}).join('')}`;
+  A().$('#nd').innerHTML=`<div class="ctwrap"><div class="ctl"><div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><button class="sec" id="pv">‹</button><b>Tháng ${view.m+1}/${view.y}</b><button class="sec" id="nx">›</button></div>
+   <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:2px"><div class="mut">T2</div><div class="mut">T3</div><div class="mut">T4</div><div class="mut">T5</div><div class="mut">T6</div><div class="mut">T7</div><div class="mut">CN</div>${grid}</div></div><div id="ctdet" class="card ctdet"></div></div>
+   <div class="ctr"><div class="row" style="justify-content:space-between;margin:4px 0 8px"><b>Tuần ${dm(tuan[0])} – ${dm(tuan[6])}</b>${quyen?'<button id="them">+ Thêm lịch</button>':''}</div>
+   ${tuan.map(d=>{const l=(ev||[]).filter(e=>e.ngay===d);return `<div class="dayh${d===hom?' hom':''}${d===chon?' chon':''}">${TH[pd(d).getDay()]} ${dm(d)}${d===hom?' · Hôm nay':''}</div>${l.map(the).join('')||'<div class="mut" style="margin-bottom:6px">Chưa có lịch</div>'}`}).join('')}</div></div>`;
   document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{chon=b.dataset.d;const n=pd(chon);view={y:n.getFullYear(),m:n.getMonth()};dung()});
   $('#pv').onclick=()=>{view.m--;if(view.m<0){view.m=11;view.y--}chon=iso(new Date(view.y,view.m,1));dung()};
   $('#nx').onclick=()=>{view.m++;if(view.m>11){view.m=0;view.y++}chon=iso(new Date(view.y,view.m,1));dung()};
   if($('#them'))$('#them').onclick=()=>form(null);
-  document.querySelectorAll('[data-ex]').forEach(d=>d.onclick=ev=>{if(ev.target.closest('button'))return;const x=document.getElementById('ct-'+d.dataset.ex);x.style.display=x.style.display==='none'?'block':'none'});
+  const wide=()=>window.matchMedia('(min-width:900px)').matches;
+  const bindAct=root=>{root.querySelectorAll('[data-xoa]').forEach(b=>b.onclick=()=>A().xoaMuc('lich_cong_tac',b.dataset.xoa,'Xóa vĩnh viễn lịch này?',ve));root.querySelectorAll('[data-sua]').forEach(b=>b.onclick=()=>form(emap[b.dataset.sua]))};
+  const showDet=id=>{const e=emap[id];if(!e)return;const x=document.getElementById('ct-'+id);document.querySelectorAll('[data-ex]').forEach(d=>d.classList.toggle('sel',d.dataset.ex===id));
+    $('#ctdet').innerHTML=`<div class="mut" style="font-weight:700;letter-spacing:.3px">CHI TIẾT LỊCH</div><div style="margin:6px 0"><b>🗓 ${pd(e.ngay).getDate()}/${pd(e.ngay).getMonth()+1} · ${gioTxt(e)}</b></div>${x.innerHTML}`;
+    $('#ctdet').style.display='block';bindAct($('#ctdet'))};
+  document.querySelectorAll('[data-ex]').forEach(d=>d.onclick=ev=>{if(ev.target.closest('button'))return;if(wide()){showDet(d.dataset.ex);return}const x=document.getElementById('ct-'+d.dataset.ex);x.style.display=x.style.display==='none'?'block':'none'});
+  if(wide()){const f1=document.querySelector('[data-ex]');if(f1)showDet(f1.dataset.ex);else{$('#ctdet').style.display='none'}}
   document.querySelectorAll('[data-xoa]').forEach(b=>b.onclick=()=>A().xoaMuc('lich_cong_tac',b.dataset.xoa,'Xóa vĩnh viễn lịch này?',ve));
   document.querySelectorAll('[data-sua]').forEach(b=>b.onclick=()=>form(emap[b.dataset.sua]));
 }

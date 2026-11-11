@@ -63,3 +63,17 @@ nav{background:#053a1e;border-top:2px solid var(--gold);box-shadow:0 -6px 18px r
 nav button{color:rgba(255,255,255,.62)}nav button.on{color:#fff}nav button.on::before{background:var(--gold);height:3px;top:-2px}
 nav button[data-t=moi] i{background:linear-gradient(180deg,#e8b83a,#c8921a);box-shadow:0 4px 14px rgba(0,0,0,.4);border:3px solid #053a1e}nav button[data-t=moi] svg{stroke:#04391d}nav button[data-t=moi] span.l{color:rgba(255,255,255,.75)}
 @media (prefers-color-scheme:dark){.hero{background:linear-gradient(160deg,#06391d,#0a5a2c)}.card{border-color:var(--line)}.tag{background:#17402a;color:#9be8b8}}
+
+.dayh{margin:14px 0 6px;font-weight:700;font-size:14px;color:var(--pri2);text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:8px}
+.dayh::after{content:"";flex:1;height:1px;background:var(--line)}
+.dayh.hom{color:#fff;background:var(--pri);padding:3px 11px;border-radius:99px;width:fit-content;text-transform:none;letter-spacing:0;font-size:13px}.dayh.hom::after{display:none}
+.ctdet{display:none;border-top:4px solid var(--gold)}
+.card[data-ex]{border-left:5px solid var(--pri)}.card[data-ex].sel{outline:2px solid var(--pri);background:var(--soft)}
+@media (min-width:900px){
+ main:has(.ctwrap){max-width:1160px}
+ .ctwrap{display:grid;grid-template-columns:390px 1fr;gap:20px;align-items:start}
+ .ctl{position:sticky;top:76px}
+ .ctdet{display:block}
+ .ctr .card[data-ex]{padding:12px 16px}
+}
+@media (max-width:899px){.ctdet{display:none!important}}
