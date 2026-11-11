@@ -37,3 +37,9 @@
 8. Thẻ lịch từng bị tách tiêu đề và địa điểm thành 2 khối → người dùng muốn 1 dòng duy nhất, chi tiết ẩn.
 9. Công cụ Supabase `execute_sql` nhiều lệnh chỉ trả kết quả lệnh cuối; kiểm tra RLS cần giao dịch tách riêng; một lần DROP FUNCTION bị treo ở bước xác nhận → thử lại.
 10. Tài khoản phải xác nhận trước khi giao việc cho người khác: kiểm tra phạm vi bằng RLS (đã có `viec_them`).
+
+## Báo cáo kế hoạch – sử dụng chi phí (v29)
+- Nguồn: Google Sheet "Bảng thu chi - bệnh viện đa khoa" (chủ sở hữu Thảo, shared with Linh). Đã nạp tab "KH 2026" → bảng `kh_dong` (102 dòng; `thang` = BHYT/tháng, `thang_dv` = dịch vụ).
+- Quyền xem: admin, BGĐ, TCHC (hàm `xem_tai_chinh()`); chỉ admin sửa. Menu: Tôi → "Kế hoạch – sử dụng chi phí".
+- Số trong sheet định dạng lẫn lộn (chấm/phẩy) → hàm `vn_num()`. Một số dòng tháng lệch vị trí (ghi chú trong cột ghi_chu).
+- Chưa nạp: KH 2026 2, Thanh toán, EMS, Quỹ phòng, Công ty thành viên, Hợp đồng, TT đối tác, DNTT, Chiến sỹ TĐ, Theo dõi TT tháng, DNTT cũ 2025. Chờ Linh hướng dẫn cách kết nối.
