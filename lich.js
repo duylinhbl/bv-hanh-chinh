@@ -145,6 +145,10 @@ async function soan(ky){
       let bao=0;
       if(ky.trang_thai==='cong_bo'){const a=dsCa(m0),b=dsCa(m),ids=new Set([...Object.keys(a),...Object.keys(b)]),dd=[...ids].filter(i=>[...(a[i]||[])].sort().join()!==[...(b[i]||[])].sort().join());
         if(dd.length){const r=await A().sb.rpc('bao_dieu_chinh_truc',{p_nguoi:dd,p_tu:ky.tu_ngay,p_den:ky.den_ngay});if(r.error)throw r.error;bao=dd.length}}
+      try{const kk=mm=>Object.entries(mm).filter(([,v])=>v),a0=Object.fromEntries(kk(m0)),a1=Object.fromEntries(kk(m));
+        const them=[],bo=[],doi=[];for(const [k,v] of Object.entries(a1)){if(!(k in a0))them.push([k,v]);else if(a0[k]!==v)doi.push([k,a0[k],v])}for(const [k,v] of Object.entries(a0))if(!(k in a1))bo.push([k,v]);
+        const ng=[...new Set(Object.keys(a1).map(k=>k.split('|')[0]))];
+        await A().sb.from('nhat_ky_hoc').insert({loai:'lich_truc',nguoi_luu:A().me.id,du_lieu:{tu:ky.tu_ngay,den:ky.den_ngay,trang_thai:ky.trang_thai,anh_chup:Object.entries(a1),them,bo,doi,ngay_con_canh_bao:ng.filter(n=>canhBao(m,n).length)}})}catch(_){}
       m0={...m};toast(bao?`Đã lưu, đã báo ${bao} người bị thay đổi`:'Đã lưu');return true}catch(e){$('#loi').textContent='Lỗi lưu: '+e.message;return false}};
     $('#luu').onclick=sv;
     if($('#cb'))$('#cb').onclick=async()=>{
