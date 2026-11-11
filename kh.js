@@ -36,6 +36,12 @@ async function trang1(file){
   await pg.render({canvasContext:cx,viewport:vp}).promise;
   return c.toDataURL('image/jpeg',.85).split(',')[1];
 }
+async function chuTrang1(file){ // PDF có lớp chữ (xuất từ Excel/Word): lấy chữ ngay, không cần OCR
+  await taiPdfJs();
+  const pdf=await window.pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,pg=await pdf.getPage(1),tc=await pg.getTextContent(),L={};
+  tc.items.forEach(it=>{const y=Math.round(it.transform[5]/3);(L[y]=L[y]||[]).push([it.transform[4],it.str])});
+  return Object.keys(L).map(Number).sort((a,b)=>b-a).map(y=>L[y].sort((a,b)=>a[0]-b[0]).map(t=>t[1]).join(' ')).join('\n');
+}
 async function nhap(){
   const {sb,$,esc,toast}=A();
   const i0=rows.findIndex(r=>r.stt==='II'&&r.cap===1),i1=rows.findIndex(r=>r.stt==='D');
@@ -85,9 +91,11 @@ async function nhap(){
     if(file.size>9e6){toast(file.name+' quá lớn (tối đa ~9MB)');continue}
     const x={name:file.name,st:'dang',so:0,cands:[]};F.push(x);dsF();
     try{const {b64,mime}=await docB64(file);
-      let b64_doc;
-      if(mime==='application/pdf'||/\.pdf$/i.test(file.name)){try{b64_doc=await trang1(file);x.msg='Đọc trang đầu…'}catch(e){console.warn('pdf.js',e)}}
-      const {data,error}=await sb.functions.invoke('kh-ghi',{body:{action:'doc',ten_file:file.name,mime,b64,b64_doc,mime_doc:b64_doc?'image/jpeg':undefined}});
+      let b64_doc,text_doc;
+      if(mime==='application/pdf'||/\.pdf$/i.test(file.name)){
+        try{const t=await chuTrang1(file);if(t.replace(/\s/g,'').length>120&&/\d{1,3}[.,]\d{3}/.test(t))text_doc=t}catch(e){console.warn('pdf text',e)}
+        if(!text_doc){try{b64_doc=await trang1(file)}catch(e){console.warn('pdf.js',e)}}}
+      const {data,error}=await sb.functions.invoke('kh-ghi',{body:{action:'doc',ten_file:file.name,mime,b64,b64_doc,text_doc,mime_doc:b64_doc?'image/jpeg':undefined}});
       let loi=error?(data&&data.loi)||error.message:data&&data.loi;
       if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
       if(loi)throw new Error(loi);
