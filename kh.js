@@ -46,12 +46,13 @@ async function nhap(){
   $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3><div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
   <div class="nh-t">${[...Array(12)].map((_,i)=>`<button data-m="${i+1}" class="${i+1===t0?'on':''}">Tháng ${i+1}</button>`).join('')}</div>
   <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div id="nl">${dsHtml()}</div>
-  <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" placeholder="Số tiền phiếu (đồng)"><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
+  <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" autocomplete="off" placeholder="Số tiền phiếu (đồng)"><div id="nsp" style="font-size:20px;font-weight:700;color:var(--pri2);min-height:26px;margin:0 0 6px"></div><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
   const bind=()=>document.querySelectorAll('.nh-r').forEach(e=>e.onclick=()=>{chon=+e.dataset.k;const r=rows.find(x=>x.id===chon);$('#nsel').innerHTML='Đã chọn: <b>'+esc((r.stt||'')+' '+r.hang_muc)+'</b>';$('#nl').innerHTML=dsHtml();bind();$('#ns').focus()});
   const ve3=()=>{$('#nl').innerHTML=dsHtml();bind()};bind();
   $('#nq').oninput=e=>{tk=e.target.value;ve3()};
   document.querySelectorAll('.nh-t button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nh-t button').forEach(x=>x.classList.remove('on'));b.classList.add('on');ve3()});
-  $('#ns').oninput=e=>{const d=e.target.value.replace(/\D/g,'');e.target.value=d?Number(d).toLocaleString('vi-VN'):''};
+  const fmtS=()=>{const el=$('#ns'),d=el.value.replace(/\D/g,'').replace(/^0+/,'');const t=d?d.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'';el.value=t;$('#nsp').textContent=t?t+' đồng':''};
+  ['input','keyup','change','paste'].forEach(ev=>$('#ns').addEventListener(ev,()=>setTimeout(fmtS,0)));
   $('#nv').onclick=()=>{document.getElementById('khst')?.remove();ve2()};
   $('#ng').onclick=async()=>{
     if(!chon)return toast('Chọn khoản chi');
