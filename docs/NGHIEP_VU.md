@@ -23,7 +23,7 @@
 **Lịch trực:** KHTH xếp, công bố; nhân viên thấy ca của mình, nhắc 17h chiều hôm trước và 6h30 sáng hôm trực; in đúng mẫu BV. Quy tắc: BS Sơn và BS Tô Văn Châu không trực chung; 2 bác sĩ cùng khoa không trực chung (trừ Khám bệnh tối đa 2); khoa Sản trực đôi (2 người/ngày); BS nghỉ phép/bệnh/hợp đồng/mang thai không trực (khong_truc); trực lãnh đạo chỉ Quốc, Tô Văn Châu, Danh, Nguyễn Đắc Lộc (3 BS lãnh đạo cũng là trực viện cột 1; Châu trực viện thì trực luôn siêu âm); trực viện/lãnh đạo/siêu âm chỉ gom bác sĩ; nhóm HSCC có nhóm trưởng (tên đầu) N1/N2/N3 và Sản N1–N3. Phân biệt trùng tên bằng năm sinh (Kim Yến 1990 = Yến (N) nhỏ; 1991/1984 như dữ liệu).
 **Đổi trực:** nhân viên bấm "Đổi trực" ở ca của mình → người kia đồng ý → trưởng khoa + ĐD trưởng khoa liên quan + BGĐ (≥1 người) duyệt → KHTH xác nhận → hệ thống tự đổi lịch và báo. Ai từ chối thì báo ngay.
 **Học từ thói quen:** mỗi lần lưu lịch trực và mỗi lần đổi trực ghi vào bảng `nhat_ky_hoc`. Sau vài tháng sẽ gợi ý lịch; chỉ áp dụng cho menu khác khi lịch trực ổn định.
-**Báo cáo tuần:** 10h sáng thứ 5 hằng tuần (scheduled task) tự lập file Word "BÁO CÁO CÔNG TÁC TUẦN" từ lịch công tác trong app (theo mẫu Drive thư mục 139jl_3We-_a-ynCjqjLZn5ntWSnY1a4K), gửi vanphong@caosudautieng.com.vn, tiêu đề "Bệnh viện đa khoa".
+**Báo cáo tuần (v43):** APP TỰ GỬI, không còn là scheduled task của Claude (trigger cũ trig_01LfHDUW… đã TẮT, đừng bật lại kẻo gửi trùng). Edge Function `bao-cao-tuan` chạy pg_cron 15:00 giờ VN thứ 5 (08:00 UTC; thử lại 15:30 nếu lỗi, tự bỏ qua nếu tuần đó đã gửi — bảng `bc_tuan_log`). Lấy `lich_cong_tac` (huy=false, rieng_tu=false) tuần thứ 2–6 này + tuần sau, rút 1 dòng/lịch bằng quy tắc (sự kiện → "Tham dự…", việc khác → "Thực hiện…", bỏ giờ/thành phần, gộp trùng), kế hoạch luôn kết thúc "- Duy trì công tác tiếp nhận cấp cứu, khám chữa bệnh.", tuần trống ghi Duy trì. Mẫu Word có ô {{...}} là file Drive "MAU BAO CAO CONG TAC TUAN.docx" (id trong apps-script/BaoCaoTuan.gs) → Apps Script (tchcbvdk) trả mẫu (`bc_mau`) và gửi thư (`bc_gui`: MailApp, bcc duylinhbl, lưu bản sao vào thư mục Drive 139jl…) tới vanphong@caosudautieng.com.vn, tiêu đề "Bệnh viện đa khoa". Thành công/lỗi đều báo push cho quản trị. Tắt: bi_mat `bc_tuan_tat`='1'; đổi người nhận: `bc_tuan_to` (phải nằm trong BC_NGUOI_NHAN_HOP_LE của Apps Script). Gọi tay (quản trị): body {dry:true} xem trước, {force:true} gửi lại. Lưu ý: lịch nhập SAU 15h thứ 5 sẽ không vào báo cáo tuần đó. Đã chạy thật 12/11 lúc 14:03 (3 việc, ok). Mã nguồn edge function chỉ nằm trên Supabase; BaoCaoTuan.gs nằm trong Apps Script, chưa có trong repo GitHub.
 **Đang chờ:** mẫu bảng công của TCKT (anh đang xin) → chấm công GPS (chỉ khi bấm, ngoài khu vực = không có mặt) + bảng công tháng (trưởng khoa duyệt → gửi TCKT); quy chế dùng GPS; Zalo/SMS dự phòng (chưa trả lời); tự gợi ý lịch trực; xác nhận "NHS Phương" (Sản), Bí thư chưa khớp; backup ảnh 6 tháng; xóa file mật khẩu ban đầu sau khi phát.
 
 ## 4. Lỗi đã xử lý – KHÔNG để lặp lại
@@ -39,7 +39,7 @@
 10. Tài khoản phải xác nhận trước khi giao việc cho người khác: kiểm tra phạm vi bằng RLS (đã có `viec_them`).
 
 ## Báo cáo kế hoạch – sử dụng chi phí (v29)
-- Nguồn: Google Sheet "Bảng thu chi - bệnh viện đa khoa" (chủ sở hữu Thảo, shared with Linh). Đã nạp tab "KH 2026" → bảng `kh_dong` (102 dòng; `thang` = BHYT/tháng, `thang_dv` = dịch vụ).
+- Nguồn: Google Sheet "Bảng thu chi - bệnh viện đa khoa" (chủ sở hữu Thảo, shared with Linh). Đã nạp tab "KH 2026" → bảng `kh_dong` (104 dòng, có số đến tháng 10/2026; `thang` = BHYT/tháng, `thang_dv` = dịch vụ).
 - Quyền xem: admin, BGĐ, TCHC (hàm `xem_tai_chinh()`); chỉ admin sửa. Menu: Tôi → "Kế hoạch – sử dụng chi phí".
 - Số trong sheet định dạng lẫn lộn (chấm/phẩy) → hàm `vn_num()`. Một số dòng tháng lệch vị trí (ghi chú trong cột ghi_chu).
 - Chưa nạp: KH 2026 2, Thanh toán, EMS, Quỹ phòng, Công ty thành viên, Hợp đồng, TT đối tác, DNTT, Chiến sỹ TĐ, Theo dõi TT tháng, DNTT cũ 2025. Chờ Linh hướng dẫn cách kết nối.
@@ -67,7 +67,7 @@
 - Sheet là nguồn gốc; `kh_dong` chỉ là bản sao. Hàm `kh-dong-bo` đọc lại Sheet (cron 15 phút 6h–20h + nút "Làm mới từ Sheet"), ghi `kh_bo_log`. Chỉ cập nhật dòng đã có dữ liệu tháng (không tạo số cho dòng cha/tổng).
 - `kh-ghi` chỉ tự thử lại khi `bi_mat.kh_script_v2='1'` (Apps Script đã có chống ghi trùng).
 
-**Vận hành:** bảng `loi_app` nhận lỗi JS từ app (admin xem); `sao-luu` xuất JSON 23 bảng vào bucket private `sao-luu` mỗi đêm 03:00 (giữ 30 bản; chưa gồm ảnh bucket `anh`); `tools/bump.sh` tăng phiên bản đồng bộ 3 nơi, `tools/kiemtra.sh` kiểm cú pháp + phiên bản; báo cáo tuần thứ 5 có BƯỚC 5 gửi mail báo lỗi cho chủ app khi thất bại.
+**Vận hành:** bảng `loi_app` nhận lỗi JS từ app (admin xem); `sao-luu` xuất JSON 23 bảng vào bucket private `sao-luu` mỗi đêm 03:00 (giữ 30 bản; chưa gồm ảnh bucket `anh`); `tools/bump.sh` tăng phiên bản đồng bộ 3 nơi, `tools/kiemtra.sh` kiểm cú pháp + phiên bản; báo cáo tuần: lỗi thì push cho quản trị (xem mục Báo cáo tuần).
 
 ## Kiểm thử tự động (v42)
 - **Trong DB** (`select * from kiem_thu()`): 23 bài – cấu trúc (RLS, quyền, search_path, FK, cron, sao lưu, đồng bộ Sheet) + phân quyền thật bằng cách đóng vai nhân viên thường / trưởng khoa / BGĐ / TCHC / người nhập TC / người xếp lịch (mọi thay đổi trong test đều hoàn lại). `kiem_thu_va_bao()` chạy 03:30 mỗi đêm, ghi `kiem_thu_log`, có lỗi thì push cho quản trị. **Sau mỗi migration phải chạy lại.**
@@ -81,3 +81,17 @@
 - Form giao việc: hiện "đã bật thông báo (n máy)" hoặc cảnh báo chưa bật (RPC `so_may_push`); sau khi giao cũng cảnh báo.
 - Tab Tôi (TCHC/BGĐ): danh sách "Ai chưa bật thông báo" (RPC `ds_chua_bat_push`).
 - Edge `gui-push` v2: thử lại 1 lần, ghi bảng `push_log` (ok / loi / het_han / khong_may); SW: thông báo việc giữ trên màn hình đến khi chạm (requireInteraction), rung.
+
+## Đề án chuyển đổi số BVĐK (11/2026)
+- Hai cuốn trong Drive nhóm 21.CNTT CHUYỂN ĐỔI SỐ: bản 2023 (Finish) và bản 2026 (file gốc "1011_"). Quy tắc: KHÔNG ghi đè, luôn tạo file mới cạnh file cũ.
+- Nhân sự: 2023 còn sếp Hưng; 2026 sếp đã về hưu, chỉ còn Nữ và Linh; 2026 bỏ Bình Dương, mốc tháng 11/2026; 2023 mốc tháng 9. Bản 2026 có ghi chú "cập nhật theo thực tế".
+- Đã làm: bìa cho cả 2 cuốn (xanh #1B6B3A + vàng đồng #B8892B, logo BV); bản 2026 cập nhật theo báo cáo + báo giá, thêm 4 phụ lục, chuẩn font Times New Roman 13. File mới nhất 2026: "1112_đề án cđs bvđk 2026 (chuẩn font TNR 13, có bìa, có phụ lục).docx" (id 1rm3raN-uzipMXCa8GP5fJmnRFesKs8bG); 2023 có bìa: id 11K_O9Xpo1qnyPxm08CUqY6944aCXYivS.
+- Số đã kiểm khớp báo giá: phần mềm 300.141.200; hạ tầng 2.021.379.000; ATTT 280.280.000; VAT 8% 202.456.734; dự phòng 132.449.459; tổng 2.983.895.370. Báo giá hiệu lực 30 ngày từ 21/10/2026 (~20/11/2026); từ 01/01/2027 VAT 10% (+≈50,6 triệu).
+- Còn tồn: Word phải Update Field để cập nhật mục lục; tên mục lục chưa đổi; bảng kế hoạch mới có hàng nhóm hẹp; bản 2023 chưa chuẩn font; Phần II.I còn số liệu Bình Dương 2023.
+
+## Báo cáo tháng (đang thiết kế, chưa chạy – 12/11/2026)
+- Gửi: Phòng Kế hoạch Đầu tư Cty + ông Hồng Chí Bình (Phó TGĐ), KHÔNG gửi VP công ty. Chưa có email hai nơi này.
+- Gồm 2 file (mẫu trong Drive thư mục "Báo cáo", id 1VhAksV8C_GfX6EHC6n5tr4OG1WAQQVkZ): (1) "Báo cáo công tác tháng N - BVĐK.docx" (số /BC-BVĐK, ký Giám đốc, nơi nhận Ô. Bình + Phòng KHĐT; mục công tác tháng N + kế hoạch tháng N+1) lấy từ lịch công tác trong app; (2) "1. Tổng hợp - Bao cao thuc hien ke hoach den thang N nam 2026 (QLĐT&XD).docx" (chuỗi tháng 6–10, mục 2.4.10 là Bệnh viện) lấy từ "kế hoạch .xlsx" (id 1x0fyIAkP7sa3rnyVihKfo6nrxkU7uWKB) = bản chép `kh_dong`.
+- Ánh xạ: Điện=7.1, Nước=7.2, Thuốc/VTYT/hóa chất=6.1+6.2+6.3, Khám bệnh=dòng A.1 (thang+thang_dv), Điều trị=A.2.
+- Lệch cần xác nhận: tiêu đề cột file kế hoạch ghi "đến tháng 9" nhưng số khám 58.993/điều trị 4.030 là đến hết tháng 10; thuốc file 14.247.222.275 vs app 14.077.009.143 (lệch ≈170 triệu).
+- Chờ Linh chốt: email 2 nơi nhận, ngày/giờ chạy mỗi tháng (đề xuất ngày 2, 9h), tháng đầu tạo nháp để duyệt hay gửi thẳng. Nên làm kiểu app tự gửi như báo cáo tuần (không dùng scheduled task của Claude).
