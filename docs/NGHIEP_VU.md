@@ -53,3 +53,18 @@
 - (v39) HỒ SƠ THỰC TẾ = file scan nhiều trang (vd 13 trang, HP Scan) gồm: Giấy đề nghị thanh toán (Mẫu 05-TT) + Tờ trình/đề nghị mua sắm + Hóa đơn + báo giá/biên bản... Mỗi tờ có "Tổng cộng" KHÁC nhau (vd tờ trình 8.610.000 chưa trừ giảm giá; DNTT và hóa đơn 8.540.780). QUY TẮC: số tiền cộng vào ô tháng = TỔNG CỘNG TRÊN GIẤY ĐỀ NGHỊ THANH TOÁN (đối chiếu số bằng chữ ngay dưới). Không có DNTT mới dùng số bằng chữ xuất hiện nhiều nhất; cuối cùng mới dùng dòng "Tổng cộng". Bộ đọc chữ dung sai lỗi OCR (so khớp mờ 1 ký tự) và bỏ qua số điện thoại/số tài khoản. Giữ nguyên bài học: không bao giờ tin "max các số".
 - (v40) CHỈ ĐỌC TRANG ĐẦU của hồ sơ PDF (trang 1 = Giấy đề nghị thanh toán): app dựng ảnh trang 1 bằng pdf.js (cdnjs 3.11.174) trên máy người dùng, gửi ảnh đó đi đọc chữ; file PDF đầy đủ vẫn được lưu vào thư mục khoản chi. Lý do: file scan 13 trang (~3,6MB) đọc OCR cả file quá chậm/dễ lỗi.
 - (v41) PDF có lớp chữ (xuất từ Excel/Word): app lấy chữ trang 1 ngay trên máy (pdf.js getTextContent) → không cần OCR, tức thì. PDF scan/ảnh: gửi ảnh trang 1 cho Google OCR (≈30-60 giây). Đã thử OCR thật: Google đọc đúng 11.580.000 khớp số bằng chữ.
+
+## v42 – Rà soát hệ thống & gia cố (12/11/2026)
+**Bảo mật DB (đã vá, đã kiểm chứng):**
+- View `danh_ba` chỉ còn SELECT (trước đó nhân viên thường sửa được tên/chức vụ người khác qua view). Mọi bảng: anon không ghi, authenticated không TRUNCATE.
+- `tg_push_*` không ai gọi trực tiếp được; `vn_num/vn_arr` cố định search_path.
+- Policy FOR ALL tách thành insert/update/delete (SELECT chỉ 1 policy); RLS dùng `(select auth.uid())`; 15 FK có index.
+- Quy tắc: tạo VIEW mới phải `security_invoker` hoặc chỉ GRANT SELECT; không bao giờ để view DEFINER cập nhật được.
+- Việc còn lại phải làm tay (Dashboard Supabase): bật *Leaked password protection*.
+
+**Tài chính – độ tin cậy:**
+- Apps Script v2: khóa `LockService` (2 người ghi cùng lúc không mất số), **mã phiếu `rq`** chống ghi trùng (bấm lại/mất mạng không cộng đôi), tab **"Nhật ký app"** trong Sheet ghi mọi lần cộng/hoàn tác (chỉ thêm dòng), **hoàn tác** phiếu (chỉ khi ô tháng chưa bị sửa tay sau đó; hồ sơ chuyển sang `_da_huy`, không xóa), **mã dòng cố định** (developer metadata `kh_id` gắn vào dòng Sheet → chèn/đổi tên dòng không ghi nhầm), kiểm lại số sau khi ghi, tự dọn `_tam` > 2 ngày (chạy `caiTrigger()` một lần).
+- Sheet là nguồn gốc; `kh_dong` chỉ là bản sao. Hàm `kh-dong-bo` đọc lại Sheet (cron 15 phút 6h–20h + nút "Làm mới từ Sheet"), ghi `kh_bo_log`. Chỉ cập nhật dòng đã có dữ liệu tháng (không tạo số cho dòng cha/tổng).
+- `kh-ghi` chỉ tự thử lại khi `bi_mat.kh_script_v2='1'` (Apps Script đã có chống ghi trùng).
+
+**Vận hành:** bảng `loi_app` nhận lỗi JS từ app (admin xem); `sao-luu` xuất JSON 23 bảng vào bucket private `sao-luu` mỗi đêm 03:00 (giữ 30 bản; chưa gồm ảnh bucket `anh`); `tools/bump.sh` tăng phiên bản đồng bộ 3 nơi, `tools/kiemtra.sh` kiểm cú pháp + phiên bản; báo cáo tuần thứ 5 có BƯỚC 5 gửi mail báo lỗi cho chủ app khi thất bại.

@@ -1,11 +1,12 @@
 (()=>{
 const A=()=>window.BVAPP;
+const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,12);
 const n=x=>x==null?'':Math.round(x).toLocaleString('vi-VN');
 const ty=(a,b)=>b?Math.round(a/b*100):null;
-let rows=[],ds=false,mo=null,NT=false;
+let rows=[],ds=false,mo=null,NT=false,vua=null;
 async function ve(){
   const {sb,$,esc}=A();$('#nd').innerHTML='Đang tải…';
-  const {data,error}=await sb.from('kh_dong').select('*').order('thu_tu');
+  const {data,error}=await sb.from('kh_dong').select('id,thu_tu,stt,hang_muc,dvt,cap,kh_nam,sd_nam,thang,thang_dv,ghi_chu,cap_nhat').order('thu_tu');
   if(error)return $('#nd').innerHTML='<p class="mut">Lỗi: '+esc(error.message)+'</p>';
   rows=data;NT=!!(await sb.rpc('nhap_tai_chinh')).data;ve2();
 }
@@ -65,7 +66,9 @@ async function nhap(){
     ds.filter(r=>!q||f(r.hang_muc+' '+(r.stt||'')).includes(q)).forEach(r=>{const c=cha(r);if(c!==g){g=c;h+=`<div class="nh-g">${esc(c)}</div>`}
       const v=(r.thang||[])[m-1];h+=`<div class="nh-r ${chon===r.id?'on':''}" data-k="${r.id}"><span><b>${esc(r.stt||'')}</b>${esc(r.hang_muc)}</span><span class="m">KH ${n(r.kh_nam)}<br>T${m}: <i>${v?n(v):'—'}</i></span></div>`});
     return h||'<p class="mut">Không thấy khoản nào</p>'};
-  $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3><div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
+  let rq=uid();
+  const bn=vua&&Date.now()-vua.t<15*60000?`<div class="card" id="nhok" style="background:#eef8f1;border:1px solid #9fd0ad"><b>✓ Vừa ghi:</b> ${esc(vua.txt)}<br><button id="nhoan" style="width:auto;margin-top:6px;padding:4px 12px;font-size:13px;background:#fff!important;color:#b03a2e!important;border:1px solid #d9a9a3!important;box-shadow:none!important">↩ Hoàn tác phiếu này</button></div>`:'';
+  $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3>${bn}<div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
   <div class="nh-t">${[...Array(12)].map((_,i)=>`<button data-m="${i+1}" class="${i+1===t0?'on':''}">Tháng ${i+1}</button>`).join('')}</div>
   <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div class="nh-dz" id="dz">📎 <b>Kéo thả hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF, ảnh, Word, Excel · app đọc số tiền ở TRANG ĐẦU, bồ kiểm lại rồi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
   <div id="nl">${dsHtml()}</div>
@@ -109,6 +112,16 @@ async function nhap(){
   ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on')}));
   dz.addEventListener('drop',e=>themF([...e.dataTransfer.files]));
   $('#nv').onclick=()=>{document.getElementById('khst')?.remove();ve2()};
+  if($('#nhoan'))$('#nhoan').onclick=async()=>{
+    if(!confirm('Hoàn tác phiếu: '+vua.txt+'?\nSố tiền sẽ trừ khỏi ô tháng, hồ sơ chuyển sang thư mục _da_huy trên Drive.'))return;
+    const b=$('#nhoan');b.disabled=true;b.textContent='Đang hoàn tác…';
+    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{action:'hoan',rq:vua.rq}});
+    let loi=error?(data&&data.loi)||error.message:data&&data.loi;
+    if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
+    b.disabled=false;b.textContent='↩ Hoàn tác phiếu này';
+    if(loi)return toast(loi);
+    vua=null;toast('Đã hoàn tác');await ve();nhap();
+  };
   $('#ng').onclick=async()=>{
     if(!chon)return toast('Chọn khoản chi');
     if(F.some(x=>x.st==='dang'))return toast('Đợi đọc xong hồ sơ');
@@ -120,15 +133,19 @@ async function nhap(){
     const r=rows.find(x=>x.id===chon),th=+document.querySelector('.nh-t .on').dataset.m,tong=items.reduce((a,x)=>a+x.so,0);
     if(!confirm('Cộng '+items.map(x=>n(x.so)).join(' + ')+' = '+n(tong)+' đ\nvào '+(r.stt||'')+' '+r.hang_muc+'\nTháng '+th+(F.length?'\nLưu '+F.length+' hồ sơ vào thư mục tương ứng trên Drive':'')+'?'))return;
     const b=$('#ng');b.disabled=true;b.textContent='Đang ghi…';
-    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{id:r.id,thang:th,items}});
+    const {data,error}=await sb.functions.invoke('kh-ghi',{body:{id:r.id,thang:th,items,rq}});
     b.disabled=false;b.textContent='Cộng vào tháng';
     let loi=error?(data&&data.loi)||error.message:data&&data.loi;
     if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
-    if(loi)return toast(loi);
-    toast('Đã cộng vào Sheet'+(data.links&&data.links.length?' · đã lưu '+data.links.length+' hồ sơ vào '+data.thu_muc:''));await ve();nhap();
+    if(loi){if(/Mã phiếu/.test(loi))rq=uid();return toast(loi+(error&&!(data&&data.loi)&&!/Mã phiếu/.test(loi)?' — nếu mất mạng, bấm lại: hệ thống không cộng đôi':''))}
+    vua={txt:items.map(x=>n(x.so)).join(' + ')+' = '+n(tong)+' đ → '+(r.stt||'')+' '+r.hang_muc+' (T'+th+')',rq:data.rq||rq,t:Date.now()};
+    toast(data.trung?'Phiếu này đã được ghi trước đó, không cộng lại':'Đã cộng vào Sheet'+(data.links&&data.links.length?' · đã lưu '+data.links.length+' hồ sơ vào '+data.thu_muc:''));
+    if(data.kiem===false)alert('Đã ghi, nhưng số trong ô tháng khác dự kiến (có thể ai đó đang sửa tay Sheet). Mở Sheet kiểm lại ô này.');
+    await ve();nhap();
   };
 }
 const f=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
+const capNhat=()=>{const t=rows.reduce((m,r)=>r.cap_nhat&&r.cap_nhat>m?r.cap_nhat:m,'');return t?new Date(t).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'—'};
 function ve2(){
   const {$,esc}=A();
   const L=rows.filter(r=>r.cap<=(ds?9:2)||false);
@@ -142,9 +159,13 @@ function ve2(){
     ${r.ghi_chu?`<div class="mut" style="font-size:12px">${esc(r.ghi_chu)}</div>`:''}</div>`};
   $('#nd').innerHTML=`<h3>Kế hoạch – sử dụng 2026</h3><div class="mut">Nguồn: Bảng thu chi (tab KH 2026). Số đã dùng đến tháng gần nhất có dữ liệu.</div>
   <div class="kpi" style="display:flex;gap:8px;margin:8px 0">${[thu,chi].filter(Boolean).map(r=>`<div class="card" style="flex:1"><div class="mut">${esc(r.hang_muc)}</div><b>${n(r.kh_nam)}</b></div>`).join('')}</div>
-  ${bieuDo()}${NT?'<button class="full" id="nhn">✍️ Nhập số chi tháng</button>':''}<label><input type="checkbox" id="khct" ${ds?'checked':''}> Hiện chi tiết</label>${L.map(hien).join('')}`;
+  ${bieuDo()}${NT?'<button class="full" id="nhn">✍️ Nhập số chi tháng</button>':''}<div class="mut" style="font-size:12px;margin:4px 0">Số liệu cập nhật lúc ${esc(capNhat())} · <a href="#" id="khlm">🔄 Làm mới từ Sheet</a></div><label><input type="checkbox" id="khct" ${ds?'checked':''}> Hiện chi tiết</label>${L.map(hien).join('')}`;
   document.querySelectorAll('[data-k]').forEach(e=>e.onclick=()=>{const r=rows.find(x=>x.id==e.dataset.k);if(r.thang){mo=r.id;ve2();scrollTo(0,0)}});
   if($('#nhn'))$('#nhn').onclick=nhap;
+  $('#khlm').onclick=async e=>{e.preventDefault();const a=e.target;a.textContent='Đang đọc Sheet…';
+    const {data,error}=await A().sb.functions.invoke('kh-dong-bo',{body:{}});
+    if(error||!data||data.loi){A().toast((data&&data.loi)||'Chưa làm mới được, thử lại sau');a.textContent='🔄 Làm mới từ Sheet';return}
+    await ve();A().toast(data.cap_nhat?'Đã cập nhật '+data.cap_nhat+' dòng từ Sheet':'Số liệu đã khớp Sheet')};
   $('#khct').onchange=e=>{ds=e.target.checked;ve2()};
 }
 window.KH={ve};
