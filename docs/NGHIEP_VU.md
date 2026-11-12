@@ -74,3 +74,10 @@
 - **Phía app** (`tests/chay_tat_ca.sh`): cú pháp + phiên bản đồng bộ, đọc số tiền hồ sơ, ghi/hoàn tác/chống trùng Sheet (Sheet giả lập), giao diện nhập chi phí (playwright). GitHub Actions tự chạy mỗi lần push (`.github/workflows/kiem-thu.yml`).
 - Quy tắc: thêm tính năng/ sửa lỗi mới → thêm 1 bài kiểm thử tương ứng.
 - Chính sách xem thông báo (`tb_xem`): chỉ người phát, BGĐ/TCHC và người nhận (do người phát chọn toàn viện hoặc theo khoa) thấy; kiểm thử D1/D2 bảo vệ quy tắc này.
+
+## v43 – Thông báo đẩy đáng tin cậy (12/11/2026)
+- Nguyên nhân mất thông báo: đăng ký push hết hạn bị máy chủ xóa (404/410) nhưng app vẫn báo "đang bật" nên không đăng ký lại; đa số nhân viên chưa bật; lỗi gửi không được ghi.
+- App: `dongBoPush()` tự đăng ký lại khi đăng nhập/mở lại app (6 giờ/lần) và khi SW báo `pushsubscriptionchange`.
+- Form giao việc: hiện "đã bật thông báo (n máy)" hoặc cảnh báo chưa bật (RPC `so_may_push`); sau khi giao cũng cảnh báo.
+- Tab Tôi (TCHC/BGĐ): danh sách "Ai chưa bật thông báo" (RPC `ds_chua_bat_push`).
+- Edge `gui-push` v2: thử lại 1 lần, ghi bảng `push_log` (ok / loi / het_han / khong_may); SW: thông báo việc giữ trên màn hình đến khi chạm (requireInteraction), rung.

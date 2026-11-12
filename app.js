@@ -64,7 +64,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v42</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v43</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -108,14 +108,20 @@ async function formViec(){
   <label>Người nhận ${me.vai_tro==='nhan_vien'?'':'(chỉ hiện người trong khoa/phòng bạn phụ trách)'}</label>
   <input id="nq" placeholder="Gõ tên để lọc…" autocomplete="off"><select id="nn"></select>
   <label>Hạn</label><input id="han" type="datetime-local"><label>Mức độ</label><select id="ut"><option value="1">Thường</option><option value="2">Gấp</option><option value="0">Thấp</option></select>
+  <div id="pcb" class="mut" style="margin-top:6px"></div>
   <button class="full" id="g">📤 Giao việc</button><p class="mut" id="loi"></p></div>`;
+  const pcb=async()=>{const id=$('#nn').value,el=$('#pcb');if(!el)return;if(!id||id===me.id){el.textContent='';return}
+    const {data}=await sb.rpc('so_may_push',{p_nguoi:id});if($('#nn').value!==id)return;
+    el.innerHTML=data>0?'🔔 Người này đã bật thông báo ('+data+' máy)':'<span style="color:#b45309">⚠ Người này chưa bật thông báo trên máy, nên sẽ không có tin báo ngay. Hãy nhắc họ mở app → tab "Tôi" → bật thông báo.</span>'};
   const dien=q=>{const x=fx(q);const l=ds.filter(u=>!x||fx(u.ho_ten+' '+kt(u)).includes(x));$('#nn').innerHTML=l.map(u=>`<option value="${u.id}" ${u.id===me.id?'selected':''}>${esc(u.ho_ten)}${u.id===me.id?' (tôi)':''}${kt(u)?' · '+esc(kt(u)):''}</option>`).join('')||'<option value="">Không có ai khớp</option>';if(x&&l.length)$('#nn').value=l[0].id};
-  dien('');$('#nq').oninput=()=>dien($('#nq').value);
+  dien('');$('#nq').oninput=()=>{dien($('#nq').value);pcb()};$('#nn').onchange=pcb;pcb();
   $('#g').onclick=async()=>{
     if(!$('#tt').value.trim())return $('#loi').textContent='Nhập tên việc';if(!$('#nn').value)return $('#loi').textContent='Chọn người nhận';
     const {error}=await sb.from('viec').insert({tieu_de:$('#tt').value.trim(),mo_ta:$('#ms').value||null,nguoi_giao:me.id,nguoi_nhan:$('#nn').value,han:$('#han').value?new Date($('#han').value).toISOString():null,uu_tien:+$('#ut').value});
     if(error)return $('#loi').textContent='Không giao được: '+error.message;
-    toast('Đã giao việc');tab='toi';ve();
+    const nn=$('#nn').value;let canh='';
+    if(nn!==me.id){const {data:sm}=await sb.rpc('so_may_push',{p_nguoi:nn});if(!sm)canh=' Lưu ý: người nhận chưa bật thông báo trên máy, hãy nhắc họ.'}
+    toast('Đã giao việc.'+canh);tab='toi';ve();
   };
 }
 
@@ -216,6 +222,21 @@ async function batPush(){
   const {error}=await sb.rpc('dang_ky_push',{p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth,p_ua:navigator.userAgent});
   if(error)throw error;
 }
+// tự đăng ký lại: máy đã cho phép thông báo nhưng đăng ký bị mất/hết hạn ở máy chủ -> ghi lại, không cần bấm gì
+async function dongBoPush(ep){
+  try{
+    if(!pushHoTro()||Notification.permission!=='granted'||!me)return;
+    const k='push_db_'+me.id,gan=+(localStorage.getItem(k)||0);
+    if(!ep&&Date.now()-gan<6*3600e3)return;
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(BV.VAPID)});
+    const j=sub.toJSON();
+    const {error}=await sb.rpc('dang_ky_push',{p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth,p_ua:navigator.userAgent});
+    if(!error)try{localStorage.setItem(k,String(Date.now()))}catch(_){}
+  }catch(_){}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)dongBoPush()});
 async function tatPush(){const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub){await sb.rpc('huy_dang_ky_push',{p_endpoint:sub.endpoint});await sub.unsubscribe()}}
 async function theBatPush(){
   const st=await pushTrangThai();
@@ -232,17 +253,21 @@ function diDen(u){
     else if(q.get('ct')){tab='ct';ve()}
   }catch(_){}
 }
-if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.di&&me)diDen(e.data.di)});
+if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.dongbo&&me)dongBoPush(true);if(e.data&&e.data.di&&me)diDen(e.data.di)});
 let TC=false;
 async function taiKhoan(){
   TC=!!(await sb.rpc('xem_tai_chinh')).data;
   const st=await pushTrangThai();
   $('#nd').innerHTML=`<div class="card"><h3>${esc(me.ho_ten)}</h3><div class="mut">${esc(me.chuc_vu||'')}<br>${esc(me.so_dien_thoai)}</div></div>
   <div class="card"><h3>Thông báo trên máy này</h3><div class="mut">${{bat:'Đang bật',tat:'Chưa bật',chan:'Đang bị chặn',ios:'Cần thêm app vào Màn hình chính',khong:'Máy không hỗ trợ'}[st]}</div>${st==='tat'?'<button class="full" id="bp">🔔 Bật thông báo</button>':st==='bat'?'<button class="sec full" id="tp">🔕 Tắt thông báo trên máy này</button>':''}</div>
+  ${(me.vai_tro==='tchc'||me.vai_tro==='bgd'||me.la_quan_tri)?'<div class="card" id="cpb"><h3>Ai chưa bật thông báo</h3><div class="mut">Đang tải…</div></div>':''}
   ${TC?'<button class="full" id="kh">📊 Kế hoạch – sử dụng chi phí</button>':''}
   <button class="sec full" id="ra">🚪 Đăng xuất</button>`;
   if($('#bp'))$('#bp').onclick=async()=>{try{await batPush();toast('Đã bật thông báo');taiKhoan()}catch(e){toast(e.message||'Không bật được')}};
   if($('#tp'))$('#tp').onclick=async()=>{await tatPush();toast('Đã tắt');taiKhoan()};
+  if($('#cpb'))sb.rpc('ds_chua_bat_push').then(({data,error})=>{const el=$('#cpb');if(!el)return;if(error)return el.innerHTML='<h3>Ai chưa bật thông báo</h3><div class="mut">Không xem được</div>';
+    const dn=(data||[]).filter(x=>x.da_dang_nhap),ch=(data||[]).filter(x=>!x.da_dang_nhap);
+    el.innerHTML='<h3>Ai chưa bật thông báo</h3><div class="mut">'+(dn.length?'<b>Đã đăng nhập nhưng chưa bật ('+dn.length+'):</b><br>'+dn.map(x=>esc(x.ho_ten)+(x.khoa?' · '+esc(x.khoa):'')).join('<br>')+'<br><br>':'')+'<b>Chưa đăng nhập lần nào:</b> '+ch.length+' người</div>'});
   if($('#kh'))$('#kh').onclick=()=>window.KH.ve();
   $('#ra').onclick=async()=>{await sb.auth.signOut();me=null;manHinhDangNhap()};
 }
@@ -252,7 +277,7 @@ async function khoiDong(){
   if(!session)return manHinhDangNhap();
   const {data,error}=await sb.from('nguoi_dung').select('*').eq('auth_id',session.user.id).single();
   if(error||!data){await sb.auth.signOut();return manHinhDangNhap()}
-  me=data;await napDanhBa();PHAT=!!(await sb.rpc('duoc_phat')).data;me.phai_doi_mat_khau?manHinhDoiMK():khung();
+  me=data;await napDanhBa();PHAT=!!(await sb.rpc('duoc_phat')).data;me.phai_doi_mat_khau?manHinhDoiMK():khung();dongBoPush(true);
 }
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 khoiDong().then(()=>{if(me&&location.search){const u=location.search;history.replaceState(null,'',location.pathname);diDen(u)}});
