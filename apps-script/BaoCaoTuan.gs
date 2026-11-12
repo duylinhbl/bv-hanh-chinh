@@ -1,11 +1,11 @@
-// Thêm vào Apps Script hiện có (cùng dự án với CauNoi_BangThuChi.gs, tài khoản tchcbvdk@gmail.com), rồi Triển khai > Quản lý bản triển khai > Sửa > Phiên bản mới.
+// Thêm vào Apps Script hiện có (cùng dự án với CauNoi_BangThuChi.gs, tài khoản tchcbvdkcsdt@gmail.com), rồi Triển khai > Quản lý bản triển khai > Sửa > Phiên bản mới.
 // 1) Trong doPost(), ngay sau dòng kiểm tra token, thêm 2 dòng:
 //      if (b.action === 'bc_mau') return out(bcMau());
 //      if (b.action === 'bc_gui') return out(bcGui(b));
-// 2) Chia sẻ file "MAU BAO CAO CONG TAC TUAN.docx" (và thư mục báo cáo, quyền Chỉnh sửa) cho tchcbvdk@gmail.com.
+// 2) Chia sẻ file "MAU BAO CAO CONG TAC TUAN.docx" (và thư mục báo cáo, quyền Chỉnh sửa) cho tchcbvdkcsdt@gmail.com.
 // 3) Lần đầu chạy thử hàm bcCapQuyen() trong trình soạn thảo để Google xin quyền Gmail (MailApp) + Drive.
 const BC_MAU_ID = '1nI4i3s6HQ0EcCILjezM5hYsz0t-PMPpI';      // MAU BAO CAO CONG TAC TUAN.docx (có các ô {{...}})
-const BC_THU_MUC = '139jl_3We-_a-ynCjqjLZn5ntWSnY1a4K';      // nơi lưu các báo cáo đã gửi
+const BC_THU_MUC = '1VhAksV8C_GfX6EHC6n5tr4OG1WAQQVkZ';      // nơi lưu báo cáo đã gửi: 18.BÁO CÁO CHUYÊN ĐỀ - ĐỊNH KỲ / 2026 / TCHC / Báo cáo
 const BC_NGUOI_NHAN_HOP_LE = ['vanphong@caosudautieng.com.vn', 'duylinhbl@gmail.com']; // chỉ gửi tới các địa chỉ này
 
 function bcMau() {
