@@ -14,6 +14,8 @@ const fs = require('fs'), path = require('path');
   const t3 = L.tinhTuan(new Date('2026-12-31T08:00:00Z'));
   kiem(t3.tb_tu === '2026-12-28' && t3.kh_tu === '2027-01-04' && t3.kh_den === '2027-01-08', 'qua năm mới');
   kiem(L.tenFile('2026-11-09', '2026-11-13') === 'BAO CAO CONG TAC TUAN 09 thang 11 - 13 tháng 11 nam 2026.docx', 'tên file đúng mẫu');
+  kiem(L.tieuDeMail() === 'Bệnh viện đa khoa' && !L.noiDungMail('2026-11-09', '2026-11-16').includes('đính chính'), 'thư thường');
+  kiem(L.tieuDeMail(true).includes('đính chính') && L.noiDungMail('2026-11-09', '2026-11-16', true).includes('đính chính'), 'thư đính chính');
   // Rút gọn
   kiem(L.motDong('Tập huấn Online Bệnh án điện tử') === 'Tham dự Tập huấn Online Bệnh án điện tử.', 'sự kiện -> Tham dự');
   kiem(L.motDong('Tiêm vaccine toàn viện') === 'Thực hiện tiêm vaccine toàn viện.', 'việc -> Thực hiện');

@@ -56,9 +56,10 @@ export const dongKeHoach = (rows: Lich[]) => [...dongTuan(rows), DONG_DUY_TRI];
 export const tenFile = (tu: string, den: string) =>
   `BAO CAO CONG TAC TUAN ${tu.slice(8, 10)} thang ${tu.slice(5, 7)} - ${den.slice(8, 10)} tháng ${den.slice(5, 7)} nam ${den.slice(0, 4)}.docx`;
 
-export const tieuDeMail = 'Bệnh viện đa khoa';
-export const noiDungMail = (tuTB: string, tuKH: string) =>
-  `Bệnh viện đa khoa kính gửi VPCTY báo cáo tuần ${dmy(tuTB)} và phương hướng tuần ${dmy(tuKH)}\n\nTrân trọng,`;
+export const tieuDeMail = (dinhChinh = false) => dinhChinh ? 'Bệnh viện đa khoa (đính chính)' : 'Bệnh viện đa khoa';
+export const noiDungMail = (tuTB: string, tuKH: string, dinhChinh = false) =>
+  `Bệnh viện đa khoa kính gửi VPCTY báo cáo tuần ${dmy(tuTB)} và phương hướng tuần ${dmy(tuKH)}` +
+  (dinhChinh ? ' (bản đính chính, thay thế bản đã gửi trước đó do có cập nhật bổ sung lịch công tác)' : '') + '\n\nTrân trọng,';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 

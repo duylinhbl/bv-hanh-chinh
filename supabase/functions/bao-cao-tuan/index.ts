@@ -78,8 +78,9 @@ Deno.serve(async (req) => {
     if (dry) return out({ ok: true, dry: true, tuan: t, cong_viec: cv, ke_hoach: kq, ten_file: ten, kich_thuoc: docx.length });
 
     buoc = 'gửi thư cho Văn phòng Công ty';
+    const dc = cfg.bc_tuan_dinh_chinh === t.tb_tu; // bi_mat.bc_tuan_dinh_chinh = ngày thứ 2 của tuần cần gửi bản đính chính
     const to = cfg.bc_tuan_to || 'vanphong@caosudautieng.com.vn';
-    const r = await goi({ action: 'bc_gui', to, bcc: cfg.bc_tuan_bcc || 'duylinhbl@gmail.com', reply_to: 'duylinhbl@gmail.com', subject: tieuDeMail, body: noiDungMail(t.tb_tu, t.kh_tu), filename: ten, b64: b64e(docx), mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const r = await goi({ action: 'bc_gui', to, bcc: cfg.bc_tuan_bcc || 'duylinhbl@gmail.com', reply_to: 'duylinhbl@gmail.com', subject: tieuDeMail(dc), body: noiDungMail(t.tb_tu, t.kh_tu, dc), filename: ten, b64: b64e(docx), mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     if (!r.ok) throw new Error(r.loi || 'Apps Script không gửi được thư');
     await ghiLog(true, cv.length + kq.length - 1);
     const gio = ngayVN(new Date()).toISOString().slice(11, 16);
