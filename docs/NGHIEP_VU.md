@@ -68,3 +68,9 @@
 - `kh-ghi` chỉ tự thử lại khi `bi_mat.kh_script_v2='1'` (Apps Script đã có chống ghi trùng).
 
 **Vận hành:** bảng `loi_app` nhận lỗi JS từ app (admin xem); `sao-luu` xuất JSON 23 bảng vào bucket private `sao-luu` mỗi đêm 03:00 (giữ 30 bản; chưa gồm ảnh bucket `anh`); `tools/bump.sh` tăng phiên bản đồng bộ 3 nơi, `tools/kiemtra.sh` kiểm cú pháp + phiên bản; báo cáo tuần thứ 5 có BƯỚC 5 gửi mail báo lỗi cho chủ app khi thất bại.
+
+## Kiểm thử tự động (v42)
+- **Trong DB** (`select * from kiem_thu()`): 23 bài – cấu trúc (RLS, quyền, search_path, FK, cron, sao lưu, đồng bộ Sheet) + phân quyền thật bằng cách đóng vai nhân viên thường / trưởng khoa / BGĐ / TCHC / người nhập TC / người xếp lịch (mọi thay đổi trong test đều hoàn lại). `kiem_thu_va_bao()` chạy 03:30 mỗi đêm, ghi `kiem_thu_log`, có lỗi thì push cho quản trị. **Sau mỗi migration phải chạy lại.**
+- **Phía app** (`tests/chay_tat_ca.sh`): cú pháp + phiên bản đồng bộ, đọc số tiền hồ sơ, ghi/hoàn tác/chống trùng Sheet (Sheet giả lập), giao diện nhập chi phí (playwright). GitHub Actions tự chạy mỗi lần push (`.github/workflows/kiem-thu.yml`).
+- Quy tắc: thêm tính năng/ sửa lỗi mới → thêm 1 bài kiểm thử tương ứng.
+- Chính sách xem thông báo (`tb_xem`): chỉ người phát, BGĐ/TCHC và người nhận (do người phát chọn toàn viện hoặc theo khoa) thấy; kiểm thử D1/D2 bảo vệ quy tắc này.
