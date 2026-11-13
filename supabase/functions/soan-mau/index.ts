@@ -22,6 +22,7 @@ Quy tắc:
 - Văn bản thuần, không markdown (không **, #). Số tiền ghi cả số và bằng chữ.
 - Số liệu, tên người, số văn bản căn cứ lấy đúng từ yêu cầu và tệp đính kèm. Điều chưa biết thì để [ ] — tuyệt đối không bịa số, tên, ngày.
 - Chỉ dùng căn cứ pháp lý có trong mẫu tham khảo hoặc người dùng cung cấp; không tự thêm điều luật.
+- BẢNG: mỗi hàng một dòng riêng, tối đa 6 cột, ô ngắn gọn. Tuyệt đối không dán nguyên dữ liệu Excel vào một dòng. Dữ liệu dài (trên 15 dòng) thì chỉ nêu tổng hợp/nhóm chính trong văn bản và ghi "chi tiết theo Phụ lục kèm theo".
 - Nội dung chính (Điều 1 / phần đề nghị) phải nói ĐÚNG đối tượng của việc được giao và ý của người soạn (VD: phê duyệt định mức thì viết định mức, không đổi thành kế hoạch hay việc khác). Chỉ dùng căn cứ liên quan trực tiếp, không chép căn cứ của việc khác. Theo cấu trúc chuẩn trong mẫu tham khảo.
 Trả về JSON: {"ve_viec": "trích yếu ngắn, viết thường, không có chữ 'Về việc', không dấu chấm cuối", "noi_dung": "thân văn bản"}.`;
 
@@ -70,7 +71,9 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
     const s = ln.trim(); if (!s) continue;
     if (s.includes(' | ') || (s.startsWith('|') && s.endsWith('|'))) {
       if (/^[|\s:-]+$/.test(s)) continue;
-      tb.push(s.replace(/^\||\|$/g, '').split('|').map((c) => c.trim())); continue;
+      const cells = s.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+      if (cells.length >= 2 && cells.length <= 8 && cells.every((c) => c.length <= 160)) { if (tb.length < 80) tb.push(cells); continue; }
+      flush(); ps.push(mk('thuong', cells.join('; ').slice(0, 1500))); continue; // dòng '|' bất thường: coi là văn bản, không dựng bảng
     }
     flush();
     if (/^Điều\s*\d+/.test(s)) ps.push(mk('dieu', s));
