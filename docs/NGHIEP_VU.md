@@ -126,3 +126,7 @@
 - Nhắc việc (`nhac_viec`, pg_cron 10 phút): mọi việc chưa đóng có hạn — trước 3 ngày, 1 ngày, 1 giờ, lúc quá hạn, rồi 8h sáng mỗi ngày tới khi đóng (báo cả người giao); việc "Chờ xác nhận" nhắc người giao. Giao việc bắt buộc có hạn; việc cũ chưa có hạn có nút "Đặt hạn" ở chi tiết.
 - Cập nhật hiện trạng: một ô "Ảnh hoặc file Word/Excel".
 - Soạn văn bản (soan-mau v8): mẫu Quyết định theo văn bản BV (gạch ngang, "Điều N:", Xét đề nghị tại Tờ trình…), bảng đủ cột, khung xem Word hiển thị spacing/indent. Lưu Drive qua VanBan.gs: nếu tài khoản chạy script không mở được thư mục gốc thì tự tạo "Văn bản soạn từ app" và chia sẻ sửa cho duylinhbl@gmail.com.
+
+### Cập nhật 13/11/2026 (v61) – AI tự xếp hạng mục khi thả hồ sơ
+- Thả PDF/ảnh vào "Nhập phiếu đề nghị thanh toán": app đọc phiếu (text pdf.js hoặc ảnh trang đầu), kh-ghi action `phan_loai` (Gemini) chọn hạng mục + số tiền + tháng, tự điền vào thẻ hồ sơ.
+- Người dùng chỉ xem PDF, đối chiếu rồi bấm Cộng; có thể đổi hạng mục/tháng/số tiền ngay trong thẻ. Nhiều hồ sơ khác hạng mục được ghi riêng từng hạng mục, hoàn tác theo từng phiếu.

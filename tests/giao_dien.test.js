@@ -11,7 +11,7 @@ const path = require('path'), root = path.join(__dirname, '..');
     { id: 3, thu_tu: 3, stt: '5.3', hang_muc: 'Điện thoại bàn', cap: 3, kh_nam: 6e7, thang: [1, 2, 3], cap_nhat: '2026-11-12T01:00:00Z' },
     { id: 5, thu_tu: 5, stt: 'D', hang_muc: 'THU-CHI', cap: 0, kh_nam: 1 }];
   await p.setContent('<div id="app"><div id="nd"></div></div>');
-  await p.addScriptTag({ content: `window.calls=[];window.BVAPP={sb:{from:()=>({select:()=>({order:async()=>({data:${JSON.stringify(rows)}})})}),rpc:async()=>({data:true}),functions:{invoke:async(n,o)=>{window.calls.push([n,o.body]);if(o.body&&o.body.action==='hoan')return{data:{ok:true}};if(n==='kh-dong-bo')return{data:{ok:true,cap_nhat:2}};return{data:{ok:true,rq:o.body.rq,moi:100,tong:100,links:[],thu_muc:'x',kiem:true}}}}},$:s=>document.querySelector(s),esc:s=>String(s??'').replace(/</g,'&lt;'),toast:m=>{window.lastToast=m}};window.confirm=()=>true;window.alert=()=>{}` });
+  await p.addScriptTag({ content: `window.calls=[];window.BVAPP={sb:{from:()=>({select:()=>({order:async()=>({data:${JSON.stringify(rows)}})})}),rpc:async()=>({data:true}),functions:{invoke:async(n,o)=>{window.calls.push([n,o.body]);if(o.body&&o.body.action==='hoan')return{data:{ok:true}};if(o.body&&o.body.action==='phan_loai')return{data:{id:null,so:0,tom_tat:'x'}};if(n==='kh-dong-bo')return{data:{ok:true,cap_nhat:2}};return{data:{ok:true,rq:o.body.rq,moi:100,tong:100,links:[],thu_muc:'x',kiem:true}}}}},$:s=>document.querySelector(s),esc:s=>String(s??'').replace(/</g,'&lt;'),toast:m=>{window.lastToast=m}};window.confirm=()=>true;window.alert=()=>{}` });
   await p.addScriptTag({ path: path.join(root, 'kh.js') });
   await p.evaluate(() => window.KH.ve());
   await p.waitForSelector('#khlm');
