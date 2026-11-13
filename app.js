@@ -31,7 +31,7 @@ async function guiMot(o){
   if(o.tep){const d=duoiTep(o.tep_ten);fpath=`${o.viec_id}/${o.ma_khach}-f.${d}`;
     const {error}=await sb.storage.from('anh').upload(fpath,o.tep,{contentType:TEP_MIME[d],upsert:true});
     if(error)throw error}
-  const {error}=await sb.from('cap_nhat_hien_trang').insert({viec_id:o.viec_id,nguoi_id:me.id,trang_thai:o.trang_thai,ghi_chu:o.ghi_chu,anh_path:path,file_path:fpath,file_ten:o.tep?o.tep_ten:null,vi_do:o.vi_do,kinh_do:o.kinh_do,gio_bam:o.gio_bam,ma_khach:o.ma_khach});
+  const {error}=await sb.from('cap_nhat_hien_trang').insert({viec_id:o.viec_id,nguoi_id:me.id,trang_thai:o.trang_thai,ghi_chu:o.ghi_chu,anh_path:path,file_path:fpath,file_ten:o.tep?o.tep_ten:null,vi_do:o.vi_do,kinh_do:o.kinh_do,vi_tri_loi:o.vi_tri_loi||null,do_chinh_xac:o.do_chinh_xac||null,gio_bam:o.gio_bam,ma_khach:o.ma_khach});
   if(error&&error.code!=='23505')throw error; // trùng mã = đã gửi rồi
   if(o.trang_thai){const {error:e2}=await sb.from('viec').update({trang_thai:o.trang_thai,...(o.trang_thai==='da_dong'?{dong_luc:new Date().toISOString()}:{})}).eq('id',o.viec_id);if(e2)throw e2}
 }
@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v44</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v45</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -141,6 +141,33 @@ async function formViec(){
   };
 }
 
+const bando=c=>{const la=+c.vi_do,lo=+c.kinh_do,d=0.004;return `<div class="mut">📍 ${la.toFixed(5)}, ${lo.toFixed(5)}${c.do_chinh_xac?' (sai số ±'+c.do_chinh_xac+' m)':''} · <a href="https://www.google.com/maps?q=${la},${lo}" target="_blank" rel="noopener">Mở Google Maps</a></div><iframe class="bd" loading="lazy" title="Bản đồ" src="https://www.openstreetmap.org/export/embed.html?bbox=${lo-d},${la-d},${lo+d},${la+d}&layer=mapnik&marker=${la},${lo}"></iframe>`};
+const napJs=u=>new Promise((ok,ko)=>{const t=document.createElement('script');t.src=u;t.onload=ok;t.onerror=()=>ko(new Error('Không tải được bộ xem file, kiểm tra mạng'));document.head.appendChild(t)});
+let xlsxP,mamP;
+const taiXlsx=()=>xlsxP||(xlsxP=napJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'));
+const taiMam=()=>mamP||(mamP=napJs('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js'));
+function sach(html){const t=document.createElement('template');t.innerHTML=html;t.content.querySelectorAll('script,iframe,object,embed,link,style').forEach(e=>e.remove());t.content.querySelectorAll('*').forEach(e=>{[...e.attributes].forEach(a=>{if(/^on/i.test(a.name)||(/^(href|src)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value)))e.removeAttribute(a.name)})});return t.innerHTML}
+async function xemTep(path,ten){
+  const ov=document.createElement('div');ov.className='vw';
+  ov.innerHTML=`<div class="vwh"><b>${esc(ten||'Tệp')}</b><span><a id="vwtai" href="#" download>⬇ Tải</a> <button class="sec" id="vwx">✕ Đóng</button></span></div><div class="vwb" id="vwb">Đang mở…</div>`;
+  document.body.appendChild(ov);$('#vwx').onclick=()=>ov.remove();
+  const b=$('#vwb');
+  try{
+    const url=await linkTep(path,ten);if(!url)throw new Error('Không lấy được đường dẫn file');$('#vwtai').href=url;
+    const d=duoiTep(ten),buf=await (await fetch(url)).arrayBuffer();
+    if(d==='xlsx'||d==='xls'){
+      await taiXlsx();const wb=XLSX.read(buf,{type:'array'});
+      const ve1=i=>{const ws=wb.Sheets[wb.SheetNames[i]];const r=XLSX.utils.decode_range(ws['!ref']||'A1');
+        const cat=r.e.r>1000||r.e.c>40;if(cat){r.e.r=Math.min(r.e.r,1000);r.e.c=Math.min(r.e.c,40);ws['!ref']=XLSX.utils.encode_range(r)}
+        $('#vwt').innerHTML=sach(XLSX.utils.sheet_to_html(ws,{header:'',footer:''}))+(cat?'<p class="mut">Chỉ hiển thị 1000 dòng × 40 cột đầu, tải file để xem đủ.</p>':'');
+        document.querySelectorAll('.vwtab').forEach((x,k)=>x.classList.toggle('on',k===i))};
+      b.innerHTML=`<div class="vwtabs">${wb.SheetNames.map((n,i)=>`<button class="vwtab sec" data-i="${i}">${esc(n)}</button>`).join('')}</div><div id="vwt" class="vwt"></div>`;
+      b.querySelectorAll('.vwtab').forEach(x=>x.onclick=()=>ve1(+x.dataset.i));ve1(0);
+    }else if(d==='docx'){
+      await taiMam();const r=await mammoth.convertToHtml({arrayBuffer:buf});b.innerHTML='<div class="vwdoc">'+sach(r.value)+'</div>';
+    }else b.innerHTML='<p>File .doc đời cũ chưa xem trực tiếp được, bấm "Tải" ở trên để mở bằng Word.</p>';
+  }catch(e){b.innerHTML='<p style="color:#b91c1c">Không mở được file: '+esc(e.message||String(e))+'</p>'}
+}
 async function chiTiet(id){
   const [{data:v},{data:cn}]=await Promise.all([
     sb.from('viec').select('*').eq('id',id).single(),
@@ -154,18 +181,21 @@ async function chiTiet(id){
   if(laGiao&&v.nguoi_giao===me.id)opts.push(['da_dong','Xác nhận đóng việc']);
   $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button>
   <div class="card" style="margin-top:10px"><h3>${esc(v.tieu_de)}</h3>${tag(v.trang_thai)}<p>${esc(v.mo_ta||'')}</p>
-  <div class="mut">Giao: ${esc(ten(v.nguoi_giao))} → ${esc(ten(v.nguoi_nhan))}${v.han?'<br>Hạn '+fmt(v.han):''}</div>${v.file_path?`<p><a href="${vurl||'#'}" download>${bieuTuongTep(v.file_ten)} ${esc(v.file_ten||'Tệp đính kèm')}</a></p>`:''}</div>
+  <div class="mut">Giao: ${esc(ten(v.nguoi_giao))} → ${esc(ten(v.nguoi_nhan))}${v.han?'<br>Hạn '+fmt(v.han):''}</div>${v.file_path?`<p><a href="${vurl||'#'}" download>${bieuTuongTep(v.file_ten)} ${esc(v.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(v.file_path)}" data-xt="${esc(v.file_ten||'')}">👁 Xem</a></p>`:''}</div>
   ${(laNhan||opts.length)?`<div class="card"><label>Cập nhật hiện trạng</label><select id="st"><option value="">Giữ nguyên trạng thái</option>${opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select>
   <label>Ghi chú</label><textarea id="gc"></textarea><label>Ảnh (chụp tại chỗ)</label><input id="anh" type="file" accept="image/*" capture="environment">
   <label>Hoặc đính kèm file Word / Excel (tối đa 10 MB)</label><input id="tep" type="file" accept=".doc,.docx,.xls,.xlsx">
   <button class="full" id="gui">📷 Gửi cập nhật</button><p class="mut">Vị trí GPS chỉ lấy tại lúc bấm Gửi.</p></div>`:''}
-  <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a></div>`:''}${c.co_vi_tri?`<div class="mut"><a href="https://maps.google.com/?q=${c.vi_do},${c.kinh_do}" target="_blank" rel="noopener">📍 Xem vị trí</a></div>`:''}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
+  <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   if(me.la_quan_tri){$('#nd').insertAdjacentHTML('beforeend','<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa việc này (quản trị)</button>');$('#xoa').onclick=()=>xoaMuc('viec',id,'Xóa vĩnh viễn việc này cùng lịch sử cập nhật?',ve)}
   $('#lui').onclick=ve;
+  document.querySelectorAll('[data-xp]').forEach(a=>a.onclick=e=>{e.preventDefault();xemTep(a.dataset.xp,a.dataset.xt)});
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
 }
 const nen=f=>new Promise(res=>{if(!f)return res(null);const i=new Image();i.onload=()=>{const k=Math.min(1,1600/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>res(b),'image/jpeg',.8)};i.onerror=()=>res(null);i.src=URL.createObjectURL(f)});
-const viTri=()=>new Promise(res=>{if(!navigator.geolocation)return res({});navigator.geolocation.getCurrentPosition(p=>res({vi_do:p.coords.latitude,kinh_do:p.coords.longitude}),()=>res({}),{enableHighAccuracy:true,timeout:8000,maximumAge:0})});
+const viTri=()=>new Promise(res=>{if(!navigator.geolocation)return res({vi_tri_loi:'Máy không hỗ trợ định vị'});
+  const lay=(cao,tiep)=>navigator.geolocation.getCurrentPosition(p=>res({vi_do:p.coords.latitude,kinh_do:p.coords.longitude,do_chinh_xac:Math.round(p.coords.accuracy)}),e=>e.code!==1&&tiep?tiep():res({vi_tri_loi:e.code===1?'Chưa cho phép định vị (vào Cài đặt, bật Vị trí cho trình duyệt hoặc app)':e.code===3?'Hết thời gian chờ GPS':'Không xác định được vị trí'}),{enableHighAccuracy:cao,timeout:10000,maximumAge:0});
+  lay(true,()=>lay(false,null))});
 async function guiCapNhat(id){
   const b=$('#gui');
   const tep=$('#tep').files[0]||null,lt=kiemTep(tep);if(lt)return toast(lt);
@@ -174,7 +204,7 @@ async function guiCapNhat(id){
   const o={ma_khach:uid(),viec_id:id,trang_thai:$('#st').value||null,ghi_chu:$('#gc').value.trim()||null,anh,tep,tep_ten:tep?tep.name:null,gio_bam:gio,...gps};
   if(!o.ghi_chu&&!anh&&!tep&&!o.trang_thai){b.disabled=false;return toast('Chưa có nội dung')}
   await qAdd(o);await day();
-  toast((await qAll()).length?'Đã lưu, sẽ gửi khi có mạng':gps.vi_do?'Đã gửi (có vị trí)':'Đã gửi (không lấy được vị trí)');
+  toast((await qAll()).length?'Đã lưu, sẽ gửi khi có mạng':gps.vi_do?'Đã gửi (có vị trí)':'Đã gửi, nhưng KHÔNG có vị trí: '+(gps.vi_tri_loi||''));
   chiTiet(id);
 }
 

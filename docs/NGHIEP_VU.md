@@ -103,3 +103,9 @@
 ## Quy tắc mục "phương hướng/kế hoạch" của báo cáo tuần và tháng (13/11/2026)
 - Một dòng cố định "- Duy trì công tác tiếp nhận cấp cứu, khám chữa bệnh." + các sự kiện anh Linh/Thảo đã ghi sẵn trong lịch công tác của app cho tuần/tháng sau (vd 26/11 KSK Leading, PTEC; 01/12 KSK định kỳ lần 2 Cty CP Cao su Bà Rịa). Không tự thêm việc ngoài lịch. Muốn có gì trong phương hướng thì ghi vào lịch công tác trước giờ chạy (tuần: 15h thứ 5; tháng: 08:45 ngày 2).
 - Số liệu kế hoạch-sử dụng còn lệch (điều trị 4.050 vs 4.030, thuốc/VTYT) là do chưa nhập đủ; anh Linh sẽ báo khi nhập xong để rà lại.
+
+## v45 – Xem file Excel/Word ngay trong app + bản đồ vị trí (13/11/2026)
+- Nút "👁 Xem" cạnh file đính kèm (ở việc và ở từng cập nhật): Excel (.xlsx/.xls) hiện thành bảng có tab từng sheet (tối đa 1000 dòng × 40 cột), Word (.docx) hiện nội dung; .doc cũ chỉ tải. Dùng SheetJS 0.18.5 + mammoth 1.4.2 nạp từ cdnjs khi mở file (không tải trước). HTML đã lọc script/on*/javascript:.
+- Vị trí: cập nhật có GPS hiện bản đồ OpenStreetMap ngay trong dòng + nút mở Google Maps + sai số; không có GPS thì hiện cảnh báo kèm LÝ DO (chưa cho phép định vị / hết thời gian chờ…). Cột mới `vi_tri_loi`, `do_chinh_xac`. GPS thử độ chính xác cao 10 giây rồi tự hạ mức 10 giây. Phần lớn cập nhật trước đây không có vị trí vì máy không cho phép định vị hoặc hết thời gian chờ 8 giây.
+- Chưa làm: trợ lý AI trên file (cần khóa Anthropic API đặt trong Supabase; xem thiết kế dưới).
+- Thiết kế AI trên file: Edge Function `ai-file` đọc file (Excel→CSV theo sheet, Word→chữ), nhận câu hỏi của anh Linh dạng chat, gọi Claude, lưu lịch sử vào bảng `file_chat`; trả lời có công thức/phép tính; sau đó soạn tờ trình/quyết định thành file Word lưu lại trong việc. Chỉ quản trị/TCHC dùng.
