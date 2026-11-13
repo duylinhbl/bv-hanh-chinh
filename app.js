@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v56</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v57</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -365,7 +365,6 @@ async function chiTiet(id){
   <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   if(me.la_quan_tri){$('#nd').insertAdjacentHTML('beforeend','<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa việc này (quản trị)</button>');$('#xoa').onclick=()=>xoaMuc('viec',id,'Xóa vĩnh viễn việc này cùng lịch sử cập nhật?',ve)}
   $('#lui').onclick=ve;
-  if(laNhan||laGiao)bangVB(v,laGiao);
   document.querySelectorAll('[data-xp]').forEach(a=>a.onclick=e=>{e.preventDefault();xemTep(a.dataset.xp,a.dataset.xt,id)});
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
 }

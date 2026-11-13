@@ -17,7 +17,7 @@ const HE_THONG = `Bạn là chuyên viên soạn thảo văn bản hành chính 
 Quy tắc:
 - Chỉ soạn phần THÂN văn bản. KHÔNG viết quốc hiệu, tên cơ quan, số/ký hiệu, ngày tháng, tiêu đề, dòng "Về việc", chữ ký, "Nơi nhận" (khung mẫu đã có sẵn).
 - Tờ trình: bắt đầu bằng dòng "Kính gửi:" (các nơi nhận mỗi nơi một dòng bắt đầu bằng "- "), rồi các dòng "Căn cứ ...", nội dung trình, kết bằng "Trân trọng kính trình./." hoặc câu kết tương đương của mẫu.
-- Quyết định: bắt đầu bằng các dòng "Căn cứ ...", một dòng "QUYẾT ĐỊNH:", rồi "Điều 1. ...", "Điều 2. ..." ... Điều cuối là trách nhiệm thi hành / hiệu lực.
+- Quyết định (đúng mẫu BV): các dòng "Căn cứ ...;" (căn cứ Quyết định 73/QĐ-HĐTV-CSDT ngày 05/5/2017 đã có trong mẫu; thêm căn cứ liên quan trực tiếp nếu người soạn nêu), rồi "Xét đề nghị tại Tờ trình số [ ]/TTr-BVĐK-TCHC ngày [ ] của Phòng Tổ chức Hành chánh,", rồi "QUYẾT ĐỊNH:". Dùng cách viết "Hành chánh" như văn bản của BV. Điều cuối kết bằng "./." Bắt đầu bằng các dòng "Căn cứ ...", một dòng "QUYẾT ĐỊNH:", rồi "Điều 1: ...", "Điều 2: ..." (có dấu hai chấm sau số điều) ... Điều cuối là trách nhiệm thi hành / hiệu lực.
 - Mỗi đoạn một dòng riêng, các đoạn cách nhau bằng ký tự xuống dòng (\\n): mỗi \"Căn cứ ...\", \"QUYẾT ĐỊNH:\", mỗi \"Điều N.\" là một dòng riêng; không viết cả văn bản thành một khối. Mục con dùng dấu "- " đầu dòng. Bảng viết mỗi hàng một dòng dạng "cột 1 | cột 2 | cột 3", hàng đầu là tiêu đề cột.
 - Văn bản thuần, không markdown (không **, #). Số tiền ghi cả số và bằng chữ.
 - Số liệu, tên người, số văn bản căn cứ lấy đúng từ yêu cầu và tệp đính kèm. Điều chưa biết thì để [ ] — tuyệt đối không bịa số, tên, ngày.
@@ -86,7 +86,7 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
   const ps: string[] = []; let tb: string[][] = [];
   const flush = () => { if (!tb.length) return; ps.push(bangXml(tb, pr), mk('thuong', '')); tb = []; };
   let nt = noi.replace(/\r/g, '');
-  if ((nt.match(/\n/g) || []).length < 4) nt = nt.replace(/\s+(?=(Căn cứ |Xét đề nghị|QUYẾT ĐỊNH:|Điều\s*\d+\.\s|Kính gửi:|Trân trọng))/g, '\n');
+  if ((nt.match(/\n/g) || []).length < 4) nt = nt.replace(/\s+(?=(Căn cứ |Xét đề nghị|QUYẾT ĐỊNH:|Điều\s*\d+[.:]\s|Kính gửi:|Trân trọng))/g, '\n');
   nt = nt.replace(/(QUYẾT ĐỊNH:)\s*/g, '$1\n').replace(/\.\[\.\/\.\]/g, '.');
   for (const ln of nt.split('\n')) {
     const s = ln.trim(); if (!s) continue;
