@@ -110,5 +110,5 @@ nav button[data-t=moi] i{background:linear-gradient(180deg,#e8b83a,#c8921a);box-
 .aii textarea{font-size:16px;min-height:52px;background:var(--card);color:var(--tx)}
 .aii button{font-size:16px}
 /* v49: khung soạn theo mẫu trong khung AI */
-.aisoan{padding:10px;border-top:1px solid var(--bd,#ddd);max-height:55vh;overflow:auto;font-size:16px}
+.aisoan{padding:10px;border-top:1px solid var(--bd,#ddd);font-size:16px}
 .aisoan textarea{width:100%;font-size:16px}.aisoan button{min-height:44px}

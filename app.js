@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v50</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v51</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -158,7 +158,7 @@ async function goiAI(body){
 }
 function khungAI(ov,viecId,path,ten){
   const p=document.createElement('div');p.className='ai';
-  p.innerHTML=`<div class="aih"><b>🤖 Hỏi AI về tệp này</b><span><button class="sec" id="aithu">Thu gọn</button> <button class="sec" id="aixoa">Xóa hội thoại</button></span></div><div class="aim" id="aim"></div><div class="aiq"><button id="aimau" style="background:#15803d;color:#fff">📝 Soạn tờ trình / quyết định theo mẫu BV</button>${GOI_Y.filter(g=>!/^Soạn/.test(g[0])).map((g,i)=>`<button class="sec" data-g="${GOI_Y.indexOf(g)}">${g[0]}</button>`).join('')}</div><div id="aisoan" style="display:none"></div><div class="aii"><textarea id="aiq" rows="2" placeholder="Hỏi, nhờ tính toán, viết công thức, soạn văn bản…"></textarea><button id="aig">Gửi</button></div>`;
+  p.innerHTML=`<div class="aih"><b>🤖 Hỏi AI về tệp này</b><span><button class="sec" id="aithu">Thu gọn</button> <button class="sec" id="aixoa">Xóa hội thoại</button></span></div><div class="aim" id="aim"></div><div class="aiq"><button id="aimau" style="background:#15803d;color:#fff">📝 Soạn tờ trình / quyết định theo mẫu BV</button>${GOI_Y.filter(g=>!/^Soạn/.test(g[0])).map((g,i)=>`<button class="sec" data-g="${GOI_Y.indexOf(g)}">${g[0]}</button>`).join('')}</div><div class="aii"><textarea id="aiq" rows="2" placeholder="Hỏi, nhờ tính toán, viết công thức, soạn văn bản…"></textarea><button id="aig">Gửi</button></div>`;
   ov.appendChild(p);
   const m=$('#aim'),base={viec_id:viecId,file_path:path};
   const them=(vai,tx)=>{const d=document.createElement('div');d.className='aib '+(vai==='user'?'u':'m');const t=document.createElement('div');t.className='ait';t.textContent=tx;d.appendChild(t);
@@ -174,7 +174,10 @@ function khungAI(ov,viecId,path,ten){
     const r=await goiAI({...base,action:'chat',cau_hoi:tx});cho.remove();g.disabled=false;
     them('model',r.tra_loi||('⚠ '+(r.loi||'Lỗi không rõ')));if(r.cat)toast('Tệp dài, AI chỉ đọc phần đầu')};
   $('#aig').onclick=()=>gui($('#aiq').value);
-  $('#aimau').onclick=()=>{const k=$('#aisoan');if(k.style.display==='none'){k.style.display='block';if(!k.dataset.ok){k.dataset.ok=1;khungSoan(k,ov,viecId,path)}}else k.style.display='none'};
+  $('#aimau').onclick=()=>{const so=document.createElement('div');so.className='vw';
+    so.innerHTML='<div class="vwh"><b>📝 Soạn tờ trình / quyết định theo mẫu BV</b><span><button class="sec" id="sox">✕ Đóng</button></span></div><div class="vwb" id="sob" style="overflow:auto"></div>';
+    document.body.appendChild(so);$('#sox').onclick=()=>{if(so.dataset.vb)ov.dataset.vb=1;so.remove()};
+    khungSoan($('#sob'),so,viecId,path)};
   p.querySelectorAll('.aiq button').forEach(x=>x.onclick=()=>{const g=GOI_Y[+x.dataset.g];if(g[2]){$('#aiq').value=g[1];$('#aiq').focus()}else gui(g[1])});
   goiAI({...base,action:'lich_su'}).then(r=>{(r.lich_su||[]).forEach(h=>them(h.vai,h.noi_dung))});
 }
@@ -227,7 +230,7 @@ async function khungSoan(k,ov,viecId,path){
     const chua=dsVb.length+[...kq.querySelectorAll('[data-l]')].length;
     if(!confirm((chua?`Còn ${chua} văn bản chưa lưu vào Drive.\n\n`:'')+'Kết thúc việc này, xem như đã hoàn chỉnh?'))return;
     await qAdd({ma_khach:uid(),viec_id:viecId,trang_thai:'da_dong',ghi_chu:'Kết thúc: hồ sơ đã hoàn chỉnh',anh:null,tep:null,tep_ten:null,gio_bam:new Date().toISOString(),vi_tri_loi:'Không lấy vị trí khi kết thúc việc'});
-    await day();ov.remove();toast('Đã kết thúc việc');chiTiet(viecId);
+    await day();document.querySelectorAll('.vw').forEach(x=>x.remove());toast('Đã kết thúc việc');chiTiet(viecId);
   };
 }
 async function xemTep(path,ten,viecId,urlSan){
