@@ -38,6 +38,11 @@ async function appsScript(sv: any, payload: Record<string, unknown>) {
 const cacheMau = new Map<string, { docx: Uint8Array; protos: any }>();
 async function layMau(sv: any, ma: string) {
   const c = cacheMau.get(ma); if (c) return c;
+  try {
+    const base = 'https://duylinhbl.github.io/bv-hanh-chinh/mau/';
+    const [a, jj] = await Promise.all([fetch(base + ma + '.docx', { signal: AbortSignal.timeout(20000) }), fetch(base + ma + '.json', { signal: AbortSignal.timeout(20000) })]);
+    if (a.ok && jj.ok) { const m = { docx: new Uint8Array(await a.arrayBuffer()), protos: (await jj.json()).protos }; cacheMau.set(ma, m); return m; }
+  } catch (_) { /* dùng Apps Script */ }
   const j = await appsScript(sv, { action: 'vb_mau_lay', ma });
   const m = { docx: unb64(j.docx_b64), protos: JSON.parse(j.json).protos };
   cacheMau.set(ma, m); return m;
@@ -143,9 +148,15 @@ Deno.serve(async (req) => {
       const dl = await sv.storage.from('anh').download(vb.storage_path);
       if (dl.error || !dl.data) return out({ loi: 'Không tải được file Word đã soạn' }, 500);
       const buf = new Uint8Array(await dl.data.arrayBuffer());
-      const j = await appsScript(sv, { action: 'luu_van_ban', ten_file: vb.ten_file, b64: b64(buf), mime: MIME, loai_ten: lc?.ten || 'Khác', folder_id: lc?.drive_folder_id || '', viec_ten: sach(v.tieu_de, 60) });
-      await sv.from('van_ban_viec').update({ drive_url: j.url, luu_luc: new Date().toISOString() }).eq('id', vb.id);
-      return out({ ok: true, url: j.url, thu_muc: j.thu_muc });
+      const now = new Date().toISOString();
+      try {
+        const j = await appsScript(sv, { action: 'luu_van_ban', ten_file: vb.ten_file, b64: b64(buf), mime: MIME, loai_ten: lc?.ten || 'Khác', folder_id: lc?.drive_folder_id || '', viec_ten: sach(v.tieu_de, 60) });
+        await sv.from('van_ban_viec').update({ drive_url: j.url, luu_luc: now }).eq('id', vb.id);
+        return out({ ok: true, drive: true, url: j.url, thu_muc: j.thu_muc });
+      } catch (e) {
+        await sv.from('van_ban_viec').update({ luu_luc: now }).eq('id', vb.id);
+        return out({ ok: true, drive: false, canh: String((e as Error).message || e).slice(0, 200) });
+      }
     }
     if (action === 'tai') {
       const { data: vb } = await uc.from('van_ban_viec').select('ten_file,storage_path').eq('id', b.van_ban_id).maybeSingle();
@@ -153,14 +164,17 @@ Deno.serve(async (req) => {
       const sg = await sv.storage.from('anh').createSignedUrl(vb.storage_path, 3600, { download: vb.ten_file });
       return out({ ok: true, url: sg.data?.signedUrl });
     }
-    if (action !== 'soan') return out({ loi: 'Thao tác không hợp lệ' }, 400);
+    if (action !== 'soan' && action !== 'goi_y') return out({ loi: 'Thao tác không hợp lệ' }, 400);
 
     const { viec_id, mau_ma } = b;
     const yc = String(b.yeu_cau || '').trim().slice(0, 4000);
     const { data: v } = await uc.from('viec').select('id,tieu_de,mo_ta,file_path,file_ten').eq('id', viec_id).maybeSingle();
     if (!v) return out({ loi: 'Không có quyền với việc này' }, 403);
-    const { data: m } = await sv.from('mau_van_ban').select('ma,ten,loai,mau_text,hoat_dong').eq('ma', mau_ma).maybeSingle();
-    if (!m || !m.hoat_dong) return out({ loi: 'Không tìm thấy mẫu văn bản' }, 404);
+    let m: any = null;
+    if (action === 'soan') {
+      const r0 = await sv.from('mau_van_ban').select('ma,ten,loai,mau_text,hoat_dong').eq('ma', mau_ma).maybeSingle();
+      m = r0.data; if (!m || !m.hoat_dong) return out({ loi: 'Không tìm thấy mẫu văn bản' }, 404);
+    }
     const key = Deno.env.get('GEMINI_API_KEY');
     if (!key) return out({ loi: 'Chưa cài khóa Gemini (GEMINI_API_KEY).' }, 503);
     const { data: bm } = await sv.from('bi_mat').select('k,v').in('k', ['ai_model', 'ai_tat']);
@@ -177,6 +191,18 @@ Deno.serve(async (req) => {
         const dl = await sv.storage.from('anh').download(fp);
         if (!dl.error && dl.data) { const bf = new Uint8Array(await dl.data.arrayBuffer()); try { tep = (ext === 'xlsx' ? await xlsxText(bf) : docxText(bf)).slice(0, 30000); } catch (_) { /* bỏ qua */ } }
       }
+    }
+    if (action === 'goi_y') {
+      const { data: ds } = await sv.from('mau_van_ban').select('ma,ten,mo_ta').eq('hoat_dong', true).order('thu_tu');
+      const ls = (ds || []).map((x: any) => `- ${x.ma}: ${x.ten} (${x.mo_ta || ''})`).join('\n');
+      const tx = await goiGemini(key, cfg.ai_model || 'gemini-flash-lite-latest', {
+        systemInstruction: { parts: [{ text: 'Bạn là trợ lý của Phòng Tổ chức Hành chính bệnh viện. Đọc việc được giao và dữ liệu tệp, chọn loại văn bản cần soạn phù hợp nhất trong danh sách, và viết sẵn y_chinh: 2-4 câu tóm tắt ý chính cần trình/quyết định (nội dung, số liệu chính lấy từ tệp, đối tượng, thời gian; chỗ chưa rõ ghi [ ]). Không bịa số. Chỉ trả JSON.' }] },
+        contents: [{ role: 'user', parts: [{ text: `VIỆC: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nDANH SÁCH LOẠI VĂN BẢN:\n${ls}\n\nDỮ LIỆU TỆP:\n${tep || '(không đọc được tệp)'}` }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 1024, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { mau_ma: { type: 'STRING' }, y_chinh: { type: 'STRING' } }, required: ['mau_ma', 'y_chinh'] } },
+      });
+      let g: any = {}; try { g = JSON.parse(tx.replace(/^```json\s*|```$/g, '')); } catch (_) { /* bỏ qua */ }
+      const hop = (ds || []).some((x: any) => x.ma === g.mau_ma);
+      return out({ ok: true, mau_ma: hop ? g.mau_ma : '', y_chinh: String(g.y_chinh || '') });
     }
     let cu = '';
     if (b.van_ban_cu) {
