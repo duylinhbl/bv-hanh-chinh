@@ -178,8 +178,13 @@ Deno.serve(async (req) => {
         if (!dl.error && dl.data) { const bf = new Uint8Array(await dl.data.arrayBuffer()); try { tep = (ext === 'xlsx' ? await xlsxText(bf) : docxText(bf)).slice(0, 30000); } catch (_) { /* bỏ qua */ } }
       }
     }
+    let cu = '';
+    if (b.van_ban_cu) {
+      const { data: o } = await uc.from('van_ban_viec').select('storage_path,viec_id').eq('id', b.van_ban_cu).maybeSingle();
+      if (o && o.viec_id === viec_id) { const dl = await sv.storage.from('anh').download(o.storage_path); if (!dl.error && dl.data) cu = docxText(new Uint8Array(await dl.data.arrayBuffer())).slice(0, 20000); }
+    }
     const mau = await layMau(sv, m.ma);
-    const nguoi = `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${tep ? '\n\nDỮ LIỆU TỪ TỆP ĐÍNH KÈM:\n' + tep : ''}`;
+    const nguoi = `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${tep ? '\n\nDỮ LIỆU TỪ TỆP ĐÍNH KÈM:\n' + tep : ''}${cu ? '\n\nVĂN BẢN ĐÃ SOẠN TRƯỚC ĐÓ (toàn văn, gồm cả phần khung đầu/cuối):\n' + cu + '\n\nĐây là yêu cầu CHỈNH SỬA: giữ nguyên phần đúng, chỉ sửa theo ý trong mục YÊU CẦU, trả về lại ĐẦY ĐỦ thân văn bản (không chỉ phần sửa).' : ''}`;
     const txt = await goiGemini(key, cfg.ai_model || 'gemini-flash-lite-latest', {
       systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: nguoi }] }],
       generationConfig: { temperature: 0.3, maxOutputTokens: 8192, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
