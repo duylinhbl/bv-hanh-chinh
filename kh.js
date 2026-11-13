@@ -70,7 +70,7 @@ async function nhap(){
   const bn=vua&&Date.now()-vua.t<15*60000?`<div class="card" id="nhok" style="background:#eef8f1;border:1px solid #9fd0ad"><b>✓ Vừa ghi:</b> ${esc(vua.txt)}<br><button id="nhoan" style="width:auto;margin-top:6px;padding:4px 12px;font-size:13px;background:#fff!important;color:#b03a2e!important;border:1px solid #d9a9a3!important;box-shadow:none!important">↩ Hoàn tác phiếu này</button></div>`:'';
   $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3>${bn}<div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
   <div class="nh-t">${[...Array(12)].map((_,i)=>`<button data-m="${i+1}" class="${i+1===t0?'on':''}">Tháng ${i+1}</button>`).join('')}</div>
-  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div class="nh-dz" id="dz">📎 <b>Kéo thả hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF, ảnh, Word, Excel · app đọc số tiền ở TRANG ĐẦU, bồ kiểm lại rồi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
+  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div class="nh-dz" id="dz">📎 <b>Thả phiếu / hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF và ảnh hiện ngay để bồ nhìn rồi gõ số tiền · file lưu vào Drive khi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
   <div id="nl">${dsHtml()}</div>
 
   <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" autocomplete="off" placeholder="Số tiền nhập tay (nếu không có hồ sơ)"><div id="nsp" style="font-size:20px;font-weight:700;color:var(--pri2);min-height:26px;margin:0 0 6px"></div><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
@@ -81,19 +81,40 @@ async function nhap(){
   const fmtS=()=>{const el=$('#ns'),d=el.value.replace(/\D/g,'').replace(/^0+/,'');const t=d?d.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'';el.value=t;$('#nsp').textContent=t?t+' đồng':''};
   ['input','keyup','change','paste'].forEach(ev=>$('#ns').addEventListener(ev,()=>setTimeout(fmtS,0)));
 
-  const F=[];
-  const dsF=()=>{$('#fl').innerHTML=F.map((x,i)=>`<div class="nh-f"><div class="t"><span>📄 ${esc(x.name)}</span><span>${x.st==='dang'?'⏳ đang đọc…':`<a href="#" data-rm="${i}" style="color:#c0392b">✕ bỏ</a>`}</span></div>${x.st==='dang'?'':`<input data-so="${i}" inputmode="numeric" autocomplete="off" placeholder="Số tiền của hồ sơ này" value="${x.so?Number(x.so).toLocaleString('vi-VN'):''}">${x.msg?`<div class="mut" style="font-size:12px">${esc(x.msg)}</div>`:''}<div class="nh-c">${(x.cands||[]).map(c=>`<button data-c="${i}:${c}">${Number(c).toLocaleString('vi-VN')}</button>`).join('')}</div>`}</div>`).join('');
-    document.querySelectorAll('[data-rm]').forEach(a=>a.onclick=e=>{e.preventDefault();F.splice(+a.dataset.rm,1);dsF()});
-    document.querySelectorAll('[data-so]').forEach(inp=>inp.oninput=()=>{const d=inp.value.replace(/\D/g,'').replace(/^0+/,'');F[+inp.dataset.so].so=d?+d:0;inp.value=d?d.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):''});
-    document.querySelectorAll('[data-c]').forEach(bt=>bt.onclick=()=>{const[i,c]=bt.dataset.c.split(':');F[+i].so=+c;dsF()})};
+  const F=[];let fid=0;
+  const dang=(x)=>x.up==='dang';
+  const tomSo=(x)=>{const el=document.querySelector('[data-so="'+x.id+'"]');if(el){el.value=x.so?String(x.so).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):''}};
+  const trangThai=x=>{const el=document.getElementById('fs'+x.id);if(!el)return;
+    el.innerHTML=(dang(x)?'<span class="mut" style="font-size:12px">⏳ đang tải hồ sơ lên…</span>':'')+(x.msg?`<div class="mut" style="font-size:12px">${esc(x.msg)}</div>`:'')+
+      (x.cands&&x.cands.length?'<div class="nh-c"><span class="mut" style="font-size:12px">Gợi ý:</span>'+x.cands.map(c=>`<button data-c="${x.id}:${c}">${Number(c).toLocaleString('vi-VN')}</button>`).join('')+'</div>':'');
+    el.querySelectorAll('[data-c]').forEach(bt=>bt.onclick=()=>{x.so=+bt.dataset.c.split(':')[1];tomSo(x)})};
+  const xemTruoc=async(x,file)=>{const box=document.getElementById('fp'+x.id);if(!box)return;
+    const ten=file.name,laAnh=/^image\//.test(file.type)||/\.(jpe?g|png|webp|heic|gif)$/i.test(ten),laPdf=file.type==='application/pdf'||/\.pdf$/i.test(ten);
+    x.url=URL.createObjectURL(file);
+    if(laAnh){box.innerHTML=`<img src="${x.url}" style="width:100%;display:block" alt="">`;return}
+    if(laPdf){try{await taiPdfJs();const pdf=await window.pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,w=Math.max(300,box.clientWidth-4);box.innerHTML='';
+        for(let i=1;i<=Math.min(pdf.numPages,8);i++){const pg=await pdf.getPage(i),v0=pg.getViewport({scale:1}),dpr=Math.min(2,window.devicePixelRatio||1),vp=pg.getViewport({scale:w/v0.width*dpr}),c=document.createElement('canvas');
+          c.width=Math.round(vp.width);c.height=Math.round(vp.height);c.style.cssText='width:100%;display:block;border-bottom:1px solid #dde7e0';box.appendChild(c);
+          const cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:cx,viewport:vp}).promise}
+        if(pdf.numPages>8)box.insertAdjacentHTML('beforeend',`<div class="mut" style="padding:6px">…còn ${pdf.numPages-8} trang nữa, <a href="${x.url}" target="_blank" rel="noopener">mở cả file</a></div>`);return}
+      catch(e){console.warn('xem pdf',e)}}
+    box.innerHTML=`<div class="mut" style="padding:14px">📄 ${esc(ten)}<br>Không xem trước trong app được. <a href="${x.url}" target="_blank" rel="noopener" download="${esc(ten)}">Mở file</a> rồi gõ số tiền bên dưới.</div>`};
+  const veThe=(x,file)=>{const d=document.createElement('div');d.className='nh-f';d.id='ft'+x.id;
+    d.innerHTML=`<div class="t"><span>📄 ${esc(x.name)}</span><a href="#" data-rm="${x.id}" style="color:#c0392b">✕ bỏ</a></div>
+      <div id="fp${x.id}" style="max-height:58vh;overflow:auto;border:1px solid #dde7e0;border-radius:8px;margin:6px 0;background:#fafafa"><div class="mut" style="padding:14px">⏳ đang mở…</div></div>
+      <label style="margin:2px 0">Số tiền của hồ sơ này (bồ nhìn phiếu rồi gõ)</label><input data-so="${x.id}" inputmode="numeric" autocomplete="off" placeholder="Số tiền (đồng)" style="font-size:18px;font-weight:700"><div id="fs${x.id}"></div>`;
+    $('#fl').appendChild(d);
+    d.querySelector('[data-rm]').onclick=e=>{e.preventDefault();const i=F.indexOf(x);if(i>=0)F.splice(i,1);if(x.url)URL.revokeObjectURL(x.url);d.remove()};
+    d.querySelector('[data-so]').oninput=e=>{const inp=e.target,dg=inp.value.replace(/\D/g,'').replace(/^0+/,'');x.so=dg?+dg:0;inp.value=dg?dg.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):''};
+    xemTruoc(x,file)};
   const docB64=file=>new Promise((ok,no)=>{
     const rd=new FileReader();rd.onerror=no;
     if(/^image\//.test(file.type)&&file.size>2e6){const im=new Image();rd.onload=()=>{im.onload=()=>{const k=Math.min(1,2000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok({b64:c.toDataURL('image/jpeg',.85).split(',')[1],mime:'image/jpeg'})};im.onerror=no;im.src=rd.result};rd.readAsDataURL(file)}
     else{rd.onload=()=>ok({b64:String(rd.result).split(',')[1],mime:file.type||'application/octet-stream'});rd.readAsDataURL(file)}});
   const themF=async list=>{for(const file of list){
     if(file.size>9e6){toast(file.name+' quá lớn (tối đa ~9MB)');continue}
-    const x={name:file.name,st:'dang',so:0,cands:[]};F.push(x);dsF();
-    try{const {b64,mime}=await docB64(file);
+    const x={id:++fid,name:file.name,up:'dang',so:0,cands:[]};F.push(x);veThe(x,file);trangThai(x);
+    (async()=>{try{const {b64,mime}=await docB64(file);
       let b64_doc,text_doc;
       if(mime==='application/pdf'||/\.pdf$/i.test(file.name)){
         try{const t=await chuTrang1(file);if(t.replace(/\s/g,'').length>120&&/\d{1,3}[.,]\d{3}/.test(t))text_doc=t}catch(e){console.warn('pdf text',e)}
@@ -102,10 +123,11 @@ async function nhap(){
       let loi=error?(data&&data.loi)||error.message:data&&data.loi;
       if(error&&error.context&&error.context.json){try{loi=(await error.context.json()).loi||loi}catch(e){}}
       if(loi)throw new Error(loi);
-      x.tam=data.tam;x.so=data.best||0;x.cands=(data.cands||[]).filter(c=>c!==data.best);
-      x.msg=data.khop?'✓ Lấy từ '+(data.nguon||'hồ sơ')+', khớp số bằng chữ':data.chu&&data.best&&data.chu!==data.best?'⚠ Số bằng chữ ('+Number(data.chu).toLocaleString('vi-VN')+') khác số đọc được, kiểm lại':data.best?'Đã đọc số tiền, bồ kiểm lại cho đúng':(data.loi_doc?'Chưa đọc được số tiền ('+data.loi_doc.slice(0,80)+'). Nhập tay.':'Không thấy số tiền, nhập tay.');
-    }catch(e){x.msg='Lỗi: '+(e.message||e);F.splice(F.indexOf(x),1);toast(x.msg)}
-    x.st='ok';dsF()}};
+      x.tam=data.tam;x.cands=[data.best,...(data.cands||[])].filter((c,i,a)=>c&&a.indexOf(c)===i).slice(0,3);
+      x.msg=data.khop?'Số gợi ý khớp với số bằng chữ trên phiếu':'';
+      x.up='ok';
+    }catch(e){x.up='loi';x.msg='Chưa tải được hồ sơ lên Drive: '+(e.message||e)+'. Bỏ file này rồi thả lại.'}
+    trangThai(x)})()}};
   const dz=$('#dz'),fi=$('#fi');
   dz.onclick=()=>fi.click();fi.onchange=()=>{themF([...fi.files]);fi.value=''};
   ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on')}));
@@ -124,7 +146,7 @@ async function nhap(){
   };
   $('#ng').onclick=async()=>{
     if(!chon)return toast('Chọn khoản chi');
-    if(F.some(x=>x.st==='dang'))return toast('Đợi đọc xong hồ sơ');
+    if(F.some(dang))return toast('Đợi hồ sơ tải lên xong (vài giây)');if(F.some(x=>x.up==='loi'))return toast('Có hồ sơ chưa tải lên được, bỏ nó rồi thả lại');
     const items=F.filter(x=>x.so>0).map(x=>({so:x.so,tam:x.tam,ten_file:x.name}));
     const tay=Number($('#ns').value.replace(/\D/g,''));
     if(tay>0)items.push({so:tay,ghi_chu:$('#ng2').value});

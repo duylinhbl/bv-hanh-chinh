@@ -30,6 +30,18 @@ const path = require('path'), root = path.join(__dirname, '..');
   await p.click('#nhoan'); await p.waitForTimeout(200);
   const h = await p.evaluate(() => window.calls.filter(c => c[1] && c[1].action === 'hoan').map(c => c[1]));
   kiem(h.length === 1 && h[0].rq === g[0].rq, 'Hoàn tác gửi đúng mã phiếu vừa ghi');
+  // Thả hồ sơ: hiện ngay để xem, số tiền do người dùng gõ, không tự điền
+  await p.waitForSelector('#dz'); await p.click('.nh-r[data-k="3"]');
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await p.setInputFiles('#fi', { name: 'phieu.png', mimeType: 'image/png', buffer: png });
+  await p.waitForSelector('#fl img', { timeout: 3000 });
+  kiem(true, 'thả ảnh vào là hiện ngay hình để xem');
+  kiem((await p.inputValue('#fl [data-so]')) === '', 'ô số tiền để trống, không tự điền');
+  await p.fill('#fl [data-so]', '2500000'); await p.waitForTimeout(500);
+  kiem((await p.inputValue('#fl [data-so]')) === '2.500.000', 'gõ số tiền tự chia dấu "."');
+  await p.evaluate(() => { window.confirm = () => true; }); await p.click('#ng'); await p.waitForTimeout(500);
+  const g2 = await p.evaluate(() => window.calls.filter(c => c[0] === 'kh-ghi' && !c[1].action).map(c => c[1]));
+  kiem(g2.length === 2 && g2[1].items[0].so === 2500000 && g2[1].items[0].ten_file === 'phieu.png', 'ghi đúng số tiền gõ tay kèm tên hồ sơ');
   kiem(errs.length === 0, 'không có lỗi JS' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); ket('giao_dien');
 })();

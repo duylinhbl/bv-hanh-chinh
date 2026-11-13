@@ -119,3 +119,10 @@
 - Khung mẫu (docx + json) nằm Drive: thư mục "Văn bản soạn từ app" > "_mau" (id 1EM4CbhTyt9fazJ8GamFg0QNHwFkQm9eP). Tạo khung từ file gốc bằng `tools/gan_mau.py <thư mục nguồn> <thư mục ra>`. Muốn thêm mẫu: gắn khung, đưa 2 file `<ma>.docx` + `<ma>.json` vào `_mau`, thêm dòng vào `mau_van_ban`.
 - Lưu Drive: Apps Script `apps-script/VanBan.gs` (vb_mau_lay, luu_van_ban). Thư mục đích: `loai_cong_viec.drive_folder_id` nếu có, không thì "Văn bản soạn từ app" > tên loại > tên việc.
 - Nút "Kết thúc việc" (chỉ người giao): ghi cập nhật `da_dong` như "Xác nhận đóng việc".
+
+
+## Cập nhật 13/11/2026 (v60)
+- Nhập phiếu chi: thả/chọn file → HIỆN NGAY bản xem (PDF vẽ bằng pdf.js tối đa 8 trang, ảnh hiện trực tiếp, Word/Excel chỉ có link mở) → người dùng TỰ GÕ số tiền (không tự điền). Số đọc từ OCR chỉ là nút gợi ý bấm để dùng. File vẫn được tải lên "_tam" nền để Cộng xong chuyển vào thư mục hồ sơ.
+- Nhắc việc (`nhac_viec`, pg_cron 10 phút): mọi việc chưa đóng có hạn — trước 3 ngày, 1 ngày, 1 giờ, lúc quá hạn, rồi 8h sáng mỗi ngày tới khi đóng (báo cả người giao); việc "Chờ xác nhận" nhắc người giao. Giao việc bắt buộc có hạn; việc cũ chưa có hạn có nút "Đặt hạn" ở chi tiết.
+- Cập nhật hiện trạng: một ô "Ảnh hoặc file Word/Excel".
+- Soạn văn bản (soan-mau v8): mẫu Quyết định theo văn bản BV (gạch ngang, "Điều N:", Xét đề nghị tại Tờ trình…), bảng đủ cột, khung xem Word hiển thị spacing/indent. Lưu Drive qua VanBan.gs: nếu tài khoản chạy script không mở được thư mục gốc thì tự tạo "Văn bản soạn từ app" và chia sẻ sửa cho duylinhbl@gmail.com.
