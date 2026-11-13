@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v47</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v48</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -118,6 +118,7 @@ async function formViec(){
   <label>Người nhận ${me.vai_tro==='nhan_vien'?'':'(chỉ hiện người trong khoa/phòng bạn phụ trách)'}</label>
   <input id="nq" placeholder="Gõ tên để lọc…" autocomplete="off"><select id="nn"></select>
   <label>Hạn</label><input id="han" type="datetime-local"><label>Mức độ</label><select id="ut"><option value="1">Thường</option><option value="2">Gấp</option><option value="0">Thấp</option></select>
+  <label>Loại công việc (để lưu văn bản vào đúng thư mục Drive)</label><select id="lcv"></select>
   <label>Đính kèm file Word / Excel (không bắt buộc, tối đa 10 MB)</label><input id="tepg" type="file" accept=".doc,.docx,.xls,.xlsx">
   <div id="pcb" class="mut" style="margin-top:6px"></div>
   <button class="full" id="g">📤 Giao việc</button><p class="mut" id="loi"></p></div>`;
@@ -125,12 +126,13 @@ async function formViec(){
     const {data}=await sb.rpc('so_may_push',{p_nguoi:id});if($('#nn').value!==id)return;
     el.innerHTML=data>0?'🔔 Người này đã bật thông báo ('+data+' máy)':'<span style="color:#b45309">⚠ Người này chưa bật thông báo trên máy, nên sẽ không có tin báo ngay. Hãy nhắc họ mở app → tab "Tôi" → bật thông báo.</span>'};
   const dien=q=>{const x=fx(q);const l=ds.filter(u=>!x||fx(u.ho_ten+' '+kt(u)).includes(x));$('#nn').innerHTML=l.map(u=>`<option value="${u.id}" ${u.id===me.id?'selected':''}>${esc(u.ho_ten)}${u.id===me.id?' (tôi)':''}${kt(u)?' · '+esc(kt(u)):''}</option>`).join('')||'<option value="">Không có ai khớp</option>';if(x&&l.length)$('#nn').value=l[0].id};
+  sb.from('loai_cong_viec').select('ma,ten').order('thu_tu').then(({data})=>{$('#lcv').innerHTML=(data||[]).map(l=>`<option value="${l.ma}" ${l.ma==='khac'?'selected':''}>${esc(l.ten)}</option>`).join('')});
   dien('');$('#nq').oninput=()=>{dien($('#nq').value);pcb()};$('#nn').onchange=pcb;pcb();
   $('#g').onclick=async()=>{
     if(!$('#tt').value.trim())return $('#loi').textContent='Nhập tên việc';if(!$('#nn').value)return $('#loi').textContent='Chọn người nhận';
     const tep=$('#tepg').files[0]||null,lt=kiemTep(tep);if(lt)return $('#loi').textContent=lt;
     const vid=uid(),fp=tep?`${vid}/giao-${uid()}.${duoiTep(tep.name)}`:null;
-    const {error}=await sb.from('viec').insert({id:vid,file_path:fp,file_ten:tep?tep.name:null,tieu_de:$('#tt').value.trim(),mo_ta:$('#ms').value||null,nguoi_giao:me.id,nguoi_nhan:$('#nn').value,han:$('#han').value?new Date($('#han').value).toISOString():null,uu_tien:+$('#ut').value});
+    const {error}=await sb.from('viec').insert({id:vid,file_path:fp,file_ten:tep?tep.name:null,tieu_de:$('#tt').value.trim(),mo_ta:$('#ms').value||null,nguoi_giao:me.id,nguoi_nhan:$('#nn').value,han:$('#han').value?new Date($('#han').value).toISOString():null,uu_tien:+$('#ut').value,loai_cv:$('#lcv').value||'khac'});
     if(error)return $('#loi').textContent='Không giao được: '+error.message;
     let canhTep='';
     if(tep){const {error:e3}=await sb.storage.from('anh').upload(fp,tep,{contentType:TEP_MIME[duoiTep(tep.name)],upsert:true});
@@ -197,6 +199,67 @@ async function xemTep(path,ten,viecId){
     }else b.innerHTML='<p>File .doc đời cũ chưa xem trực tiếp được, bấm "Tải" ở trên để mở bằng Word.</p>';
   }catch(e){b.innerHTML='<p style="color:#b91c1c">Không mở được file: '+esc(e.message||String(e))+'</p>'}
 }
+// ---- Soạn văn bản theo mẫu bệnh viện (v48) ----
+async function goiVB(body){
+  const {data,error}=await sb.functions.invoke('soan-mau',{body});
+  if(error){let m=error.message;try{const j=await error.context.json();m=j.loi||m}catch(_){}return {loi:m}}
+  return data||{loi:'Không có phản hồi'}
+}
+function taiVe(url){const a=document.createElement('a');a.href=url;a.download='';document.body.appendChild(a);a.click();a.remove()}
+async function bangVB(v,laGiao){
+  const id=v.id,nd=$('#nd');
+  const [{data:mau},{data:lcv},{data:ds}]=await Promise.all([
+    sb.from('mau_van_ban').select('ma,ten,loai,mo_ta').eq('hoat_dong',true).order('thu_tu'),
+    sb.from('loai_cong_viec').select('ma,ten').order('thu_tu'),
+    sb.from('van_ban_viec').select('id,mau_ma,ten_file,drive_url,tao_luc,luu_luc').eq('viec_id',id).order('tao_luc',{ascending:false})]);
+  if(!(mau||[]).length)return;
+  const nhom=[['to_trinh','Tờ trình'],['quyet_dinh','Quyết định']];
+  const dong=v.trang_thai==='da_dong';
+  const c=document.createElement('div');c.className='card';c.id='vbp';
+  const ve_ds=l=>(l||[]).map(d=>`<div class="it" style="padding:8px 0"><div>📄 ${esc(d.ten_file)}</div><div class="mut">${fmt(d.tao_luc)} · ${d.drive_url?'✅ Đã lưu Drive · <a href="'+esc(d.drive_url)+'" target="_blank" rel="noopener">Mở</a>':'chưa lưu Drive'}</div>
+    <button class="sec" data-vt="${d.id}">⬇ Tải</button> ${d.drive_url?'':`<button class="sec" data-vl="${d.id}">💾 Lưu Drive</button>`}</div>`).join('')||'<p class="mut">Chưa soạn văn bản nào.</p>';
+  c.innerHTML=`<h3>📝 Soạn văn bản theo mẫu bệnh viện</h3>
+  <label>Loại công việc</label><select id="vlcv" ${laGiao?'':'disabled'}>${(lcv||[]).map(l=>`<option value="${l.ma}" ${l.ma===(v.loai_cv||'khac')?'selected':''}>${esc(l.ten)}</option>`).join('')}</select>
+  ${nhom.map(([k,t])=>`<label>${t}</label>`+(mau||[]).filter(m=>m.loai===k).map(m=>`<label class="ck" style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin:6px 0"><input type="checkbox" class="vck" value="${m.ma}" style="width:22px;height:22px;flex:none"><span>${esc(m.ten)}<br><span class="mut">${esc(m.mo_ta||'')}</span></span></label>`).join('')).join('')}
+  <label>Nội dung cần soạn (số liệu, người, căn cứ… càng rõ càng đúng)</label><textarea id="vyc" rows="4" placeholder="VD: Xin chi hỗ trợ 2.000.000 đ/người cho 10 nhân viên đoàn khám sức khỏe tại Cty Phước Hòa, nguồn chi thường xuyên"></textarea>
+  <button class="full" id="vtai">⬇ Soạn và tải Word</button>
+  <button class="full" id="vluu" style="margin-top:8px">💾 Soạn và lưu vào Drive</button>
+  <p class="mut" id="vtt">File lấy đúng khung Word của bệnh viện (quốc hiệu, bảng, chữ ký). Số văn bản để trống cho bạn điền.</p>
+  <div id="vds">${ve_ds(ds)}</div>
+  ${laGiao&&v.nguoi_giao===me.id&&!dong?'<button class="full" id="vket" style="margin-top:10px;background:#15803d">✔ Kết thúc việc (hồ sơ đã hoàn chỉnh)</button>':''}`;
+  const tl=nd.querySelector('.timeline');tl?nd.insertBefore(c,tl):nd.appendChild(c);
+  const lamMoi=async()=>{const {data}=await sb.from('van_ban_viec').select('id,mau_ma,ten_file,drive_url,tao_luc,luu_luc').eq('viec_id',id).order('tao_luc',{ascending:false});$('#vds').innerHTML=ve_ds(data);gan2()};
+  const gan2=()=>{
+    c.querySelectorAll('[data-vt]').forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await goiVB({action:'tai',van_ban_id:b.dataset.vt});b.disabled=false;r.url?taiVe(r.url):toast(r.loi||'Lỗi')});
+    c.querySelectorAll('[data-vl]').forEach(b=>b.onclick=async()=>{b.disabled=true;b.textContent='Đang lưu…';const r=await goiVB({action:'luu',van_ban_id:b.dataset.vl});if(r.loi){b.disabled=false;b.textContent='💾 Lưu Drive';return toast(r.loi)}toast('Đã lưu vào Drive: '+(r.thu_muc||''));lamMoi()})};
+  gan2();
+  $('#vlcv').onchange=async()=>{const {error}=await sb.from('viec').update({loai_cv:$('#vlcv').value}).eq('id',id);toast(error?'Không đổi được: '+error.message:'Đã đổi loại công việc');if(!error)v.loai_cv=$('#vlcv').value};
+  const chay=async luu=>{
+    const ck=[...c.querySelectorAll('.vck:checked')].map(x=>x.value);
+    if(!ck.length)return toast('Tích chọn ít nhất một loại văn bản');
+    if(!$('#vyc').value.trim()&&!confirm('Chưa nhập nội dung cần soạn, AI sẽ soạn theo tên việc. Tiếp tục?'))return;
+    $('#vtai').disabled=$('#vluu').disabled=true;let loi='',n=0;
+    for(const [i,ma] of ck.entries()){
+      $('#vtt').textContent=`Đang soạn ${i+1}/${ck.length}… (mỗi bản mất khoảng 10–40 giây)`;
+      const r=await goiVB({action:'soan',viec_id:id,mau_ma:ma,yeu_cau:$('#vyc').value.trim()});
+      if(r.loi){loi=r.loi;break}
+      n++;
+      if(luu){$('#vtt').textContent=`Đang lưu vào Drive ${i+1}/${ck.length}…`;const s2=await goiVB({action:'luu',van_ban_id:r.id});if(s2.loi){loi='Đã soạn nhưng chưa lưu được Drive: '+s2.loi;break}}
+      else{taiVe(r.url);await new Promise(o=>setTimeout(o,700))}
+    }
+    $('#vtai').disabled=$('#vluu').disabled=false;
+    $('#vtt').textContent=loi?'⚠ '+loi:(luu?`✅ Đã soạn và lưu ${n} văn bản vào Drive.`:`✅ Đã soạn ${n} văn bản, file Word đã được tải về.`);
+    lamMoi();
+  };
+  $('#vtai').onclick=()=>chay(false);$('#vluu').onclick=()=>chay(true);
+  if($('#vket'))$('#vket').onclick=async()=>{
+    const {data}=await sb.from('van_ban_viec').select('drive_url').eq('viec_id',id);
+    const chua=(data||[]).filter(d=>!d.drive_url).length;
+    if(!confirm((chua?`Còn ${chua} văn bản chưa lưu vào Drive.\n\n`:'')+'Kết thúc việc này, xem như đã hoàn chỉnh?'))return;
+    await qAdd({ma_khach:uid(),viec_id:id,trang_thai:'da_dong',ghi_chu:'Kết thúc: hồ sơ đã hoàn chỉnh',anh:null,tep:null,tep_ten:null,gio_bam:new Date().toISOString(),vi_tri_loi:'Không lấy vị trí khi kết thúc việc'});
+    await day();toast('Đã kết thúc việc');chiTiet(id);
+  };
+}
 async function chiTiet(id){
   const [{data:v},{data:cn}]=await Promise.all([
     sb.from('viec').select('*').eq('id',id).single(),
@@ -218,6 +281,7 @@ async function chiTiet(id){
   <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   if(me.la_quan_tri){$('#nd').insertAdjacentHTML('beforeend','<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa việc này (quản trị)</button>');$('#xoa').onclick=()=>xoaMuc('viec',id,'Xóa vĩnh viễn việc này cùng lịch sử cập nhật?',ve)}
   $('#lui').onclick=ve;
+  if(laNhan||laGiao)bangVB(v,laGiao);
   document.querySelectorAll('[data-xp]').forEach(a=>a.onclick=e=>{e.preventDefault();xemTep(a.dataset.xp,a.dataset.xt,id)});
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
 }
