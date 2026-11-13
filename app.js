@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v55</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v56</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -144,7 +144,7 @@ async function formViec(){
 }
 
 const bando=c=>{const la=+c.vi_do,lo=+c.kinh_do,d=0.004;return `<div class="mut">📍 ${la.toFixed(5)}, ${lo.toFixed(5)}${c.do_chinh_xac?' (sai số ±'+c.do_chinh_xac+' m)':''} · <a href="https://www.google.com/maps?q=${la},${lo}" target="_blank" rel="noopener">Mở Google Maps</a></div><iframe class="bd" loading="lazy" title="Bản đồ" src="https://www.openstreetmap.org/export/embed.html?bbox=${lo-d},${la-d},${lo+d},${la+d}&layer=mapnik&marker=${la},${lo}"></iframe>`};
-const napJs=u=>new Promise((ok,ko)=>{const t=document.createElement('script');t.src=u;t.onload=ok;t.onerror=()=>ko(new Error('Không tải được bộ xem file, kiểm tra mạng'));document.head.appendChild(t)});
+const napJs=u=>new Promise((ok,ko)=>{const t=document.createElement('script');const h=setTimeout(()=>ko(new Error('Bộ xem file tải quá lâu (mạng chậm hoặc bị chặn). Bấm Tải ở trên để mở bằng Word/Excel.')),20000);t.src=u;t.onload=()=>{clearTimeout(h);ok()};t.onerror=()=>{clearTimeout(h);ko(new Error('Không tải được bộ xem file, kiểm tra mạng'))};document.head.appendChild(t)});
 let xlsxP,mamP;
 const taiXlsx=()=>xlsxP||(xlsxP=napJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'));
 const taiMam=()=>mamP||(mamP=napJs('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js'));
@@ -238,31 +238,68 @@ async function khungSoan(k,ov,viecId,path){
     await day();document.querySelectorAll('.vw').forEach(x=>x.remove());toast('Đã kết thúc việc');chiTiet(viecId);
   };
 }
+// ---- Trình xem Word tự viết (không cần tải thư viện ngoài, không bị treo) ----
+async function giaiNen(buf,ten){
+  const dv=new DataView(buf),u8=new Uint8Array(buf);let e=-1;
+  for(let i=u8.length-22;i>=Math.max(0,u8.length-70000);i--)if(dv.getUint32(i,true)===0x06054b50){e=i;break}
+  if(e<0)throw new Error('Không phải file Word hợp lệ');
+  let n=dv.getUint16(e+10,true),o=dv.getUint32(e+16,true);
+  for(;n>0;n--){
+    const m=dv.getUint16(o+10,true),cs=dv.getUint32(o+20,true),nl=dv.getUint16(o+28,true),xl=dv.getUint16(o+30,true),cl=dv.getUint16(o+32,true),lh=dv.getUint32(o+42,true);
+    const nm=new TextDecoder().decode(u8.subarray(o+46,o+46+nl));
+    if(nm===ten){const st=lh+30+dv.getUint16(lh+26,true)+dv.getUint16(lh+28,true),dt=u8.subarray(st,st+cs);
+      if(m===0)return dt;
+      return new Uint8Array(await new Response(new Blob([dt]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())}
+    o+=46+nl+xl+cl}
+  throw new Error('Không thấy nội dung trong file Word');
+}
+async function docxHtml(buf){
+  const xml=new TextDecoder().decode(await giaiNen(buf,'word/document.xml'));
+  const d=new DOMParser().parseFromString(xml,'application/xml');
+  if(d.querySelector('parsererror'))throw new Error('File Word bị lỗi cấu trúc');
+  const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main',L=(el,t)=>[...el.children].filter(c=>c.localName===t);
+  const val=(el,t)=>{const x=L(el,t)[0];return x?x.getAttributeNS(W,'val')||x.getAttribute('w:val')||'':null};
+  const bat=(rp,t)=>{if(!rp)return false;const x=L(rp,t)[0];if(!x)return false;const v=x.getAttributeNS(W,'val')||x.getAttribute('w:val');return v!=='0'&&v!=='false'};
+  const txt=el=>{let r='';(function w(n){for(const c of n.children){
+    if(c.localName==='Fallback')continue;
+    if(c.localName==='t')r+=c.textContent;else if(c.localName==='tab')r+=' ';else if(c.localName==='br'||c.localName==='cr')r+='\n';else w(c)}})(el);return r};
+  const run=r=>{let t=txt(r);if(!t)return '';t=esc(t).replace(/\n/g,'<br>');const rp=L(r,'rPr')[0];
+    if(bat(rp,'b'))t='<b>'+t+'</b>';if(bat(rp,'i'))t='<i>'+t+'</i>';if(rp&&L(rp,'u')[0]&&val(rp,'u')!=='none')t='<u>'+t+'</u>';return t};
+  const para=p=>{const pp=L(p,'pPr')[0];const jc=pp?val(pp,'jc'):'';const al=jc==='center'?'center':jc==='right'||jc==='end'?'right':jc==='both'?'justify':'left';
+    let h='';(function w(n){for(const c of n.children){if(c.localName==='Fallback')continue;if(c.localName==='r')h+=run(c);else if(c.localName==='p')continue;else w(c)}})(p);
+    const ind=pp&&L(pp,'ind')[0],fl=ind?parseInt(ind.getAttributeNS(W,'firstLine')||0):0,lf=ind?parseInt(ind.getAttributeNS(W,'left')||0):0;
+    return `<p style="text-align:${al};margin:4px 0;${fl>0?'text-indent:'+(fl/20)+'pt;':''}${lf>0?'padding-left:'+(lf/20)+'pt;':''}">${h||'&nbsp;'}</p>`};
+  const bang=t=>{const pr=L(t,'tblPr')[0],bd=pr&&L(pr,'tblBorders')[0],cob=!!bd&&[...bd.children].some(c=>!/^(none|nil)$/.test(c.getAttributeNS(W,'val')||c.getAttribute('w:val')||'')),kv=cob?'1px solid #666':'none';return `<table style="border-collapse:collapse;width:100%;margin:6px 0">`+L(t,'tr').map(tr=>'<tr>'+L(tr,'tc').map(tc=>`<td style="border:${kv};padding:3px 6px;vertical-align:top">${L(tc,'p').map(para).join('')||''}</td>`).join('')+'</tr>').join('')+'</table>'};
+  let out='';const body=d.getElementsByTagNameNS(W,'body')[0];
+  for(const c of body.children){if(c.localName==='p')out+=para(c);else if(c.localName==='tbl')out+=bang(c);else if(c.localName==='sdt'){const k=L(c,'sdtContent')[0];if(k)for(const x of k.children){if(x.localName==='p')out+=para(x);else if(x.localName==='tbl')out+=bang(x)}}}
+  return out;
+}
 async function xemTep(path,ten,viecId,urlSan,textDP){
   const ov=document.createElement('div');ov.className='vw';
   ov.innerHTML=`<div class="vwh"><b>${esc(ten||'Tệp')}</b><span><a id="vwtai" href="#" download>⬇ Tải</a> <button class="sec" id="vwx">✕ Đóng</button></span></div><div class="vwb" id="vwb">Đang mở…</div>`;
-  document.body.appendChild(ov);$('#vwx').onclick=()=>{const cap=ov.dataset.vb&&viecId;ov.remove();if(cap)chiTiet(viecId)};
-  const b=$('#vwb');
+  document.body.appendChild(ov);ov.querySelector('#vwx').onclick=()=>{const cap=ov.dataset.vb&&viecId;ov.remove();if(cap)chiTiet(viecId)};
+  const b=ov.querySelector('#vwb');
   if(viecId&&/^(xlsx|docx)$/.test(duoiTep(ten)))khungAI(ov,viecId,path,ten);
   try{
-    const url=urlSan||await linkTep(path,ten);if(!url)throw new Error('Không lấy được đường dẫn file');$('#vwtai').href=url;
+    const url=urlSan||await linkTep(path,ten);if(!url)throw new Error('Không lấy được đường dẫn file');ov.querySelector('#vwtai').href=url;
     const d=duoiTep(ten);
     const hen=(pr,ms,tb)=>Promise.race([pr,new Promise((_,no)=>setTimeout(()=>no(new Error(tb||'Mở file quá lâu')),ms))]);
     if(textDP){
-      b.innerHTML='<div class="vwdoc" style="white-space:pre-wrap;font-family:\'Times New Roman\',serif;font-size:17px;line-height:1.5">'+esc(textDP)+'</div><p class="mut" style="padding:8px">Đây là bản xem nhanh nội dung. File Word tải về có đủ quốc hiệu, bảng, chữ ký đúng mẫu bệnh viện.</p>';
-      hen((async()=>{const bf=await (await fetch(url)).arrayBuffer();await taiMam();return mammoth.convertToHtml({arrayBuffer:bf})})(),12000).then(r=>{if(r&&r.value&&document.body.contains(ov))b.innerHTML='<div class="vwdoc">'+sach(r.value)+'</div>'}).catch(()=>{});
+      const bn='<div class="vwdoc" style="white-space:pre-wrap;font-family:\'Times New Roman\',serif;font-size:17px;line-height:1.5">'+esc(textDP)+'</div><p class="mut" style="padding:8px">Đây là bản xem nhanh nội dung. File Word tải về có đủ quốc hiệu, bảng, chữ ký đúng mẫu bệnh viện.</p>';
+      b.innerHTML=bn;
+      try{const bf=await hen((async()=>(await fetch(url)).arrayBuffer())(),15000);const h=await docxHtml(bf);if(document.body.contains(ov))b.innerHTML='<div class="vwdoc" style="font-family:\'Times New Roman\',serif;font-size:17px">'+sach(h)+'</div>'}catch(er){b.dataset.err=String(er.message||er)}
       return}
     const buf=await hen((async()=>(await fetch(url)).arrayBuffer())(),20000,'Tải file quá lâu, kiểm tra mạng rồi mở lại');
     if(d==='xlsx'||d==='xls'){
       await taiXlsx();const wb=XLSX.read(buf,{type:'array'});
       const ve1=i=>{const ws=wb.Sheets[wb.SheetNames[i]];const r=XLSX.utils.decode_range(ws['!ref']||'A1');
         const cat=r.e.r>1000||r.e.c>40;if(cat){r.e.r=Math.min(r.e.r,1000);r.e.c=Math.min(r.e.c,40);ws['!ref']=XLSX.utils.encode_range(r)}
-        $('#vwt').innerHTML=sach(XLSX.utils.sheet_to_html(ws,{header:'',footer:''}))+(cat?'<p class="mut">Chỉ hiển thị 1000 dòng × 40 cột đầu, tải file để xem đủ.</p>':'');
-        document.querySelectorAll('.vwtab').forEach((x,k)=>x.classList.toggle('on',k===i))};
+        ov.querySelector('#vwt').innerHTML=sach(XLSX.utils.sheet_to_html(ws,{header:'',footer:''}))+(cat?'<p class="mut">Chỉ hiển thị 1000 dòng × 40 cột đầu, tải file để xem đủ.</p>':'');
+        ov.querySelectorAll('.vwtab').forEach((x,k)=>x.classList.toggle('on',k===i))};
       b.innerHTML=`<div class="vwtabs">${wb.SheetNames.map((n,i)=>`<button class="vwtab sec" data-i="${i}">${esc(n)}</button>`).join('')}</div><div id="vwt" class="vwt"></div>`;
       b.querySelectorAll('.vwtab').forEach(x=>x.onclick=()=>ve1(+x.dataset.i));ve1(0);
     }else if(d==='docx'){
-      await hen(taiMam(),15000,'Không tải được bộ đọc Word (mạng chậm), bấm Tải ở trên để mở bằng Word');const r=await hen(mammoth.convertToHtml({arrayBuffer:buf}),15000,'Không đọc được file này, bấm Tải ở trên để mở bằng Word');b.innerHTML='<div class="vwdoc">'+sach(r.value)+'</div>';
+      b.innerHTML='<div class="vwdoc" style="font-family:\'Times New Roman\',serif;font-size:17px">'+sach(await hen(docxHtml(buf),15000,'Không đọc được file này, bấm Tải ở trên để mở bằng Word'))+'</div>';
     }else b.innerHTML='<p>File .doc đời cũ chưa xem trực tiếp được, bấm "Tải" ở trên để mở bằng Word.</p>';
   }catch(e){b.innerHTML='<p style="color:#b91c1c">Không mở được file: '+esc(e.message||String(e))+'</p>'}
 }
