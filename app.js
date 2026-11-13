@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v58</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v59</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -117,7 +117,7 @@ async function formViec(){
   $('#nd').innerHTML=`<div class="card"><label>Việc cần làm</label><input id="tt"><label>Mô tả</label><textarea id="ms"></textarea>
   <label>Người nhận ${me.vai_tro==='nhan_vien'?'':'(chỉ hiện người trong khoa/phòng bạn phụ trách)'}</label>
   <input id="nq" placeholder="Gõ tên để lọc…" autocomplete="off"><select id="nn"></select>
-  <label>Hạn</label><input id="han" type="datetime-local"><label>Mức độ</label><select id="ut"><option value="1">Thường</option><option value="2">Gấp</option><option value="0">Thấp</option></select>
+  <label>Hạn (bắt buộc, app sẽ nhắc trước 3 ngày, 1 ngày, 1 giờ và nhắc mỗi sáng nếu quá hạn)</label><input id="han" type="datetime-local"><div class="row" style="margin-top:6px;gap:6px">${[["Hôm nay 17h",0],["Ngày mai",1],["3 ngày",3],["1 tuần",7],["1 tháng",30]].map(x=>`<button type="button" class="sec" data-hn="${x[1]}" style="padding:6px 10px">${x[0]}</button>`).join("")}</div><label>Mức độ</label><select id="ut"><option value="1">Thường</option><option value="2">Gấp</option><option value="0">Thấp</option></select>
   <label>Loại công việc (để lưu văn bản vào đúng thư mục Drive)</label><select id="lcv"></select>
   <label>Đính kèm file Word / Excel (không bắt buộc, tối đa 10 MB)</label><input id="tepg" type="file" accept=".doc,.docx,.xls,.xlsx">
   <div id="pcb" class="mut" style="margin-top:6px"></div>
@@ -127,9 +127,11 @@ async function formViec(){
     el.innerHTML=data>0?'🔔 Người này đã bật thông báo ('+data+' máy)':'<span style="color:#b45309">⚠ Người này chưa bật thông báo trên máy, nên sẽ không có tin báo ngay. Hãy nhắc họ mở app → tab "Tôi" → bật thông báo.</span>'};
   const dien=q=>{const x=fx(q);const l=ds.filter(u=>!x||fx(u.ho_ten+' '+kt(u)).includes(x));$('#nn').innerHTML=l.map(u=>`<option value="${u.id}" ${u.id===me.id?'selected':''}>${esc(u.ho_ten)}${u.id===me.id?' (tôi)':''}${kt(u)?' · '+esc(kt(u)):''}</option>`).join('')||'<option value="">Không có ai khớp</option>';if(x&&l.length)$('#nn').value=l[0].id};
   sb.from('loai_cong_viec').select('ma,ten').order('thu_tu').then(({data})=>{$('#lcv').innerHTML=(data||[]).map(l=>`<option value="${l.ma}" ${l.ma==='khac'?'selected':''}>${esc(l.ten)}</option>`).join('')});
+  const hanDat=n=>{const d=new Date();d.setDate(d.getDate()+n);d.setHours(17,0,0,0);if(d<new Date())d.setDate(d.getDate()+1);const z=x=>String(x).padStart(2,'0');$('#han').value=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
+  document.querySelectorAll('[data-hn]').forEach(b=>b.onclick=()=>hanDat(+b.dataset.hn));hanDat(1);
   dien('');$('#nq').oninput=()=>{dien($('#nq').value);pcb()};$('#nn').onchange=pcb;pcb();
   $('#g').onclick=async()=>{
-    if(!$('#tt').value.trim())return $('#loi').textContent='Nhập tên việc';if(!$('#nn').value)return $('#loi').textContent='Chọn người nhận';
+    if(!$('#tt').value.trim())return $('#loi').textContent='Nhập tên việc';if(!$('#nn').value)return $('#loi').textContent='Chọn người nhận';if(!$('#han').value)return $('#loi').textContent='Chọn hạn hoàn thành để app nhắc đúng hẹn';
     const tep=$('#tepg').files[0]||null,lt=kiemTep(tep);if(lt)return $('#loi').textContent=lt;
     const vid=uid(),fp=tep?`${vid}/giao-${uid()}.${duoiTep(tep.name)}`:null;
     const {error}=await sb.from('viec').insert({id:vid,file_path:fp,file_ten:tep?tep.name:null,tieu_de:$('#tt').value.trim(),mo_ta:$('#ms').value||null,nguoi_giao:me.id,nguoi_nhan:$('#nn').value,han:$('#han').value?new Date($('#han').value).toISOString():null,uu_tien:+$('#ut').value,loai_cv:$('#lcv').value||'khac'});
@@ -359,16 +361,17 @@ async function chiTiet(id){
   if(laGiao&&v.nguoi_giao===me.id)opts.push(['da_dong','Xác nhận đóng việc']);
   $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button>
   <div class="card" style="margin-top:10px"><h3>${esc(v.tieu_de)}</h3>${tag(v.trang_thai)}<p>${esc(v.mo_ta||'')}</p>
-  <div class="mut">Giao: ${esc(ten(v.nguoi_giao))} → ${esc(ten(v.nguoi_nhan))}${v.han?'<br>Hạn '+fmt(v.han):''}</div>${v.file_path?`<p><a href="${vurl||'#'}" download>${bieuTuongTep(v.file_ten)} ${esc(v.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(v.file_path)}" data-xt="${esc(v.file_ten||'')}">👁 Xem</a></p>`:''}</div>
+  <div class="mut">Giao: ${esc(ten(v.nguoi_giao))} → ${esc(ten(v.nguoi_nhan))}${v.han?'<br>Hạn '+fmt(v.han):'<br><b style="color:#b45309">⚠ Chưa có hạn nên app không nhắc được</b>'}${(laNhan||v.nguoi_giao===me.id)&&v.trang_thai!=='da_dong'?` · <a href="#" id="dhan">⏰ ${v.han?'Đổi':'Đặt'} hạn</a><div id="hanbox" style="display:none;margin-top:6px"><input id="han2" type="datetime-local"> <button class="sec" id="luuhan">Lưu hạn</button></div>`:''}</div>${v.file_path?`<p><a href="${vurl||'#'}" download>${bieuTuongTep(v.file_ten)} ${esc(v.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(v.file_path)}" data-xt="${esc(v.file_ten||'')}">👁 Xem</a></p>`:''}</div>
   ${(laNhan||opts.length)?`<div class="card"><label>Cập nhật hiện trạng</label><select id="st"><option value="">Giữ nguyên trạng thái</option>${opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select>
-  <label>Ghi chú</label><textarea id="gc"></textarea><label>Ảnh (chụp tại chỗ)</label><input id="anh" type="file" accept="image/*" capture="environment">
-  <label>Hoặc đính kèm file Word / Excel (tối đa 10 MB)</label><input id="tep" type="file" accept=".doc,.docx,.xls,.xlsx">
+  <label>Ghi chú</label><textarea id="gc"></textarea><label>📎 Ảnh hoặc file Word / Excel (chụp ảnh tại chỗ hoặc chọn file, tối đa 10 MB)</label><input id="dk" type="file" accept="image/*,.doc,.docx,.xls,.xlsx">
   <button class="full" id="gui">📷 Gửi cập nhật</button><p class="mut">Vị trí GPS chỉ lấy tại lúc bấm Gửi.</p></div>`:''}
   <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   if(me.la_quan_tri){$('#nd').insertAdjacentHTML('beforeend','<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa việc này (quản trị)</button>');$('#xoa').onclick=()=>xoaMuc('viec',id,'Xóa vĩnh viễn việc này cùng lịch sử cập nhật?',ve)}
   $('#lui').onclick=ve;
   document.querySelectorAll('[data-xp]').forEach(a=>a.onclick=e=>{e.preventDefault();xemTep(a.dataset.xp,a.dataset.xt,id)});
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
+  if($('#dhan')){$('#dhan').onclick=e=>{e.preventDefault();$('#hanbox').style.display='block';const d=new Date(v.han||Date.now()+864e5),z=x=>String(x).padStart(2,'0');$('#han2').value=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
+    $('#luuhan').onclick=async()=>{if(!$('#han2').value)return toast('Chọn hạn');const {error}=await sb.from('viec').update({han:new Date($('#han2').value).toISOString()}).eq('id',id);if(error)return toast('Không lưu được hạn: '+error.message);toast('Đã lưu hạn, app sẽ nhắc đúng hẹn');chiTiet(id)}}
 }
 const nen=f=>new Promise(res=>{if(!f)return res(null);const i=new Image();i.onload=()=>{const k=Math.min(1,1600/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>res(b),'image/jpeg',.8)};i.onerror=()=>res(null);i.src=URL.createObjectURL(f)});
 const viTri=()=>new Promise(res=>{if(!navigator.geolocation)return res({vi_tri_loi:'Máy không hỗ trợ định vị'});
@@ -376,9 +379,10 @@ const viTri=()=>new Promise(res=>{if(!navigator.geolocation)return res({vi_tri_l
   lay(true,()=>lay(false,null))});
 async function guiCapNhat(id){
   const b=$('#gui');
-  const tep=$('#tep').files[0]||null,lt=kiemTep(tep);if(lt)return toast(lt);
+  const f=$('#dk').files[0]||null,laAnh=!!f&&(/^image\//.test(f.type)||/\.(jpe?g|png|webp|heic|heif|gif)$/i.test(f.name));
+  const tep=laAnh?null:f,lt=kiemTep(tep);if(lt)return toast(lt);
   b.disabled=true;
-  const gio=new Date().toISOString(), gps=await viTri(), anh=await nen($('#anh').files[0]);
+  const gio=new Date().toISOString(), gps=await viTri(), anh=laAnh?await nen(f):null;
   const o={ma_khach:uid(),viec_id:id,trang_thai:$('#st').value||null,ghi_chu:$('#gc').value.trim()||null,anh,tep,tep_ten:tep?tep.name:null,gio_bam:gio,...gps};
   if(!o.ghi_chu&&!anh&&!tep&&!o.trang_thai){b.disabled=false;return toast('Chưa có nội dung')}
   await qAdd(o);await day();
