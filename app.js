@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v52</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v53</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -158,7 +158,7 @@ async function goiAI(body){
 }
 function khungAI(ov,viecId,path,ten){
   const p=document.createElement('div');p.className='ai';
-  p.innerHTML=`<div class="aih"><b>🤖 Hỏi AI về tệp này</b><span><button class="sec" id="aithu">Thu gọn</button> <button class="sec" id="aixoa">Xóa hội thoại</button></span></div><div class="aim" id="aim"></div><div class="aiq"><button id="aimau" style="background:#15803d;color:#fff">📝 Soạn tờ trình / quyết định theo mẫu BV</button>${GOI_Y.filter(g=>!/^Soạn/.test(g[0])).map((g,i)=>`<button class="sec" data-g="${GOI_Y.indexOf(g)}">${g[0]}</button>`).join('')}</div><div class="aii"><textarea id="aiq" rows="2" placeholder="Hỏi, nhờ tính toán, viết công thức, soạn văn bản…"></textarea><button id="aig">Gửi</button></div>`;
+  p.innerHTML=`<div class="aih"><b>🤖 Hỏi AI về tệp này</b><span><button class="sec" id="aithu">Thu gọn</button> <button class="sec" id="aixoa">Xóa hội thoại</button></span></div><div class="aim" id="aim"></div><div class="aiq"><button id="aimau" style="background:#15803d;color:#fff">📝 Soạn tờ trình / quyết định từ file này</button>${GOI_Y.filter(g=>!/^Soạn/.test(g[0])).map((g,i)=>`<button class="sec" data-g="${GOI_Y.indexOf(g)}">${g[0]}</button>`).join('')}</div><div class="aii"><textarea id="aiq" rows="2" placeholder="Hỏi, nhờ tính toán, viết công thức, soạn văn bản…"></textarea><button id="aig">Gửi</button></div>`;
   ov.appendChild(p);
   const m=$('#aim'),base={viec_id:viecId,file_path:path};
   const them=(vai,tx)=>{const d=document.createElement('div');d.className='aib '+(vai==='user'?'u':'m');const t=document.createElement('div');t.className='ait';t.textContent=tx;d.appendChild(t);
@@ -175,61 +175,65 @@ function khungAI(ov,viecId,path,ten){
     them('model',r.tra_loi||('⚠ '+(r.loi||'Lỗi không rõ')));if(r.cat)toast('Tệp dài, AI chỉ đọc phần đầu')};
   $('#aig').onclick=()=>gui($('#aiq').value);
   $('#aimau').onclick=()=>{const so=document.createElement('div');so.className='vw';
-    so.innerHTML='<div class="vwh"><b>📝 Soạn tờ trình / quyết định theo mẫu BV</b><span><button class="sec" id="sox">✕ Đóng</button></span></div><div class="vwb" id="sob" style="overflow:auto"></div>';
+    so.innerHTML='<div class="vwh"><b>📝 Soạn văn bản từ file này</b><span><button class="sec" id="sox">✕ Đóng</button></span></div><div class="vwb" id="sob" style="overflow:auto"></div>';
     document.body.appendChild(so);$('#sox').onclick=()=>{if(so.dataset.vb)ov.dataset.vb=1;so.remove()};
     khungSoan($('#sob'),so,viecId,path)};
   p.querySelectorAll('.aiq button').forEach(x=>x.onclick=()=>{const g=GOI_Y[+x.dataset.g];if(g[2]){$('#aiq').value=g[1];$('#aiq').focus()}else gui(g[1])});
   goiAI({...base,action:'lich_su'}).then(r=>{(r.lich_su||[]).forEach(h=>them(h.vai,h.noi_dung))});
 }
-// Soạn tờ trình / quyết định theo mẫu bệnh viện, ngay trong khung AI của tệp đang xem
+// Soạn tờ trình / quyết định theo mẫu bệnh viện: 1 màn hình, AI tự gợi ý loại + ý chính
 async function khungSoan(k,ov,viecId,path){
-  k.innerHTML='<p class="mut">Đang tải danh sách mẫu…</p>';
+  k.innerHTML='<div style="padding:14px"><p class="mut">🤖 AI đang đọc file và gợi ý loại văn bản…</p></div>';
   const [{data:mau},{data:vv}]=await Promise.all([sb.from('mau_van_ban').select('ma,ten,loai,mo_ta').eq('hoat_dong',true).order('thu_tu'),sb.from('viec').select('nguoi_giao,trang_thai').eq('id',viecId).single()]);
-  const nhom=[['to_trinh','Tờ trình'],['quyet_dinh','Quyết định']];
   const choKet=vv&&vv.nguoi_giao===me.id&&vv.trang_thai!=='da_dong';
-  k.innerHTML=`<div class="aisoan"><b>1. Chọn loại văn bản</b>
-  ${nhom.map(([g,t])=>`<div class="mut" style="margin-top:6px">${t}</div>`+(mau||[]).filter(m=>m.loai===g).map(m=>`<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin:6px 0"><input type="checkbox" class="vck" value="${m.ma}" style="width:22px;height:22px;flex:none"><span>${esc(m.ten)}<br><span class="mut">${esc(m.mo_ta||'')}</span></span></label>`).join('')).join('')}
-  <b>2. Ý của bạn</b><textarea id="vyc" rows="3" placeholder="VD: Trình duyệt chi hỗ trợ theo bảng này, nguồn chi thường xuyên, thực hiện tháng 12"></textarea>
-  <b>3. AI đọc tệp này + ý bạn, viết vào khung Word của bệnh viện</b>
-  <div style="display:flex;gap:8px;margin-top:6px"><button id="vtai" style="flex:1">⬇ Soạn &amp; tải Word</button><button id="vluu" style="flex:1">💾 Soạn &amp; lưu Drive</button></div>
-  <p class="mut" id="vtt"></p><div id="vkq"></div>
-  ${choKet?'<button id="vket" style="width:100%;margin-top:10px;background:#15803d;color:#fff">✔ Kết thúc việc (hồ sơ đã hoàn chỉnh)</button>':''}</div>`;
-  const kq=$('#vkq'),dsVb=[];
+  const goiYP=goiVB({action:'goi_y',viec_id:viecId,file_path:path});
+  k.innerHTML=`<div class="aisoan">
+  <b>① Loại văn bản</b> <span class="mut" id="vgy">(AI đang gợi ý…)</span>
+  ${(mau||[]).map(m=>`<label class="vlb"><input type="radio" name="vmau" class="vck" value="${m.ma}"><span><b>${esc(m.ten)}</b><br><span class="mut">${esc(m.mo_ta||'')}</span></span></label>`).join('')}
+  <b>② Ý chính</b> <span class="mut">(AI viết sẵn, bạn sửa lại cho đúng ý)</span>
+  <textarea id="vyc" rows="5" placeholder="Đang chờ AI gợi ý… hoặc tự gõ ý của bạn"></textarea>
+  <button id="vsoan" class="full">✨ Soạn văn bản</button>
+  <p class="mut" id="vtt"></p><div id="vkq"></div></div>
+  <div class="vfoot"><button id="vluu" class="full" disabled>💾 Lưu</button><button id="vtai" class="sec" disabled>⬇ Tải Word</button>${choKet?'<button id="vket" class="full" style="background:#15803d">✔ Kết thúc việc</button>':''}</div>`;
+  const kq=$('#vkq'),DS=[];
+  goiYP.then(r=>{
+    if(r.mau_ma){const x=k.querySelector(`.vck[value="${r.mau_ma}"]`);if(x)x.checked=true}
+    if(r.y_chinh&&!$('#vyc').value)$('#vyc').value=r.y_chinh;
+    $('#vgy').textContent=r.loi?'(không gợi ý được, bạn tự chọn)':(r.mau_ma?'(AI đã chọn sẵn, bạn đổi được)':'(bạn chọn giúp)');
+    if(r.loi)toast(r.loi)});
+  const capNhatNut=()=>{const chua=DS.filter(d=>!d.luu).length;$('#vluu').disabled=!DS.length||!chua;$('#vluu').textContent=!DS.length?'💾 Lưu':chua?`💾 Lưu (${chua} văn bản)`:'✅ Đã lưu hết';$('#vtai').disabled=!DS.length};
   const xem=async r=>{const x=await goiVB({action:'tai',van_ban_id:r.id});if(!x.url)return toast(x.loi||'Lỗi');xemTep(null,r.ten,null,x.url)};
-  const luuDrive=async r=>{const x=await goiVB({action:'luu',van_ban_id:r.id});if(x.loi){toast(x.loi);return false}r.luu=true;toast('Đã lưu vào Drive: '+(x.thu_muc||''));return true};
+  const luuMot=async r=>{const x=await goiVB({action:'luu',van_ban_id:r.id});if(x.loi){toast(x.loi);return null}r.luu=true;r.drive=!!x.drive;r.thu=x.thu_muc||'';r.canh=x.canh||'';return x};
   const ve=r=>{
     const d=r.el||(r.el=document.createElement('div'));d.className='aib m';
-    d.innerHTML=`<div class="ait">📄 ${esc(r.ten)}</div><div class="aia"><button class="sec" data-x>👁 Xem</button> <button class="sec" data-t>⬇ Tải</button> ${r.luu?'<span class="mut">✅ Đã lưu Drive</span>':'<button class="sec" data-l>💾 Lưu Drive</button>'} <button class="sec" data-c>✏️ Chỉnh lại</button></div>
-    <div data-cf style="display:none;margin-top:6px"><textarea rows="2" placeholder="Chỗ nào chưa vừa ý, VD: thêm căn cứ Quy chế chi tiêu, đổi mức chi thành 2.500.000 đ" style="width:100%"></textarea><button data-cg style="width:100%">Chỉnh &amp; soạn lại</button></div>`;
+    d.innerHTML=`<div class="ait">📄 ${esc(r.ten)}</div><div class="mut">${r.luu?(r.drive?'✅ Đã lưu vào Drive: '+esc(r.thu):'✅ Đã lưu trong app'+(r.canh?' (chưa vào Drive: '+esc(r.canh)+')':'')):'Chưa lưu'}</div><div class="aia"><button class="sec" data-x>👁 Xem</button> <button class="sec" data-c>✏️ Chỉnh lại</button></div>
+    <div data-cf style="display:none;margin-top:6px"><textarea rows="2" placeholder="Chỗ nào chưa vừa ý? VD: thêm căn cứ Quy chế chi tiêu, đổi mức chi thành 2.500.000 đ" style="width:100%"></textarea><button data-cg style="width:100%">Chỉnh &amp; soạn lại</button></div>`;
     d.querySelector('[data-x]').onclick=()=>xem(r);
-    d.querySelector('[data-t]').onclick=async()=>{const x=await goiVB({action:'tai',van_ban_id:r.id});x.url?taiVe(x.url,r.ten):toast(x.loi||'Lỗi')};
-    const l=d.querySelector('[data-l]');if(l)l.onclick=async()=>{l.disabled=true;l.textContent='Đang lưu…';if(await luuDrive(r))ve(r);else{l.disabled=false;l.textContent='💾 Lưu Drive'}};
     d.querySelector('[data-c]').onclick=()=>{const f=d.querySelector('[data-cf]');f.style.display=f.style.display==='none'?'block':'none'};
     d.querySelector('[data-cg]').onclick=async e=>{const t=d.querySelector('textarea').value.trim();if(!t)return toast('Ghi chỗ cần chỉnh');const b=e.target;b.disabled=true;b.textContent='Đang chỉnh…';
       const x=await goiVB({action:'soan',viec_id:viecId,mau_ma:r.mau,file_path:path,van_ban_cu:r.id,yeu_cau:'CHỈNH SỬA văn bản đã soạn theo ý sau: '+t});
       if(x.loi){b.disabled=false;b.textContent='Chỉnh & soạn lại';return toast(x.loi)}
-      const n={id:x.id,ten:x.ten,mau:r.mau,luu:false};if(r.luu)await luuDrive(n);ve(n);kq.insertBefore(n.el,d);d.remove()};
+      const n={id:x.id,ten:x.ten,mau:r.mau,luu:false};DS.splice(DS.indexOf(r),1,n);ve(n);kq.insertBefore(n.el,d);d.remove();capNhatNut();xem(n)};
     if(!d.parentNode)kq.appendChild(d)};
-  const chay=async luu=>{
-    const ck=[...k.querySelectorAll('.vck:checked')].map(x=>x.value);
-    if(!ck.length)return toast('Tích chọn ít nhất một loại văn bản');
-    $('#vtai').disabled=$('#vluu').disabled=true;let loi='',n=0;
-    for(const [i,ma] of ck.entries()){
-      $('#vtt').textContent=`Đang soạn ${i+1}/${ck.length}… (mỗi bản khoảng 10–40 giây)`;
-      const r=await goiVB({action:'soan',viec_id:viecId,mau_ma:ma,file_path:path,yeu_cau:$('#vyc').value.trim()});
-      if(r.loi){loi=r.loi;break}
-      n++;ov.dataset.vb=1;const o={id:r.id,ten:r.ten,mau:ma,luu:false};
-      if(luu){$('#vtt').textContent=`Đang lưu vào Drive ${i+1}/${ck.length}…`;if(!await luuDrive(o))loi='Đã soạn nhưng chưa lưu được vào Drive, bấm "Lưu Drive" ở bản bên dưới để thử lại.'}
-      else{taiVe(r.url,r.ten);await new Promise(o=>setTimeout(o,700))}
-      ve(o);if(loi)break;
-    }
-    $('#vtai').disabled=$('#vluu').disabled=false;
-    $('#vtt').textContent=loi?'⚠ '+loi:`✅ Đã soạn ${n} văn bản${luu?' và lưu vào Drive':''}. Bấm "👁 Xem" để kiểm tra, chưa vừa ý thì "✏️ Chỉnh lại".`;
-  };
-  $('#vtai').onclick=()=>chay(false);$('#vluu').onclick=()=>chay(true);
+  $('#vsoan').onclick=async()=>{
+    const ma=(k.querySelector('.vck:checked')||{}).value;
+    if(!ma)return toast('Chọn loại văn bản ở bước ①');
+    if(!$('#vyc').value.trim())return toast('Nhập ý chính ở bước ②');
+    const b=$('#vsoan');b.disabled=true;$('#vtt').textContent='⏳ AI đang viết vào khung Word của bệnh viện… (khoảng 10–40 giây)';
+    const r=await goiVB({action:'soan',viec_id:viecId,mau_ma:ma,file_path:path,yeu_cau:$('#vyc').value.trim()});
+    b.disabled=false;
+    if(r.loi){$('#vtt').textContent='⚠ '+r.loi;return}
+    ov.dataset.vb=1;const o={id:r.id,ten:r.ten,mau:ma,luu:false};DS.push(o);ve(o);capNhatNut();
+    $('#vtt').textContent='✅ Đã soạn xong. Bấm "👁 Xem" kiểm tra, chưa vừa ý thì "✏️ Chỉnh lại", ổn thì bấm 💾 Lưu.';xem(o)};
+  $('#vluu').onclick=async()=>{
+    const b=$('#vluu');b.disabled=true;b.textContent='Đang lưu…';let nd=0,loiN=0,canh='';
+    for(const r of DS.filter(d=>!d.luu)){const x=await luuMot(r);if(x){x.drive?nd++:canh=x.canh;ve(r)}else loiN++}
+    capNhatNut();
+    $('#vtt').textContent=loiN?'⚠ Có văn bản chưa lưu được, bấm Lưu lần nữa.':nd?'✅ Đã lưu vào thư mục Drive của loại công việc. Xem lại xong thì bấm ✔ Kết thúc việc.':'✅ Đã lưu trong app. Chưa đưa được vào Drive'+(canh?': '+canh:'')+'. Tải Word về để tự cất nếu cần.'};
+  $('#vtai').onclick=async()=>{for(const r of DS){const x=await goiVB({action:'tai',van_ban_id:r.id});if(x.url){await taiVe(x.url,r.ten);await new Promise(o=>setTimeout(o,600))}else toast(x.loi||'Lỗi')}};
   if($('#vket'))$('#vket').onclick=async()=>{
-    const chua=dsVb.length+[...kq.querySelectorAll('[data-l]')].length;
-    if(!confirm((chua?`Còn ${chua} văn bản chưa lưu vào Drive.\n\n`:'')+'Kết thúc việc này, xem như đã hoàn chỉnh?'))return;
+    const chua=DS.filter(d=>!d.luu).length;
+    if(!confirm((chua?`Còn ${chua} văn bản chưa lưu.\n\n`:'')+'Kết thúc việc này, xem như đã hoàn chỉnh?'))return;
     await qAdd({ma_khach:uid(),viec_id:viecId,trang_thai:'da_dong',ghi_chu:'Kết thúc: hồ sơ đã hoàn chỉnh',anh:null,tep:null,tep_ten:null,gio_bam:new Date().toISOString(),vi_tri_loi:'Không lấy vị trí khi kết thúc việc'});
     await day();document.querySelectorAll('.vw').forEach(x=>x.remove());toast('Đã kết thúc việc');chiTiet(viecId);
   };

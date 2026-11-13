@@ -112,3 +112,10 @@ nav button[data-t=moi] i{background:linear-gradient(180deg,#e8b83a,#c8921a);box-
 /* v49: khung soạn theo mẫu trong khung AI */
 .aisoan{padding:10px;border-top:1px solid var(--bd,#ddd);font-size:16px}
 .aisoan textarea{width:100%;font-size:16px}.aisoan button{min-height:44px}
+/* v53: soạn văn bản 1 màn hình */
+.vlb{display:flex;gap:10px;align-items:flex-start;font-weight:400;margin:6px 0;padding:8px;border:1px solid var(--bd,#ddd);border-radius:10px}
+.vlb input{width:22px;height:22px;flex:none;margin-top:2px}
+.vlb:has(input:checked){border-color:#15803d;background:rgba(21,128,61,.12)}
+.vfoot{position:sticky;bottom:0;display:flex;gap:8px;padding:10px;background:var(--bg,#fff);border-top:1px solid var(--bd,#ddd)}
+.vfoot button{flex:1;min-height:48px}
+#vsoan{margin-top:8px;min-height:50px;font-size:17px}
