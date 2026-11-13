@@ -3,7 +3,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { unzipSync } from 'npm:fflate@0.8.2';
 import * as XLSX from 'npm:xlsx@0.18.5';
-import { AlignmentType, Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from 'npm:docx@9.0.2';
 
 const H = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info', 'Content-Type': 'application/json' };
 const out = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: H });
@@ -28,15 +27,20 @@ function docxText(buf: Uint8Array): string {
 }
 
 function xlsxText(buf: Uint8Array): string {
-  const wb = XLSX.read(buf, { type: 'array' });
+  // Giới hạn 3000 dòng x 60 cột mỗi sheet để không tràn bộ nhớ khi file có vùng định dạng rất lớn
+  const wb = XLSX.read(buf, { type: 'array', sheetRows: 3000, cellStyles: false, cellHTML: false });
   let s = '';
   for (const n of wb.SheetNames) {
+    if (s.length > MAX_CHARS) break;
     const ws = wb.Sheets[n];
     if (!ws['!ref']) { s += `### Sheet "${n}": trống\n\n`; continue; }
     const r = XLSX.utils.decode_range(ws['!ref']);
+    if (r.e.c > r.s.c + 59) r.e.c = r.s.c + 59;
+    if (r.e.r > r.s.r + 2999) r.e.r = r.s.r + 2999;
+    ws['!ref'] = XLSX.utils.encode_range(r);
     const cot = Array.from({ length: r.e.c - r.s.c + 1 }, (_, i) => XLSX.utils.encode_col(r.s.c + i)).join(',');
     const csv = XLSX.utils.sheet_to_csv(ws, { blankrows: true }).split('\n');
-    s += `### Sheet "${n}" (vùng ${ws['!ref']}; các cột theo thứ tự: ${cot})\n`;
+    s += `### Sheet "${n}" (vùng ${ws['!ref']}, tối đa 3000 dòng đầu; các cột theo thứ tự: ${cot})\n`;
     csv.forEach((l, i) => { if (l.replace(/,/g, '').trim()) s += `r${r.s.r + i + 1}|${l}\n`; });
     s += '\n';
   }
@@ -44,8 +48,9 @@ function xlsxText(buf: Uint8Array): string {
 }
 
 const hoa = (s: string) => s === s.toUpperCase() && /[A-ZÀ-Ỹ]/.test(s) && s.length < 120;
-function toDocx(noi: string): Promise<Uint8Array> {
-  const kids: (Paragraph | Table)[] = [];
+async function toDocx(noi: string): Promise<Uint8Array> {
+  const { AlignmentType, Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } = await import('npm:docx@9.0.2');
+  const kids: any[] = [];
   let tbl: string[][] = [];
   const F = 'Times New Roman';
   const flush = () => {
@@ -75,7 +80,7 @@ function toDocx(noi: string): Promise<Uint8Array> {
     styles: { default: { document: { run: { font: F, size: 28 } } } },
     sections: [{ properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, bottom: 1134, left: 1985, right: 1134 } } }, children: kids }],
   });
-  return Packer.toBuffer(doc) as Promise<Uint8Array>;
+  return (await Packer.toBuffer(doc)) as Uint8Array;
 }
 
 Deno.serve(async (req) => {
