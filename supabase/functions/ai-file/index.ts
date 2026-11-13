@@ -158,15 +158,25 @@ Deno.serve(async (req) => {
     const payload: any = { systemInstruction: { parts: [{ text: HE_THONG }] }, contents, generationConfig: { temperature: 0.3, maxOutputTokens: 8192 } };
     if (cfg.ai_code !== '0') payload.tools = [{ code_execution: {} }];
 
-    const goi = () => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(payload) });
-    let r = await goi();
-    if (r.status === 503) { await new Promise((ok) => setTimeout(ok, 2500)); r = await goi(); }
+    const t0 = Date.now();
+    const goi = () => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(payload), signal: AbortSignal.timeout(45000) });
+    const nghi = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+    let r!: Response;
+    for (let k = 0; ; k++) {
+      try { r = await goi(); } catch (_) {
+        if (k >= 2 || Date.now() - t0 > 90000) return out({ loi: 'Gemini trả lời quá lâu hoặc mất kết nối, bồ thử lại sau ít phút.' }, 504);
+        continue;
+      }
+      if ((r.status === 503 || r.status === 500) && k < 4 && Date.now() - t0 < 80000) { await nghi(2500 * (k + 1)); continue; }
+      break;
+    }
     const j: any = await r.json().catch(() => ({}));
     if (!r.ok) {
       const m = String(j?.error?.message || r.status);
       if (r.status === 429) return out({ loi: 'Hết hạn mức miễn phí của Gemini trong lúc này, thử lại sau ít phút (hoặc sang ngày mới).' }, 429);
       if (r.status === 400 && /API key|API_KEY/i.test(m)) return out({ loi: 'Khóa Gemini không hợp lệ, quản trị cần kiểm tra lại GEMINI_API_KEY.' }, 502);
       if (r.status === 403 || /location|not supported/i.test(m)) return out({ loi: 'Gemini từ chối yêu cầu: ' + m.slice(0, 200) }, 502);
+      if (r.status === 503) return out({ loi: 'Gemini đang quá tải (đã tự thử lại vài lần). Bồ bấm gửi lại sau ít phút.' }, 503);
       return out({ loi: 'Gemini lỗi: ' + m.slice(0, 200) }, 502);
     }
     const parts = j?.candidates?.[0]?.content?.parts || [];

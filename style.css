@@ -95,3 +95,17 @@ nav button[data-t=moi] i{background:linear-gradient(180deg,#e8b83a,#c8921a);box-
 .ait{white-space:pre-wrap;word-break:break-word}.aia{margin-top:6px}.aia button{width:auto;padding:4px 8px;font-size:12px}
 .aiq{display:flex;gap:6px;overflow-x:auto;padding:6px 10px}.aiq button{width:auto;white-space:nowrap;padding:5px 9px;font-size:13px}
 .aii{display:flex;gap:6px;padding:0 10px 10px}.aii textarea{flex:1}.aii button{width:auto;padding:0 16px}
+
+/* v47: đọc rõ trên điện thoại (cả chế độ tối) */
+.vw{background:var(--bg);color:var(--tx)}
+.vwt,.vwdoc{background:#fff;color:#111;border-radius:8px;padding:6px}
+.vwt table{font-size:14px}.vwt td,.vwt th,.vwdoc td{color:#111}
+.vwdoc{font-size:16px}
+.ai{background:var(--card);color:var(--tx);max-height:52vh}
+.aih b{font-size:16px;color:var(--tx)}
+.aib{font-size:16px;line-height:1.5}
+.aib.u{background:#055c2b;color:#fff}
+.aib.m{background:var(--bg);color:var(--tx);border-color:var(--line)}
+.aia button,.aih button,.aiq button{font-size:14px;padding:8px 12px}
+.aii textarea{font-size:16px;min-height:52px;background:var(--card);color:var(--tx)}
+.aii button{font-size:16px}
