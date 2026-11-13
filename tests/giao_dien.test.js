@@ -21,6 +21,7 @@ const path = require('path'), root = path.join(__dirname, '..');
   await p.click('#nhn'); await p.waitForSelector('.nh-r');
   kiem(await p.isVisible('#dz'), 'có ô kéo thả hồ sơ');
   await p.click('.nh-r[data-k="3"]'); await p.fill('#ns', '1800000');
+  await p.waitForFunction(() => document.querySelector('#ns').value === '1.800.000', null, {timeout: 3000}).catch(() => {});
   kiem((await p.inputValue('#ns')) === '1.800.000', 'ô số tiền tự chia dấu "." hàng nghìn');
   await p.click('#ng'); await p.waitForTimeout(300);
   const g = await p.evaluate(() => window.calls.filter(c => c[0] === 'kh-ghi').map(c => c[1]));
