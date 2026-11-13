@@ -22,7 +22,8 @@ Quy tắc:
 - Văn bản thuần, không markdown (không **, #). Số tiền ghi cả số và bằng chữ.
 - Số liệu, tên người, số văn bản căn cứ lấy đúng từ yêu cầu và tệp đính kèm. Điều chưa biết thì để [ ] — tuyệt đối không bịa số, tên, ngày.
 - Chỉ dùng căn cứ pháp lý có trong mẫu tham khảo hoặc người dùng cung cấp; không tự thêm điều luật.
-- BẢNG: mỗi hàng một dòng riêng, tối đa 6 cột, ô ngắn gọn. Tuyệt đối không dán nguyên dữ liệu Excel vào một dòng. Dữ liệu dài (trên 15 dòng) thì chỉ nêu tổng hợp/nhóm chính trong văn bản và ghi "chi tiết theo Phụ lục kèm theo".
+- BẢNG: khi nội dung là danh mục/bảng số liệu từ Excel thì dựng bảng ĐẦY ĐỦ: giữ ĐÚNG và ĐỦ các cột, đúng thứ tự và tên cột của Excel (tối đa 8 cột; tuyệt đối không bỏ cột nào, đặc biệt các cột định mức/số km, kể cả cột định mức của bệnh viện nếu có trong Excel hoặc trong yêu cầu), giữ ĐỦ các hàng (đến 100 hàng), mỗi hàng một dòng riêng dạng "ô 1 | ô 2 | ô 3", ô ngắn gọn. Không dán nguyên dữ liệu Excel vào một dòng.
+- Quyết định KHÔNG có dòng "Kính gửi".
 - Nội dung chính (Điều 1 / phần đề nghị) phải nói ĐÚNG đối tượng của việc được giao và ý của người soạn (VD: phê duyệt định mức thì viết định mức, không đổi thành kế hoạch hay việc khác). Chỉ dùng căn cứ liên quan trực tiếp, không chép căn cứ của việc khác. Theo cấu trúc chuẩn trong mẫu tham khảo.
 Trả về JSON: {"ve_viec": "trích yếu ngắn, viết thường, không có chữ 'Về việc', không dấu chấm cuối", "noi_dung": "thân văn bản"}.`;
 
@@ -50,17 +51,24 @@ async function layMau(sv: any, ma: string) {
   cacheMau.set(ma, m); return m;
 }
 
-function bangXml(rows: string[][], pr: any): string {
-  const n = Math.max(...rows.map((r) => r.length)), W = 8787, cw = Math.floor(W / n);
-  const rpr0: string = pr.rpr || '';
-  const dam = rpr0 ? (/<w:rFonts[^>]*\/>/.test(rpr0) ? rpr0.replace(/(<w:rFonts[^>]*\/>)/, '$1<w:b/>') : rpr0.replace('<w:rPr>', '<w:rPr><w:b/>')) : '<w:rPr><w:b/></w:rPr>';
-  const tr = rows.map((r, ri) => '<w:tr>' + Array.from({ length: n }, (_, i) =>
-    `<w:tc><w:tcPr><w:tcW w:w="${cw}" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr><w:r>${ri === 0 ? dam : rpr0}<w:t xml:space="preserve">${esc(r[i] || '')}</w:t></w:r></w:p></w:tc>`).join('') + '</w:tr>').join('');
+function bangXml(rows: string[][], pr: any, W: number): string {
+  const n = Math.max(...rows.map((r) => r.length));
+  const h0 = rows[0].map((c) => c.toLowerCase());
+  const hep = (c: string) => /^(stt|tt|số tt|stt\.?)$/.test(c.trim());
+  const w0 = hep(h0[0]) ? 700 : 0;
+  const cw = (i: number) => w0 ? (i === 0 ? w0 : Math.floor((W - w0) / (n - 1))) : Math.floor(W / n);
+  const tot = Array.from({ length: n }, (_, i) => cw(i)).reduce((a, b) => a + b, 0);
+  const ro = (b: boolean) => `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>${b ? '<w:b/><w:bCs/>' : ''}<w:sz w:val="26"/><w:szCs w:val="26"/><w:lang w:val="nl-NL"/></w:rPr>`;
+  const soCot = (c: string) => /^[\d.,\s-]+$/.test(c.trim());
+  const tr = rows.map((r, ri) => '<w:tr>' + (ri === 0 ? '<w:trPr><w:tblHeader/></w:trPr>' : '<w:trPr><w:cantSplit/></w:trPr>') + Array.from({ length: n }, (_, i) => {
+    const t = r[i] || '', ctr = ri === 0 || i === 0 || soCot(t);
+    return `<w:tc><w:tcPr><w:tcW w:w="${cw(i)}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40" w:line="240" w:lineRule="auto"/><w:ind w:left="0" w:right="0" w:firstLine="0"/><w:jc w:val="${ctr ? 'center' : 'left'}"/></w:pPr><w:r>${ro(ri === 0)}<w:t xml:space="preserve">${esc(t)}</w:t></w:r></w:p></w:tc>`;
+  }).join('') + '</w:tr>').join('');
   const bd = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map((s) => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="000000"/>`).join('');
-  return `<w:tbl><w:tblPr><w:tblW w:w="${cw * n}" w:type="dxa"/><w:tblBorders>${bd}</w:tblBorders></w:tblPr><w:tblGrid>${Array(n).fill(`<w:gridCol w:w="${cw}"/>`).join('')}</w:tblGrid>${tr}</w:tbl>`;
+  return `<w:tbl><w:tblPr><w:tblW w:w="${tot}" w:type="dxa"/><w:jc w:val="center"/><w:tblInd w:w="0" w:type="dxa"/><w:tblBorders>${bd}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${Array.from({ length: n }, (_, i) => `<w:gridCol w:w="${cw(i)}"/>`).join('')}</w:tblGrid>${tr}</w:tbl>`;
 }
 
-function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: string, ngay: { d: string; m: string; y: string }): Uint8Array {
+function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: string, ngay: { d: string; m: string; y: string }, laTT = false): Uint8Array {
   const pr = mau.protos;
   const RP = '<ns0:rPr><ns0:sz ns0:val="26"/><ns0:szCs ns0:val="26"/><ns0:lang ns0:val="nl-NL"/></ns0:rPr>';
   const RB = '<ns0:rPr><ns0:b/><ns0:sz ns0:val="26"/><ns0:szCs ns0:val="26"/><ns0:lang ns0:val="nl-NL"/></ns0:rPr>';
@@ -68,8 +76,8 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
   const jc = (p: string, v: string) => p.replace(/<ns0:jc [^>]*\/>/, '').replace(/(<ns0:pPr>[\s\S]*?)(<ns0:rPr>|<\/ns0:pPr>)/, `$1<ns0:jc ns0:val="${v}"/>$2`);
   const body = (k: string, runs: string, ind: string, v: string) => {
     let p = String(pr[k] || pr.thuong).replace(/<ns0:ind [^>]*\/>/, '').replace(/<ns0:tabs>[\s\S]*?<\/ns0:tabs>/, '');
-    const sp = '<ns0:spacing ns0:before="60" ns0:after="60" ns0:line="300" ns0:lineRule="auto"/>' + ind;
-    p = /<ns0:spacing [^>]*\/>/.test(p) ? p.replace(/<ns0:spacing [^>]*\/>/, sp) : p.replace('<ns0:pPr>', '<ns0:pPr>' + sp);
+    const sp0 = (p.match(/<ns0:spacing [^>]*\/>/) || ['<ns0:spacing ns0:before="60" ns0:after="60" ns0:line="300" ns0:lineRule="auto"/>'])[0];
+    p = /<ns0:spacing [^>]*\/>/.test(p) ? p.replace(/<ns0:spacing [^>]*\/>/, sp0 + ind) : p.replace('<ns0:pPr>', '<ns0:pPr>' + sp0 + ind);
     p = jc(p, v);
     return p.replace(/<ns0:r>[\s\S]*<\/ns0:r>/, runs);
   };
@@ -84,7 +92,10 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
   const z = unzipSync(mau.docx);
   let x = new TextDecoder().decode(z['word/document.xml']);
   const ps: string[] = []; let tb: string[][] = [];
-  const flush = () => { if (!tb.length) return; ps.push(bangXml(tb, pr), mk('thuong', '')); tb = []; };
+  const dm = (x0: string) => { const g = (r: RegExp) => Number((x0.match(r) || [])[1] || 0); const w = g(/<w:pgSz [^>]*w:w="(\d+)"/), l = g(/<w:pgMar [^>]*w:left="(\d+)"/), r2 = g(/<w:pgMar [^>]*w:right="(\d+)"/); return w && w - l - r2 > 5000 ? w - l - r2 : 9070; };
+  const TW = dm(x);
+  let boKg = false;
+  const flush = () => { if (!tb.length) return; ps.push(bangXml(tb, pr, TW), mk('thuong', '')); tb = []; };
   let nt = noi.replace(/\r/g, '');
   if ((nt.match(/\n/g) || []).length < 4) nt = nt.replace(/\s+(?=(Căn cứ |Xét đề nghị|QUYẾT ĐỊNH:|Điều\s*\d+[.:]\s|Kính gửi:|Trân trọng))/g, '\n');
   nt = nt.replace(/(QUYẾT ĐỊNH:)\s*/g, '$1\n').replace(/\.\[\.\/\.\]/g, '.');
@@ -93,10 +104,11 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
     if (s.includes(' | ') || (s.startsWith('|') && s.endsWith('|'))) {
       if (/^[|\s:-]+$/.test(s)) continue;
       const cells = s.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
-      if (cells.length >= 2 && cells.length <= 8 && cells.every((c) => c.length <= 160)) { if (tb.length < 80) tb.push(cells); continue; }
+      if (cells.length >= 2 && cells.length <= 8 && cells.every((c) => c.length <= 200)) { if (tb.length < 120) tb.push(cells); continue; }
       flush(); ps.push(mk('thuong', cells.join('; ').slice(0, 1500))); continue; // dòng '|' bất thường: coi là văn bản, không dựng bảng
     }
     flush();
+    if (!laTT) { if (/^Kính gửi/.test(s)) { boKg = true; continue; } if (boKg && /^[-–•]/.test(s)) continue; boKg = false; }
     if (/^QUYẾT ĐỊNH\s*:?$/i.test(s)) ps.push(mk('giua', 'QUYẾT ĐỊNH:'));
     else if (/^Điều\s*\d+/.test(s)) ps.push(mk('dieu', s));
     else if (/^Kính gửi/.test(s)) ps.push(mk('kg', s));
@@ -247,7 +259,7 @@ Deno.serve(async (req) => {
     const hn = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(new Date());
     const g = (t: string) => hn.find((p) => p.type === t)!.value;
     const vViec = String(kq.ve_viec || v.tieu_de).replace(/^về việc\s*/i, '').trim();
-    const docx = ghepWord(mau, vViec, String(kq.noi_dung), { d: g('day'), m: g('month'), y: g('year') });
+    const docx = ghepWord(mau, vViec, String(kq.noi_dung), { d: g('day'), m: g('month'), y: g('year') }, m.loai === 'to_trinh');
     const tf = sach(`${m.loai === 'to_trinh' ? 'Tờ trình' : 'Quyết định'} - ${vViec}`, 100) + '.docx';
     const p = `${viec_id}/vb-${crypto.randomUUID()}.docx`;
     const up = await sv.storage.from('anh').upload(p, docx, { contentType: MIME });
