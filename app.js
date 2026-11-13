@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v45</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v46</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -147,11 +147,40 @@ let xlsxP,mamP;
 const taiXlsx=()=>xlsxP||(xlsxP=napJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'));
 const taiMam=()=>mamP||(mamP=napJs('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js'));
 function sach(html){const t=document.createElement('template');t.innerHTML=html;t.content.querySelectorAll('script,iframe,object,embed,link,style').forEach(e=>e.remove());t.content.querySelectorAll('*').forEach(e=>{[...e.attributes].forEach(a=>{if(/^on/i.test(a.name)||(/^(href|src)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value)))e.removeAttribute(a.name)})});return t.innerHTML}
-async function xemTep(path,ten){
+
+const GOI_Y=[['Tóm tắt','Tóm tắt nội dung chính của tệp này.'],['Soát số liệu','Soát tệp này, chỉ ra số liệu bất thường, thiếu hoặc không khớp.'],['Viết công thức','Tôi cần viết công thức Excel: ',1],['Soạn tờ trình','Dựa trên tệp này, soạn tờ trình. Nội dung chính: ',1],['Soạn quyết định','Dựa trên tệp này, soạn quyết định. Nội dung chính: ',1]];
+async function goiAI(body){
+  const {data,error}=await sb.functions.invoke('ai-file',{body});
+  if(error){let m=error.message;try{const j=await error.context.json();m=j.loi||m}catch(_){}return {loi:m}}
+  return data||{loi:'Không có phản hồi'}
+}
+function khungAI(ov,viecId,path,ten){
+  const p=document.createElement('div');p.className='ai';
+  p.innerHTML=`<div class="aih"><b>🤖 Hỏi AI về tệp này</b><span><button class="sec" id="aithu">Thu gọn</button> <button class="sec" id="aixoa">Xóa hội thoại</button></span></div><div class="aim" id="aim"></div><div class="aiq">${GOI_Y.map((g,i)=>`<button class="sec" data-g="${i}">${g[0]}</button>`).join('')}</div><div class="aii"><textarea id="aiq" rows="2" placeholder="Hỏi, nhờ tính toán, viết công thức, soạn văn bản…"></textarea><button id="aig">Gửi</button></div>`;
+  ov.appendChild(p);
+  const m=$('#aim'),base={viec_id:viecId,file_path:path};
+  const them=(vai,tx)=>{const d=document.createElement('div');d.className='aib '+(vai==='user'?'u':'m');const t=document.createElement('div');t.className='ait';t.textContent=tx;d.appendChild(t);
+    if(vai!=='user'){const a=document.createElement('div');a.className='aia';a.innerHTML='<button class="sec">⬇ Tải Word</button> <button class="sec">📋 Chép</button>';
+      const [w,c]=a.querySelectorAll('button');
+      w.onclick=async()=>{w.disabled=true;w.textContent='Đang tạo…';const r=await goiAI({...base,action:'xuat_word',noi_dung:tx,ten_file:'Soan thao AI - '+(ten||'').replace(/\.\w+$/,'')});w.disabled=false;w.textContent='⬇ Tải Word';if(r.url)window.open(r.url,'_blank');else toast(r.loi||'Không tạo được file')};
+      c.onclick=async()=>{try{await navigator.clipboard.writeText(tx);toast('Đã chép')}catch(_){toast('Máy không cho chép tự động')}};
+      d.appendChild(a)}
+    m.appendChild(d);m.scrollTop=m.scrollHeight;return d};
+  $('#aithu').onclick=()=>{p.classList.toggle('nho');$('#aithu').textContent=p.classList.contains('nho')?'Mở ra':'Thu gọn'};
+  $('#aixoa').onclick=async()=>{if(!confirm('Xóa toàn bộ hội thoại AI về tệp này?'))return;await goiAI({...base,action:'xoa_lich_su'});m.innerHTML=''};
+  const gui=async tx=>{tx=tx.trim();if(!tx)return;const g=$('#aig');g.disabled=true;$('#aiq').value='';them('user',tx);const cho=them('model','Đang suy nghĩ…');cho.querySelector('.aia').remove();
+    const r=await goiAI({...base,action:'chat',cau_hoi:tx});cho.remove();g.disabled=false;
+    them('model',r.tra_loi||('⚠ '+(r.loi||'Lỗi không rõ')));if(r.cat)toast('Tệp dài, AI chỉ đọc phần đầu')};
+  $('#aig').onclick=()=>gui($('#aiq').value);
+  p.querySelectorAll('.aiq button').forEach(x=>x.onclick=()=>{const g=GOI_Y[+x.dataset.g];if(g[2]){$('#aiq').value=g[1];$('#aiq').focus()}else gui(g[1])});
+  goiAI({...base,action:'lich_su'}).then(r=>{(r.lich_su||[]).forEach(h=>them(h.vai,h.noi_dung))});
+}
+async function xemTep(path,ten,viecId){
   const ov=document.createElement('div');ov.className='vw';
   ov.innerHTML=`<div class="vwh"><b>${esc(ten||'Tệp')}</b><span><a id="vwtai" href="#" download>⬇ Tải</a> <button class="sec" id="vwx">✕ Đóng</button></span></div><div class="vwb" id="vwb">Đang mở…</div>`;
   document.body.appendChild(ov);$('#vwx').onclick=()=>ov.remove();
   const b=$('#vwb');
+  if(viecId&&/^(xlsx|docx)$/.test(duoiTep(ten)))khungAI(ov,viecId,path,ten);
   try{
     const url=await linkTep(path,ten);if(!url)throw new Error('Không lấy được đường dẫn file');$('#vwtai').href=url;
     const d=duoiTep(ten),buf=await (await fetch(url)).arrayBuffer();
@@ -189,7 +218,7 @@ async function chiTiet(id){
   <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   if(me.la_quan_tri){$('#nd').insertAdjacentHTML('beforeend','<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa việc này (quản trị)</button>');$('#xoa').onclick=()=>xoaMuc('viec',id,'Xóa vĩnh viễn việc này cùng lịch sử cập nhật?',ve)}
   $('#lui').onclick=ve;
-  document.querySelectorAll('[data-xp]').forEach(a=>a.onclick=e=>{e.preventDefault();xemTep(a.dataset.xp,a.dataset.xt)});
+  document.querySelectorAll('[data-xp]').forEach(a=>a.onclick=e=>{e.preventDefault();xemTep(a.dataset.xp,a.dataset.xt,id)});
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
 }
 const nen=f=>new Promise(res=>{if(!f)return res(null);const i=new Image();i.onload=()=>{const k=Math.min(1,1600/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(b=>res(b),'image/jpeg',.8)};i.onerror=()=>res(null);i.src=URL.createObjectURL(f)});

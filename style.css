@@ -86,3 +86,12 @@ nav button[data-t=moi] i{background:linear-gradient(180deg,#e8b83a,#c8921a);box-
 .vwtabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px}.vwtab{width:auto;white-space:nowrap;padding:6px 10px}.vwtab.on{background:#055c2b;color:#fff}
 .vwt{overflow:auto}.vwt table{border-collapse:collapse;font-size:13px}.vwt td,.vwt th{border:1px solid #cbd5d0;padding:3px 6px;white-space:nowrap}
 .vwdoc{max-width:760px;margin:auto;line-height:1.5}.vwdoc table{border-collapse:collapse}.vwdoc td{border:1px solid #cbd5d0;padding:4px 6px}
+
+.ai{border-top:2px solid #055c2b;background:#f4faf6;display:flex;flex-direction:column;max-height:48vh}
+.ai.nho .aim,.ai.nho .aiq,.ai.nho .aii{display:none}
+.aih{display:flex;justify-content:space-between;align-items:center;padding:6px 10px}.aih button{width:auto;padding:4px 8px;font-size:12px}
+.aim{overflow:auto;padding:0 10px;flex:1;min-height:60px}
+.aib{margin:6px 0;padding:8px 10px;border-radius:10px;max-width:92%}.aib.u{background:#055c2b;color:#fff;margin-left:auto}.aib.m{background:#fff;border:1px solid #cbd5d0}
+.ait{white-space:pre-wrap;word-break:break-word}.aia{margin-top:6px}.aia button{width:auto;padding:4px 8px;font-size:12px}
+.aiq{display:flex;gap:6px;overflow-x:auto;padding:6px 10px}.aiq button{width:auto;white-space:nowrap;padding:5px 9px;font-size:13px}
+.aii{display:flex;gap:6px;padding:0 10px 10px}.aii textarea{flex:1}.aii button{width:auto;padding:0 16px}
