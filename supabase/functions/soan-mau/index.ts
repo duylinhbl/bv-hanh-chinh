@@ -18,7 +18,7 @@ Quy tắc:
 - Chỉ soạn phần THÂN văn bản. KHÔNG viết quốc hiệu, tên cơ quan, số/ký hiệu, ngày tháng, tiêu đề, dòng "Về việc", chữ ký, "Nơi nhận" (khung mẫu đã có sẵn).
 - Tờ trình: bắt đầu bằng dòng "Kính gửi:" (các nơi nhận mỗi nơi một dòng bắt đầu bằng "- "), rồi các dòng "Căn cứ ...", nội dung trình, kết bằng "Trân trọng kính trình./." hoặc câu kết tương đương của mẫu.
 - Quyết định: bắt đầu bằng các dòng "Căn cứ ...", một dòng "QUYẾT ĐỊNH:", rồi "Điều 1. ...", "Điều 2. ..." ... Điều cuối là trách nhiệm thi hành / hiệu lực.
-- Mỗi đoạn một dòng. Mục con dùng dấu "- " đầu dòng. Bảng viết mỗi hàng một dòng dạng "cột 1 | cột 2 | cột 3", hàng đầu là tiêu đề cột.
+- Mỗi đoạn một dòng riêng, các đoạn cách nhau bằng ký tự xuống dòng (\\n): mỗi \"Căn cứ ...\", \"QUYẾT ĐỊNH:\", mỗi \"Điều N.\" là một dòng riêng; không viết cả văn bản thành một khối. Mục con dùng dấu "- " đầu dòng. Bảng viết mỗi hàng một dòng dạng "cột 1 | cột 2 | cột 3", hàng đầu là tiêu đề cột.
 - Văn bản thuần, không markdown (không **, #). Số tiền ghi cả số và bằng chữ.
 - Số liệu, tên người, số văn bản căn cứ lấy đúng từ yêu cầu và tệp đính kèm. Điều chưa biết thì để [ ] — tuyệt đối không bịa số, tên, ngày.
 - Chỉ dùng căn cứ pháp lý có trong mẫu tham khảo hoặc người dùng cung cấp; không tự thêm điều luật.
@@ -62,12 +62,33 @@ function bangXml(rows: string[][], pr: any): string {
 
 function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: string, ngay: { d: string; m: string; y: string }): Uint8Array {
   const pr = mau.protos;
-  const mk = (k: string, t: string) => String(pr[k] || pr.thuong).replace('§§', () => esc(t));
+  const RP = '<ns0:rPr><ns0:sz ns0:val="26"/><ns0:szCs ns0:val="26"/><ns0:lang ns0:val="nl-NL"/></ns0:rPr>';
+  const RB = '<ns0:rPr><ns0:b/><ns0:sz ns0:val="26"/><ns0:szCs ns0:val="26"/><ns0:lang ns0:val="nl-NL"/></ns0:rPr>';
+  const run = (t: string, b = false) => t ? `<ns0:r>${b ? RB : RP}<ns0:t xml:space="preserve">${esc(t)}</ns0:t></ns0:r>` : '';
+  const jc = (p: string, v: string) => p.replace(/<ns0:jc [^>]*\/>/, '').replace(/(<ns0:pPr>[\s\S]*?)(<ns0:rPr>|<\/ns0:pPr>)/, `$1<ns0:jc ns0:val="${v}"/>$2`);
+  const body = (k: string, runs: string, ind: string, v: string) => {
+    let p = String(pr[k] || pr.thuong).replace(/<ns0:ind [^>]*\/>/, '').replace(/<ns0:tabs>[\s\S]*?<\/ns0:tabs>/, '');
+    const sp = '<ns0:spacing ns0:before="60" ns0:after="60" ns0:line="300" ns0:lineRule="auto"/>' + ind;
+    p = /<ns0:spacing [^>]*\/>/.test(p) ? p.replace(/<ns0:spacing [^>]*\/>/, sp) : p.replace('<ns0:pPr>', '<ns0:pPr>' + sp);
+    p = jc(p, v);
+    return p.replace(/<ns0:r>[\s\S]*<\/ns0:r>/, runs);
+  };
+  const IND1 = '<ns0:ind ns0:firstLine="709"/>';
+  const mk = (k: string, t: string) => {
+    if (k === 'dieu') { const m = t.match(/^(Điều\s*\d+[.:]?)\s*(.*)$/s); return body('thuong', m ? run(m[1] + ' ', true) + run(m[2]) : run(t, true), IND1, 'both'); }
+    if (k === 'kg') return body('thuong', run(t), '<ns0:ind ns0:firstLine="709"/>', 'left');
+    if (k === 'muc') return body('thuong', run(t), '<ns0:ind ns0:left="709" ns0:firstLine="0"/>', 'both');
+    if (k === 'giua') return body('thuong', run(t, true), '', 'center');
+    return body('thuong', run(t), IND1, 'both');
+  };
   const z = unzipSync(mau.docx);
   let x = new TextDecoder().decode(z['word/document.xml']);
   const ps: string[] = []; let tb: string[][] = [];
   const flush = () => { if (!tb.length) return; ps.push(bangXml(tb, pr), mk('thuong', '')); tb = []; };
-  for (const ln of noi.replace(/\r/g, '').split('\n')) {
+  let nt = noi.replace(/\r/g, '');
+  if ((nt.match(/\n/g) || []).length < 4) nt = nt.replace(/\s+(?=(Căn cứ |Xét đề nghị|QUYẾT ĐỊNH:|Điều\s*\d+\.\s|Kính gửi:|Trân trọng))/g, '\n');
+  nt = nt.replace(/(QUYẾT ĐỊNH:)\s*/g, '$1\n').replace(/\.\[\.\/\.\]/g, '.');
+  for (const ln of nt.split('\n')) {
     const s = ln.trim(); if (!s) continue;
     if (s.includes(' | ') || (s.startsWith('|') && s.endsWith('|'))) {
       if (/^[|\s:-]+$/.test(s)) continue;
@@ -76,7 +97,8 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
       flush(); ps.push(mk('thuong', cells.join('; ').slice(0, 1500))); continue; // dòng '|' bất thường: coi là văn bản, không dựng bảng
     }
     flush();
-    if (/^Điều\s*\d+/.test(s)) ps.push(mk('dieu', s));
+    if (/^QUYẾT ĐỊNH\s*:?$/i.test(s)) ps.push(mk('giua', 'QUYẾT ĐỊNH:'));
+    else if (/^Điều\s*\d+/.test(s)) ps.push(mk('dieu', s));
     else if (/^Kính gửi/.test(s)) ps.push(mk('kg', s));
     else if (/^[-–•]/.test(s)) ps.push(mk('muc', s));
     else ps.push(mk('thuong', s));
