@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v54</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v55</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -202,7 +202,7 @@ async function khungSoan(k,ov,viecId,path){
     $('#vgy').textContent=r.loi?'(không gợi ý được, bạn tự chọn)':(r.mau_ma?'(AI đã chọn sẵn, bạn đổi được)':'(bạn chọn giúp)');
     if(r.loi)toast(r.loi)});
   const capNhatNut=()=>{const chua=DS.filter(d=>!d.luu).length;$('#vluu').disabled=!DS.length||!chua;$('#vluu').textContent=!DS.length?'💾 Lưu':chua?`💾 Lưu (${chua} văn bản)`:'✅ Đã lưu hết';$('#vtai').disabled=!DS.length};
-  const xem=async r=>{const x=await goiVB({action:'tai',van_ban_id:r.id});if(!x.url)return toast(x.loi||'Lỗi');xemTep(null,r.ten,null,x.url)};
+  const xem=async r=>{const x=await goiVB({action:'tai',van_ban_id:r.id});if(!x.url)return toast(x.loi||'Lỗi');xemTep(null,r.ten,null,x.url,r.text)};
   const luuMot=async r=>{const x=await goiVB({action:'luu',van_ban_id:r.id});if(x.loi){toast(x.loi);return null}r.luu=true;r.drive=!!x.drive;r.thu=x.thu_muc||'';r.canh=x.canh||'';return x};
   const ve=r=>{
     const d=r.el||(r.el=document.createElement('div'));d.className='aib m';
@@ -213,7 +213,7 @@ async function khungSoan(k,ov,viecId,path){
     d.querySelector('[data-cg]').onclick=async e=>{const t=d.querySelector('textarea').value.trim();if(!t)return toast('Ghi chỗ cần chỉnh');const b=e.target;b.disabled=true;b.textContent='Đang chỉnh…';
       const x=await goiVB({action:'soan',viec_id:viecId,mau_ma:r.mau,file_path:path,van_ban_cu:r.id,yeu_cau:'CHỈNH SỬA văn bản đã soạn theo ý sau: '+t});
       if(x.loi){b.disabled=false;b.textContent='Chỉnh & soạn lại';return toast(x.loi)}
-      const n={id:x.id,ten:x.ten,mau:r.mau,luu:false};DS.splice(DS.indexOf(r),1,n);ve(n);kq.insertBefore(n.el,d);d.remove();capNhatNut();xem(n)};
+      const n={id:x.id,ten:x.ten,mau:r.mau,luu:false,text:x.text};DS.splice(DS.indexOf(r),1,n);ve(n);kq.insertBefore(n.el,d);d.remove();capNhatNut();xem(n)};
     if(!d.parentNode)kq.appendChild(d)};
   $('#vsoan').onclick=async()=>{
     const ma=(k.querySelector('.vck:checked')||{}).value;
@@ -223,7 +223,7 @@ async function khungSoan(k,ov,viecId,path){
     const r=await goiVB({action:'soan',viec_id:viecId,mau_ma:ma,file_path:path,yeu_cau:$('#vyc').value.trim()});
     b.disabled=false;
     if(r.loi){$('#vtt').textContent='⚠ '+r.loi;return}
-    ov.dataset.vb=1;const o={id:r.id,ten:r.ten,mau:ma,luu:false};DS.push(o);ve(o);capNhatNut();
+    ov.dataset.vb=1;const o={id:r.id,ten:r.ten,mau:ma,luu:false,text:r.text};DS.push(o);ve(o);capNhatNut();
     $('#vtt').textContent='✅ Đã soạn xong. Bấm "👁 Xem" kiểm tra, chưa vừa ý thì "✏️ Chỉnh lại", ổn thì bấm 💾 Lưu.';xem(o)};
   $('#vluu').onclick=async()=>{
     const b=$('#vluu');b.disabled=true;b.textContent='Đang lưu…';let nd=0,loiN=0,canh='';
@@ -238,7 +238,7 @@ async function khungSoan(k,ov,viecId,path){
     await day();document.querySelectorAll('.vw').forEach(x=>x.remove());toast('Đã kết thúc việc');chiTiet(viecId);
   };
 }
-async function xemTep(path,ten,viecId,urlSan){
+async function xemTep(path,ten,viecId,urlSan,textDP){
   const ov=document.createElement('div');ov.className='vw';
   ov.innerHTML=`<div class="vwh"><b>${esc(ten||'Tệp')}</b><span><a id="vwtai" href="#" download>⬇ Tải</a> <button class="sec" id="vwx">✕ Đóng</button></span></div><div class="vwb" id="vwb">Đang mở…</div>`;
   document.body.appendChild(ov);$('#vwx').onclick=()=>{const cap=ov.dataset.vb&&viecId;ov.remove();if(cap)chiTiet(viecId)};
@@ -246,7 +246,13 @@ async function xemTep(path,ten,viecId,urlSan){
   if(viecId&&/^(xlsx|docx)$/.test(duoiTep(ten)))khungAI(ov,viecId,path,ten);
   try{
     const url=urlSan||await linkTep(path,ten);if(!url)throw new Error('Không lấy được đường dẫn file');$('#vwtai').href=url;
-    const d=duoiTep(ten),buf=await (await fetch(url)).arrayBuffer();
+    const d=duoiTep(ten);
+    const hen=(pr,ms,tb)=>Promise.race([pr,new Promise((_,no)=>setTimeout(()=>no(new Error(tb||'Mở file quá lâu')),ms))]);
+    if(textDP){
+      b.innerHTML='<div class="vwdoc" style="white-space:pre-wrap;font-family:\'Times New Roman\',serif;font-size:17px;line-height:1.5">'+esc(textDP)+'</div><p class="mut" style="padding:8px">Đây là bản xem nhanh nội dung. File Word tải về có đủ quốc hiệu, bảng, chữ ký đúng mẫu bệnh viện.</p>';
+      hen((async()=>{const bf=await (await fetch(url)).arrayBuffer();await taiMam();return mammoth.convertToHtml({arrayBuffer:bf})})(),12000).then(r=>{if(r&&r.value&&document.body.contains(ov))b.innerHTML='<div class="vwdoc">'+sach(r.value)+'</div>'}).catch(()=>{});
+      return}
+    const buf=await hen((async()=>(await fetch(url)).arrayBuffer())(),20000,'Tải file quá lâu, kiểm tra mạng rồi mở lại');
     if(d==='xlsx'||d==='xls'){
       await taiXlsx();const wb=XLSX.read(buf,{type:'array'});
       const ve1=i=>{const ws=wb.Sheets[wb.SheetNames[i]];const r=XLSX.utils.decode_range(ws['!ref']||'A1');
@@ -256,7 +262,7 @@ async function xemTep(path,ten,viecId,urlSan){
       b.innerHTML=`<div class="vwtabs">${wb.SheetNames.map((n,i)=>`<button class="vwtab sec" data-i="${i}">${esc(n)}</button>`).join('')}</div><div id="vwt" class="vwt"></div>`;
       b.querySelectorAll('.vwtab').forEach(x=>x.onclick=()=>ve1(+x.dataset.i));ve1(0);
     }else if(d==='docx'){
-      await taiMam();const r=await mammoth.convertToHtml({arrayBuffer:buf});b.innerHTML='<div class="vwdoc">'+sach(r.value)+'</div>';
+      await hen(taiMam(),15000,'Không tải được bộ đọc Word (mạng chậm), bấm Tải ở trên để mở bằng Word');const r=await hen(mammoth.convertToHtml({arrayBuffer:buf}),15000,'Không đọc được file này, bấm Tải ở trên để mở bằng Word');b.innerHTML='<div class="vwdoc">'+sach(r.value)+'</div>';
     }else b.innerHTML='<p>File .doc đời cũ chưa xem trực tiếp được, bấm "Tải" ở trên để mở bằng Word.</p>';
   }catch(e){b.innerHTML='<p style="color:#b91c1c">Không mở được file: '+esc(e.message||String(e))+'</p>'}
 }

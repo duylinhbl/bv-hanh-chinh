@@ -22,6 +22,7 @@ Quy tắc:
 - Văn bản thuần, không markdown (không **, #). Số tiền ghi cả số và bằng chữ.
 - Số liệu, tên người, số văn bản căn cứ lấy đúng từ yêu cầu và tệp đính kèm. Điều chưa biết thì để [ ] — tuyệt đối không bịa số, tên, ngày.
 - Chỉ dùng căn cứ pháp lý có trong mẫu tham khảo hoặc người dùng cung cấp; không tự thêm điều luật.
+- Nội dung chính (Điều 1 / phần đề nghị) phải nói ĐÚNG đối tượng của việc được giao và ý của người soạn (VD: phê duyệt định mức thì viết định mức, không đổi thành kế hoạch hay việc khác). Chỉ dùng căn cứ liên quan trực tiếp, không chép căn cứ của việc khác. Theo cấu trúc chuẩn trong mẫu tham khảo.
 Trả về JSON: {"ve_viec": "trích yếu ngắn, viết thường, không có chữ 'Về việc', không dấu chấm cuối", "noi_dung": "thân văn bản"}.`;
 
 async function appsScript(sv: any, payload: Record<string, unknown>) {
@@ -220,15 +221,16 @@ Deno.serve(async (req) => {
 
     const hn = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(new Date());
     const g = (t: string) => hn.find((p) => p.type === t)!.value;
-    const docx = ghepWord(mau, String(kq.ve_viec || v.tieu_de).replace(/^về việc\s*/i, '').trim(), String(kq.noi_dung), { d: g('day'), m: g('month'), y: g('year') });
-    const tf = sach(`${m.ten} - ${v.tieu_de}`, 100) + '.docx';
+    const vViec = String(kq.ve_viec || v.tieu_de).replace(/^về việc\s*/i, '').trim();
+    const docx = ghepWord(mau, vViec, String(kq.noi_dung), { d: g('day'), m: g('month'), y: g('year') });
+    const tf = sach(`${m.loai === 'to_trinh' ? 'Tờ trình' : 'Quyết định'} - ${vViec}`, 100) + '.docx';
     const p = `${viec_id}/vb-${crypto.randomUUID()}.docx`;
     const up = await sv.storage.from('anh').upload(p, docx, { contentType: MIME });
     if (up.error) return out({ loi: 'Không lưu được file Word: ' + up.error.message }, 500);
     const { data: row, error: e2 } = await sv.from('van_ban_viec').insert({ viec_id, mau_ma: m.ma, ten_file: tf, storage_path: p, yeu_cau: yc || null, nguoi_id: nd.id }).select('id').single();
     if (e2) return out({ loi: 'Không ghi được danh sách văn bản: ' + e2.message }, 500);
     const sg = await sv.storage.from('anh').createSignedUrl(p, 3600, { download: tf });
-    return out({ ok: true, id: row.id, ten: tf, url: sg.data?.signedUrl, mau: m.ten });
+    return out({ ok: true, id: row.id, ten: tf, url: sg.data?.signedUrl, mau: m.ten, text: docxText(docx).slice(0, 20000) });
   } catch (e) {
     return out({ loi: String((e as Error).message || e).slice(0, 300) }, 500);
   }
