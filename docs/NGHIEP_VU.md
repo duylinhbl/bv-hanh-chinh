@@ -95,3 +95,8 @@
 - Ánh xạ: Điện=7.1, Nước=7.2, Thuốc/VTYT/hóa chất=6.1+6.2+6.3, Khám bệnh=dòng A.1 (thang+thang_dv), Điều trị=A.2.
 - Lệch cần xác nhận: tiêu đề cột file kế hoạch ghi "đến tháng 9" nhưng số khám 58.993/điều trị 4.030 là đến hết tháng 10; thuốc file 14.247.222.275 vs app 14.077.009.143 (lệch ≈170 triệu).
 - Chờ Linh chốt: email 2 nơi nhận, ngày/giờ chạy mỗi tháng (đề xuất ngày 2, 9h), tháng đầu tạo nháp để duyệt hay gửi thẳng. Nên làm kiểu app tự gửi như báo cáo tuần (không dùng scheduled task của Claude).
+
+## v44 – Đính kèm Word/Excel khi giao việc (13/11/2026)
+- Ngoài ảnh, được đính kèm .doc/.docx/.xls/.xlsx (tối đa 10 MB, kiểm cả phía app và bucket `anh`) ở 2 chỗ: (1) form Giao việc — người giao đính kèm tài liệu (cột `viec.file_path/file_ten`); (2) Cập nhật hiện trạng — người nhận gửi file (cột `cap_nhat_hien_trang.file_path/file_ten`, vẫn qua hàng đợi offline). Tên file lưu trên Storage là mã ngẫu nhiên, tên gốc ở `file_ten`; mở bằng đường dẫn ký 1 giờ.
+- Policy upload `anh_them`: cả người giao lẫn người nhận việc được tải vào thư mục `<viec_id>/`. Bucket giới hạn mime Word/Excel/ảnh. Chưa nhận PDF (chưa được yêu cầu).
+- Chưa có bài kiểm thử riêng cho đính kèm (nên thêm).
