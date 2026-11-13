@@ -104,6 +104,7 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
     if (s.includes(' | ') || (s.startsWith('|') && s.endsWith('|'))) {
       if (/^[|\s:-]+$/.test(s)) continue;
       const cells = s.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+      while (cells.length > 1 && cells[cells.length - 1] === '') cells.pop();
       if (cells.length >= 2 && cells.length <= 8 && cells.every((c) => c.length <= 200)) { if (tb.length < 120) tb.push(cells); continue; }
       flush(); ps.push(mk('thuong', cells.join('; ').slice(0, 1500))); continue; // dòng '|' bất thường: coi là văn bản, không dựng bảng
     }
