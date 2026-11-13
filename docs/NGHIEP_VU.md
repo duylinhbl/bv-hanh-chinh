@@ -99,3 +99,7 @@
 - Ngoài ảnh, được đính kèm .doc/.docx/.xls/.xlsx (tối đa 10 MB, kiểm cả phía app và bucket `anh`) ở 2 chỗ: (1) form Giao việc — người giao đính kèm tài liệu (cột `viec.file_path/file_ten`); (2) Cập nhật hiện trạng — người nhận gửi file (cột `cap_nhat_hien_trang.file_path/file_ten`, vẫn qua hàng đợi offline). Tên file lưu trên Storage là mã ngẫu nhiên, tên gốc ở `file_ten`; mở bằng đường dẫn ký 1 giờ.
 - Policy upload `anh_them`: cả người giao lẫn người nhận việc được tải vào thư mục `<viec_id>/`. Bucket giới hạn mime Word/Excel/ảnh. Chưa nhận PDF (chưa được yêu cầu).
 - Chưa có bài kiểm thử riêng cho đính kèm (nên thêm).
+
+## Quy tắc mục "phương hướng/kế hoạch" của báo cáo tuần và tháng (13/11/2026)
+- Một dòng cố định "- Duy trì công tác tiếp nhận cấp cứu, khám chữa bệnh." + các sự kiện anh Linh/Thảo đã ghi sẵn trong lịch công tác của app cho tuần/tháng sau (vd 26/11 KSK Leading, PTEC; 01/12 KSK định kỳ lần 2 Cty CP Cao su Bà Rịa). Không tự thêm việc ngoài lịch. Muốn có gì trong phương hướng thì ghi vào lịch công tác trước giờ chạy (tuần: 15h thứ 5; tháng: 08:45 ngày 2).
+- Số liệu kế hoạch-sử dụng còn lệch (điều trị 4.050 vs 4.030, thuốc/VTYT) là do chưa nhập đủ; anh Linh sẽ báo khi nhập xong để rà lại.
