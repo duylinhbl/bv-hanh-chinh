@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi" data-theme="la" data-mode="sang" data-density="rong">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thư viện giao diện – BV Cao su Dầu Tiếng</title>
+<link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="components.css">
+<style>
+body{margin:0;background:var(--bg);color:var(--tx);font:var(--uk-fs)/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:0 16px 40px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--pri2);margin:26px 0 8px}
+.bar{position:sticky;top:0;z-index:10;background:var(--card);border-bottom:2px solid var(--pri);padding:10px 16px;display:grid;gap:8px}
+.bar .r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bar select{min-height:40px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--tx);padding:0 10px;font:inherit}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:var(--uk-pad);box-shadow:var(--sh)}
+label{display:block;font-weight:600;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input.f{width:100%;min-height:44px;padding:0 12px;border:1.5px solid var(--line);border-radius:11px;background:var(--card);color:var(--tx);font:inherit}
+</style></head>
+<body class="uk">
+<div class="bar">
+  <b>Thư viện giao diện</b>
+  <div class="r">
+    <select id="th" aria-label="Màu"><option value="la">Lá (hiện tại)</option><option value="duong">Dương</option><option value="teal">Teal</option><option value="tim">Tím</option><option value="cam">Cam ấm</option><option value="xam">Xám xanh</option><option value="tuongphan">Tương phản cao</option></select>
+    <select id="md" aria-label="Chế độ"><option value="sang">Sáng</option><option value="toi">Tối</option></select>
+    <select id="dn" aria-label="Mật độ"><option value="rong">Rộng</option><option value="gon">Gọn</option></select>
+  </div>
+</div>
+<div class="uk-hero"><b style="font-size:20px">Xin chào, anh Linh</b><div style="opacity:.85">Việc hôm nay của phòng Tổ chức Hành chính</div></div>
+<main>
+<h2>Số liệu</h2>
+<div class="uk-grid"><div class="uk-stat"><b>12</b><span>Việc mới</span></div><div class="uk-stat"><b>5</b><span>Đang làm</span></div><div class="uk-stat"><b style="color:var(--red)">2</b><span>Quá hạn</span></div></div>
+
+<h2>Nút và chip</h2>
+<div class="row"><button class="uk-btn">Lưu</button><button class="uk-btn uk-sec">Hủy</button><button class="uk-btn uk-ghost">Chi tiết</button><button class="uk-btn uk-danger">Xóa</button><button class="uk-btn" disabled>Tạm khóa</button></div>
+<div class="row" style="margin-top:10px"><span class="uk-chip uk-on">Tất cả</span><span class="uk-chip">Hôm nay</span><span class="uk-chip">Quá hạn</span><span class="uk-chip"><i class="uk-dot ok"></i>Đã đóng</span></div>
+<div class="uk-seg" style="margin-top:10px"><button class="uk-on">Ngày</button><button>Tuần</button><button>Tháng</button></div>
+
+<h2>Danh sách</h2>
+<div class="uk-list">
+ <div class="uk-li"><span class="uk-avatar">LB</span><div class="t"><b>Duyệt tờ trình mượn xe</b><small>Hạn 18/11 · Văn thư</small></div><span class="uk-chip"><i class="uk-dot warn"></i>Đang làm</span></div>
+ <div class="uk-li"><span class="uk-avatar">TC</span><div class="t"><b>Báo cáo ATBX năm 2026</b><small>Hạn 20/11 · Phòng X-quang</small></div><span class="uk-chip"><i class="uk-dot err"></i>Gấp</span></div>
+ <div class="uk-li"><span class="uk-avatar">YN</span><div class="t"><b>Cập nhật bảng mô tả công việc</b><small>Hạn 30/11</small></div><span class="uk-chip"><i class="uk-dot info"></i>Mới</span></div>
+</div>
+
+<h2>Tiến độ</h2>
+<div class="card"><div class="uk-progress"><i style="width:68%"></i></div><div class="uk-progress warn" style="margin-top:8px"><i style="width:40%"></i></div><div class="uk-progress err" style="margin-top:8px"><i style="width:15%"></i></div></div>
+
+<h2>Cảnh báo</h2>
+<div style="display:grid;gap:8px"><div class="uk-alert info">Thông tin: sổ nhật ký xe được cập nhật.</div><div class="uk-alert ok">Đã lưu thành công.</div><div class="uk-alert warn">Sắp đến hạn nộp báo cáo.</div><div class="uk-alert err">Lỗi: chưa nhập số tiền.</div></div>
+
+<h2>Biểu mẫu</h2>
+<div class="card"><label for="a">Số tiền</label><input class="f" id="a" value="1.800.000"><label>Gửi thông báo</label><div class="row" style="justify-content:space-between"><span>Nhắc việc quá hạn</span><label class="uk-switch" style="margin:0"><input type="checkbox" checked><i></i></label></div></div>
+
+<h2>Bảng</h2>
+<div class="uk-tablewrap"><table class="uk-table"><tr><th>Xe</th><th>Km</th><th>Lít</th><th>L/100km</th></tr><tr><td>Xe 16 chỗ</td><td class="n">1.250</td><td class="n">165</td><td class="n">13,2</td></tr><tr><td>Xe 7 chỗ</td><td class="n">820</td><td class="n">76</td><td class="n">9,3</td></tr><tr><td>Xe tải 4,2 tấn</td><td class="n">2.100</td><td class="n">380</td><td class="n">18,1</td></tr></table></div>
+
+<h2>Trống và đang tải</h2>
+<div class="card"><div class="uk-empty">📭<b>Chưa có việc</b>Bấm + để giao việc mới.</div><div class="uk-skel" style="width:70%"></div><div class="uk-skel" style="width:45%;margin-top:8px"></div></div>
+
+<h2>Hộp trượt và các bước</h2>
+<div class="row"><button class="uk-btn uk-sec" id="op">Mở hộp trượt</button></div><div class="uk-steps" style="margin-top:12px"><i class="uk-on"></i><i class="uk-on"></i><i></i><i></i></div>
+</main>
+<button class="uk-fab" aria-label="Thêm">+</button>
+<div class="uk-sheet-bg" id="bg"><div class="uk-sheet" onclick="event.stopPropagation()"><b style="font-size:18px">Giao việc</b><label>Người nhận</label><input class="f" value="Nguyễn Văn A"><button class="uk-btn uk-block" style="margin-top:14px" id="cl">Giao</button></div></div>
+<script>
+var R=document.documentElement,K='bv-ui';
+function ap(o){for(var k in o){R.dataset[k]=o[k]}}
+try{var s=JSON.parse(localStorage.getItem(K)||'{}');ap(s);['th:theme','md:mode','dn:density'].forEach(function(p){var a=p.split(':');if(s[a[1]])document.getElementById(a[0]).value=s[a[1]]})}catch(e){}
+function sv(){var o={theme:th.value,mode:md.value,density:dn.value};ap(o);try{localStorage.setItem(K,JSON.stringify(o))}catch(e){}}
+th.onchange=md.onchange=dn.onchange=sv;
+op.onclick=function(){bg.classList.add('uk-open')};bg.onclick=cl.onclick=function(){bg.classList.remove('uk-open')};
+</script></body></html>

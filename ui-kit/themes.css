@@ -1,0 +1,45 @@
+/* ===== Giao diện (theme) dùng chung – chỉ đổi biến màu, KHÔNG đổi bố cục =====
+   Cách dùng: <html data-theme="teal" data-mode="dark" data-density="compact">
+   - data-theme: la (mặc định, như app hiện tại) | duong | teal | tim | cam | xam | tuongphan
+   - data-mode : sang (mặc định) | toi
+   - data-density: rong (mặc định) | gon
+   Tên biến trùng với style.css của app (--bg --card --tx --mut --pri --pri2 --soft --gold --line --red --amb --grn --blue --sh)
+   nên nạp themes.css SAU style.css là app đổi màu được ngay. */
+
+
+[data-mode="sang"],:root{color-scheme:light}
+
+/* --- Lá (màu hiện tại của app) --- */
+[data-theme="la"]{--bg:#e3ebe5;--card:#fff;--tx:#12231a;--mut:#5d6f65;--pri:#007a36;--pri2:#055c2b;--soft:#dcefe2;--gold:#d9a521;--line:#cddad1;--red:#c0362c;--amb:#b45309;--grn:#067647;--blue:#1d6fb8}
+
+/* --- Dương (xanh y tế, sạch, tin cậy) --- */
+[data-theme="duong"]{--bg:#e8eff7;--card:#fff;--tx:#10202f;--mut:#566b7f;--pri:#0b63b8;--pri2:#084a8a;--soft:#dbeafe;--gold:#f59e0b;--line:#cbd8e6;--red:#c0362c;--amb:#b45309;--grn:#067647;--blue:#0b63b8}
+
+/* --- Teal (xanh ngọc, nhẹ nhàng, hợp bệnh viện) --- */
+[data-theme="teal"]{--bg:#e6f2f1;--card:#fff;--tx:#0f2523;--mut:#52706d;--pri:#0f766e;--pri2:#115e59;--soft:#ccfbf1;--gold:#e0a82e;--line:#c5dcda;--red:#c0362c;--amb:#b45309;--grn:#067647;--blue:#1d6fb8}
+
+/* --- Tím (hành chính, trang trọng) --- */
+[data-theme="tim"]{--bg:#efeaf7;--card:#fff;--tx:#1d1530;--mut:#665c7e;--pri:#6d3fc4;--pri2:#4f2a96;--soft:#ece4fb;--gold:#e0a82e;--line:#d9cfee;--red:#c0362c;--amb:#b45309;--grn:#067647;--blue:#1d6fb8}
+
+/* --- Cam ấm (thân thiện, dễ nhìn buổi sáng) --- */
+[data-theme="cam"]{--bg:#f6ede3;--card:#fffdfa;--tx:#2a1a0c;--mut:#7a6552;--pri:#b4540a;--pri2:#8a3f06;--soft:#fde8d3;--gold:#d9a521;--line:#e8d7c3;--red:#c0362c;--amb:#9a4a05;--grn:#067647;--blue:#1d6fb8}
+
+/* --- Xám xanh (tối giản, chuyên nghiệp) --- */
+[data-theme="xam"]{--bg:#f1f5f9;--card:#fff;--tx:#0f172a;--mut:#5b6b7f;--pri:#334155;--pri2:#1e293b;--soft:#e2e8f0;--gold:#0ea5e9;--line:#d5dde7;--red:#c0362c;--amb:#b45309;--grn:#067647;--blue:#1d6fb8}
+
+/* --- Tương phản cao (người lớn tuổi, ánh sáng mạnh, đạt WCAG AAA) --- */
+[data-theme="tuongphan"]{--bg:#fff;--card:#fff;--tx:#000;--mut:#333;--pri:#0a3d91;--pri2:#062a66;--soft:#e6eefc;--gold:#b45309;--line:#000;--red:#a80000;--amb:#7a3a00;--grn:#00561f;--blue:#0a3d91;--sh:none}
+
+/* --- Nền tối trung tính: đặt SAU các theme sáng nhưng TRƯỚC các dòng tối riêng từng theme --- */
+[data-mode="toi"][data-theme]{--bg:#0e1316;--card:#161d21;--tx:#e9eff2;--mut:#9aabb3;--line:#26323a;--sh:0 1px 2px rgba(0,0,0,.45);--red:#ff8a80;--amb:#ffb74d;--grn:#5fd38d;--blue:#6cb4f5;color-scheme:dark}
+[data-mode="toi"][data-theme="la"]{--pri:#35c36b;--pri2:#6fe09a;--soft:#12261a;--bg:#0d1511;--card:#15201a;--tx:#e8f2ec;--mut:#9bb0a4;--line:#243229}
+[data-mode="toi"][data-theme="duong"]{--pri:#5aa8ff;--pri2:#9ccaff;--soft:#112a44}
+[data-mode="toi"][data-theme="teal"]{--pri:#2dd4bf;--pri2:#7eead9;--soft:#0f2e2b}
+[data-mode="toi"][data-theme="tim"]{--pri:#b392f5;--pri2:#d2bfff;--soft:#2a1f45}
+[data-mode="toi"][data-theme="cam"]{--pri:#ffa45c;--pri2:#ffc597;--soft:#3a2412}
+[data-mode="toi"][data-theme="xam"]{--pri:#94a3b8;--pri2:#cbd5e1;--soft:#1e293b}
+[data-mode="toi"][data-theme="tuongphan"]{--bg:#000;--card:#000;--tx:#fff;--mut:#ddd;--pri:#7fb5ff;--pri2:#bcd8ff;--soft:#0b1b33;--line:#fff}
+
+/* --- Mật độ --- */
+[data-density="gon"]{--uk-pad:8px 10px;--uk-gap:6px;--uk-row:36px;--uk-fs:14px}
+:root{--uk-pad:12px 14px;--uk-gap:10px;--uk-row:48px;--uk-fs:16px}
