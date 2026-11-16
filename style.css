@@ -166,3 +166,11 @@ nav button[data-t=moi] span.l{margin-top:0;color:var(--mut)}
  input,select,textarea{border-color:#2f4136}
  .hero .kpi .r b{color:#ff9d92}.hero .kpi .a b{color:#ffd978}
 }
+
+/* Trợ lý việc */
+.tl2{display:flex;gap:12px;align-items:flex-start}.tl2>div{flex:1;min-width:0}
+@media(max-width:860px){.tl2{flex-direction:column}.tl2>div{width:100%}}
+.tlchon{padding:6px 0}.tlbc{margin:8px 0;font-size:14px;line-height:1.7}
+.tlgy{text-align:left;margin:6px 0}.tlgy span{font-weight:400;font-size:.85em}
+.tlf{padding:9px 6px;border-top:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:center}.tlf.tep{cursor:default}.tlf span{flex:1;min-width:0;word-break:break-word}.tlf button{width:auto;padding:5px 9px;font-size:13px;white-space:nowrap}
+.tlm{border:1px solid var(--line);border-left:4px solid #555;border-radius:6px;padding:8px;margin:8px 0;word-break:break-word}.tlm button{width:auto}

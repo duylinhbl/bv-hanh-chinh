@@ -142,3 +142,15 @@
 - Mở văn bản của việc → "🧭 Gợi ý loại việc": AI đọc văn bản, gợi ý 1–3 loại kèm lý do, người dùng chọn → gắn viec.loai_viec_id + thu_muc_dc.
 - Thư mục Drive chỉ ĐỌC (Apps Script, quyền Người xem), app không ghi vào. Kết quả nhân viên lưu trong việc, tự tải về nếu cần.
 - Việc tiếp theo (đợt 2): màn hình chia đôi (văn bản | Drive), AI điền báo cáo từ mẫu năm trước + hồ sơ căn cứ, xuất Word sạch.
+
+## v67 – Trợ lý việc: một nút "✨ Làm việc này cùng AI" (thay cách làm v65–v66)
+Quy trình chuẩn của nhân viên, 4 bước trên một màn hình (máy tính: chia đôi, Drive bên phải):
+1. **Văn bản đề nghị**: chọn tệp kèm việc, hoặc thả/chụp văn bản khác (Word, Excel, PDF, ảnh), hoặc tự gõ yêu cầu.
+2. **Loại việc**: AI đọc và gợi ý 1–3 loại, người làm chọn (bảng loai_viec, 16 loại theo thư mục 05–20 của kho "tong hop").
+3. **Mẫu và hồ sơ căn cứ**: duyệt Drive của trưởng phòng (CHỈ ĐỌC, chỉ trong thư mục của danh mục loại việc). Chọn file mẫu = báo cáo kỳ trước (.docx) và thư mục căn cứ (thường là thư mục năm). App nhớ cho lần sau theo loại việc.
+4. **Soạn**: AI giữ nguyên khung mẫu, chỉ thay kỳ/năm, căn cứ, số liệu theo hồ sơ; liệt kê chỗ đã thay kèm nguồn, chỗ cần kiểm, chỗ thiếu căn cứ (không bịa). Người làm gõ ý sửa cho AI sửa lại, đọc xong bấm Lưu vào việc (tùy chọn báo hoàn thành). Trưởng phòng xác nhận đóng việc như cũ.
+- Kết quả lưu trong việc của app, KHÔNG ghi vào Drive của trưởng phòng.
+- Hồ sơ căn cứ chỉ lưu bản tóm tắt (bảng dc_ho_so). File tên có "bỏ"/"cũ" và file >10 MB bị bỏ qua. File lỗi không còn chặn file sau.
+- Nhận thêm PDF làm tệp đính kèm việc. Soạn/đối chiếu ưu tiên model mạnh (bi_mat.ai_model_manh, mặc định gemini-flash-latest), lỗi thì dùng ai_model.
+- Edge function doi-chieu v3 (index.ts + docx.ts): who, goi_y_loai, duyet, quet, doc, doc_lai, ds, soan_bc, doi_chieu. Apps Script DoiChieu.gs bản 2: một dòng route `if (/^dc_/.test(b.action)) return out(dcRoute(b));`.
+- Bộ "Loại công việc" cũ (6 loại) đã ẩn khỏi giao diện.
