@@ -130,3 +130,9 @@
 ### Cập nhật 13/11/2026 (v61) – AI tự xếp hạng mục khi thả hồ sơ
 - Thả PDF/ảnh vào "Nhập phiếu đề nghị thanh toán": app đọc phiếu (text pdf.js hoặc ảnh trang đầu), kh-ghi action `phan_loai` (Gemini) chọn hạng mục + số tiền + tháng, tự điền vào thẻ hồ sơ.
 - Người dùng chỉ xem PDF, đối chiếu rồi bấm Cộng; có thể đổi hạng mục/tháng/số tiền ngay trong thẻ. Nhiều hồ sơ khác hạng mục được ghi riêng từng hạng mục, hoàn tác theo từng phiếu.
+
+## v65 – AI đối chiếu báo cáo với hồ sơ trong Drive
+- Mở báo cáo Word đính kèm việc → nút "🔎 Đối chiếu với hồ sơ trong thư mục Drive". Dán link thư mục hồ sơ căn cứ (lưu vào viec.thu_muc_dc).
+- Hồ sơ KHÔNG chép vào DB: Apps Script (DoiChieu.gs) đọc thẳng Drive, AI tóm tắt mỗi file ~900 ký tự lưu bảng dc_ho_so (chỉ đọc lại file mới/sửa). PDF/ảnh >10MB bị bỏ qua và báo.
+- Edge function doi-chieu (who/quet/doc/doi_chieu). Kết quả: khớp / lệch / thiếu căn cứ / có thể điền / hết hạn, ưu tiên chữ đỏ và ô [ ]. AI chỉ gợi ý.
+- Cần: dán DoiChieu.gs + 3 dòng route vào doPost, triển khai phiên bản mới, chia sẻ thư mục (Người xem) cho tài khoản chạy script (app hiện email).
