@@ -179,7 +179,7 @@ async function soan(ky){
   const nhomOpt=(v,n)=>{
     const cur=Array.from({length:v.so_nguoi},(_,i)=>m[`${n}|${v.id}|${i}`]||'').join(',');
     return '<option value="">— Chọn nhóm —</option>'+NHOM[v.id].map(g=>{const ds=g.thanh_vien.slice(0,v.so_nguoi);
-      return `<option value="${g.id}" ${ds.join(',')===cur?'selected':''}>${g.ten} · NT ${esc(NAME[ds[0]]||'?')}: ${esc(ds.map(i=>NAME[i]||'?').join(', '))}</option>`}).join('');
+      return `<option value="${g.id}" ${ds.join(',')===cur?'selected':''}>${esc(g.ten)} · NT ${esc(NAME[ds[0]]||'?')}: ${esc(ds.map(i=>NAME[i]||'?').join(', '))}</option>`}).join('');
   };
   const setCell=(key,id)=>{m[key]=id||null;const el=document.querySelector(`[data-k="${key}"]`);if(!el)return;
     if(id&&![...el.options].some(o=>o.value===id)){const o=document.createElement('option');o.value=id;o.textContent=nm(id);el.appendChild(o)}el.value=id||''};
@@ -242,7 +242,7 @@ async function xem(ky){
 // ----- in đúng mẫu -----
 function inLich(ky,m){
   const ds=days(ky.tu_ngay,ky.den_ngay),cols=VT.filter(v=>v.nhom==='truc');
-  const cell=(n,v)=>[0,1,2].map(i=>m[`${n}|${v.id}|${i}`]).filter(Boolean).map((id,i)=>NHOM[v.id]&&i===0?`<b>${nm(id)}</b>`:nm(id)).join('<br>');
+  const cell=(n,v)=>[0,1,2].map(i=>m[`${n}|${v.id}|${i}`]).filter(Boolean).map((id,i)=>NHOM[v.id]&&i===0?`<b>${A().esc(nm(id))}</b>`:A().esc(nm(id))).join('<br>');
   const cb=VT.filter(v=>v.nhom==='cbvc');
   const rows=ds.map((n,i)=>(i&&i%7===0?`<tr class="sp"><td colspan="${2+cols.length}"></td></tr>`:'')+`<tr><td>${TH[pd(n).getDay()]==='CN'?'CN':TH[pd(n).getDay()]}</td><td>${dm(n)}</td>${cols.map(v=>`<td>${cell(n,v)}</td>`).join('')}</tr>`).join('');
   const cbr=ds.filter(n=>[0,6].includes(pd(n).getDay())).map(n=>`<tr><td>${TH[pd(n).getDay()]}</td><td>${dm(n)}</td>${cb.map(v=>`<td>${cell(n,v)}</td>`).join('')}</tr>`).join('');
@@ -252,8 +252,8 @@ function inLich(ky,m){
   .t{display:flex;justify-content:space-between;text-align:center;font-weight:bold}</style>
   <div class="t"><div>CÔNG TY TNHH MTV CAO SU DẦU TIẾNG<br>BỆNH VIỆN ĐA KHOA CAO SU DẦU TIẾNG</div><div>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>Độc lập - Tự do - Hạnh phúc</div></div>
   <h2>LỊCH TRỰC TUẦN BỆNH VIỆN TỪ NGÀY ${dm(ky.tu_ngay)}/${pd(ky.tu_ngay).getFullYear()} ĐẾN NGÀY ${dm(ky.den_ngay)}/${pd(ky.den_ngay).getFullYear()}</h2>
-  <table><tr><th>Thứ</th><th>Ngày</th>${cols.map(v=>`<th>${v.ten}</th>`).join('')}</tr>${rows}</table>
-  <p><b>* CBVC LÀM NGÀY:</b></p><table style="width:60%"><tr><th>Thứ</th><th>Ngày</th>${cb.map(v=>`<th>${v.ten}</th>`).join('')}</tr>${cbr}</table>
+  <table><tr><th>Thứ</th><th>Ngày</th>${cols.map(v=>`<th>${A().esc(v.ten)}</th>`).join('')}</tr>${rows}</table>
+  <p><b>* CBVC LÀM NGÀY:</b></p><table style="width:60%"><tr><th>Thứ</th><th>Ngày</th>${cb.map(v=>`<th>${A().esc(v.ten)}</th>`).join('')}</tr>${cbr}</table>
   <div class="t" style="margin-top:20px;justify-content:flex-end"><div>TP. Hồ Chí Minh, ngày ... tháng ... năm ${pd(ky.tu_ngay).getFullYear()}<br>GIÁM ĐỐC</div></div>
   <script>setTimeout(()=>print(),300)<\/script>`);w.document.close();
 }
