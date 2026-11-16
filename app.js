@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v63</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v64</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -265,8 +265,17 @@ async function docxHtml(buf){
   const txt=el=>{let r='';(function w(n){for(const c of n.children){
     if(c.localName==='Fallback')continue;
     if(c.localName==='t')r+=c.textContent;else if(c.localName==='tab')r+=' ';else if(c.localName==='br'||c.localName==='cr')r+='\n';else w(c)}})(el);return r};
-  const run=r=>{let t=txt(r);if(!t)return '';t=esc(t).replace(/\n/g,'<br>');const rp=L(r,'rPr')[0];
-    if(bat(rp,'b'))t='<b>'+t+'</b>';if(bat(rp,'i'))t='<i>'+t+'</i>';if(rp&&L(rp,'u')[0]&&val(rp,'u')!=='none')t='<u>'+t+'</u>';return t};
+  const HL={yellow:'#ffff00',green:'#00ff00',cyan:'#00ffff',magenta:'#ff00ff',blue:'#9ec5ff',red:'#ff9d9d',darkYellow:'#cccc00',lightGray:'#d3d3d3'};
+  const xoa=r=>r.parentNode&&r.parentNode.localName==='del';
+  const run=r=>{let t=txt(r);if(!t&&xoa(r)){(function w(n){for(const c of n.children)if(c.localName==='delText')t+=c.textContent;else w(c)})(r)}
+    if(!t)return '';t=esc(t).replace(/\n/g,'<br>');const rp=L(r,'rPr')[0];
+    if(bat(rp,'b'))t='<b>'+t+'</b>';if(bat(rp,'i'))t='<i>'+t+'</i>';if(rp&&L(rp,'u')[0]&&val(rp,'u')!=='none')t='<u>'+t+'</u>';
+    let st='';const mau=rp&&val(rp,'color'),hl=rp&&val(rp,'highlight'),sh=rp&&L(rp,'shd')[0];
+    if(mau&&/^[0-9a-f]{6}$/i.test(mau)&&mau.toLowerCase()!=='000000')st+='color:#'+mau+';';
+    if(hl&&HL[hl])st+='background:'+HL[hl]+';';else if(sh){const f=sh.getAttributeNS(W,'fill')||sh.getAttribute('w:fill');if(f&&/^[0-9a-f]{6}$/i.test(f)&&f.toLowerCase()!=='ffffff')st+='background:#'+f+';'}
+    if(bat(rp,'strike')||xoa(r)){st+='text-decoration:line-through;';if(xoa(r)&&!/color:/.test(st))st+='color:#c00;'}
+    if(rp&&val(rp,'vertAlign')==='superscript')t='<sup>'+t+'</sup>';else if(rp&&val(rp,'vertAlign')==='subscript')t='<sub>'+t+'</sub>';
+    return st?`<span style="${st}">${t}</span>`:t};
   const para=p=>{const pp=L(p,'pPr')[0];const jc=pp?val(pp,'jc'):'';const al=jc==='center'?'center':jc==='right'||jc==='end'?'right':jc==='both'?'justify':'left';
     let h='';(function w(n){for(const c of n.children){if(c.localName==='Fallback')continue;if(c.localName==='r')h+=run(c);else if(c.localName==='p')continue;else w(c)}})(p);
     const ind=pp&&L(pp,'ind')[0],A=(e,k)=>e?parseInt(e.getAttributeNS(W,k)||e.getAttribute('w:'+k)||0):0,fl=A(ind,'firstLine'),lf=A(ind,'left'),rt=A(ind,'right'),hg=A(ind,'hanging');
@@ -368,6 +377,13 @@ async function chiTiet(id){
   <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   if(me.la_quan_tri){$('#nd').insertAdjacentHTML('beforeend','<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa việc này (quản trị)</button>');$('#xoa').onclick=()=>xoaMuc('viec',id,'Xóa vĩnh viễn việc này cùng lịch sử cập nhật?',ve)}
   $('#lui').onclick=ve;
+  if(v.trang_thai==='cho_xac_nhan'&&v.nguoi_giao===me.id){
+    $('#nd').querySelector('.card').insertAdjacentHTML('afterend',`<div class="card" style="border:2px solid #2e7d4f"><b>${esc(ten(v.nguoi_nhan))} đã báo hoàn thành, đang chờ bồ xác nhận.</b><p class="mut">Xem báo cáo/tệp bên dưới xong thì bấm một trong hai nút. Việc chưa đóng thì app còn nhắc bồ.</p>
+      <button class="full" id="xnd">✔ Xác nhận, đóng việc</button><button class="sec" id="xnl" style="width:100%;margin-top:6px">↩ Chưa đạt, yêu cầu làm lại</button></div>`);
+    const chot=async(tt,gc)=>{[$('#xnd'),$('#xnl')].forEach(b=>b.disabled=true);await qAdd({ma_khach:uid(),viec_id:id,trang_thai:tt,ghi_chu:gc,anh:null,tep:null,tep_ten:null,gio_bam:new Date().toISOString()});await day();toast(tt==='da_dong'?'Đã đóng việc':'Đã trả lại để làm lại');chiTiet(id)};
+    $('#xnd').onclick=()=>chot('da_dong','Đã xem và xác nhận hoàn thành');
+    $('#xnl').onclick=()=>{const g=prompt('Cần làm lại điểm nào? (ghi ngắn để người nhận biết)');if(g===null)return;chot('dang_lam',g.trim()||'Chưa đạt, làm lại')};
+  }
   document.querySelectorAll('[data-xp]').forEach(a=>a.onclick=e=>{e.preventDefault();xemTep(a.dataset.xp,a.dataset.xt,id)});
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
   if($('#dhan')){$('#dhan').onclick=e=>{e.preventDefault();$('#hanbox').style.display='block';const d=new Date(v.han||Date.now()+864e5),z=x=>String(x).padStart(2,'0');$('#han2').value=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
