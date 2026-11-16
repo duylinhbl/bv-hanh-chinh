@@ -136,3 +136,9 @@
 - Hồ sơ KHÔNG chép vào DB: Apps Script (DoiChieu.gs) đọc thẳng Drive, AI tóm tắt mỗi file ~900 ký tự lưu bảng dc_ho_so (chỉ đọc lại file mới/sửa). PDF/ảnh >10MB bị bỏ qua và báo.
 - Edge function doi-chieu (who/quet/doc/doi_chieu). Kết quả: khớp / lệch / thiếu căn cứ / có thể điền / hết hạn, ưu tiên chữ đỏ và ô [ ]. AI chỉ gợi ý.
 - Cần: dán DoiChieu.gs + 3 dòng route vào doPost, triển khai phiên bản mới, chia sẻ thư mục (Người xem) cho tài khoản chạy script (app hiện email).
+
+## v66 – Danh mục loại việc + AI gợi ý loại việc
+- Bảng loai_viec (nhóm, tên, thu_muc_goc, từ khóa AI): 16 loại điền sẵn theo thư mục đánh số 05–20 của kho "tong hop". TCHC/BGĐ/quản trị sửa trong Tài khoản → "Danh mục loại việc".
+- Mở văn bản của việc → "🧭 Gợi ý loại việc": AI đọc văn bản, gợi ý 1–3 loại kèm lý do, người dùng chọn → gắn viec.loai_viec_id + thu_muc_dc.
+- Thư mục Drive chỉ ĐỌC (Apps Script, quyền Người xem), app không ghi vào. Kết quả nhân viên lưu trong việc, tự tải về nếu cần.
+- Việc tiếp theo (đợt 2): màn hình chia đôi (văn bản | Drive), AI điền báo cáo từ mẫu năm trước + hồ sơ căn cứ, xuất Word sạch.

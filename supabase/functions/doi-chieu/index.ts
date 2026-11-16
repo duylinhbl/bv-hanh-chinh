@@ -75,9 +75,6 @@ Deno.serve(async (req) => {
     if (!viec_id) return out({ loi: 'Thiếu việc' }, 400);
     const { data: v } = await uc.from('viec').select('id,tieu_de,mo_ta,file_path,file_ten,thu_muc_dc').eq('id', viec_id).maybeSingle();
     if (!v) return out({ loi: 'Không có quyền với việc này' }, 403);
-    const fid = layMaThuMuc(v.thu_muc_dc || '');
-    if (!fid) return out({ loi: 'Việc này chưa gắn thư mục hồ sơ đối chiếu' }, 400);
-
     const key = Deno.env.get('GEMINI_API_KEY');
     const model = cfg.ai_model || 'gemini-2.5-flash';
     const gem = async (parts: any[], json = false, maxOut = 4096) => {
@@ -95,6 +92,47 @@ Deno.serve(async (req) => {
       }
       throw new Error(loi || 'Gemini lỗi');
     };
+
+    const tenTep = async (fp: string) => {
+      let ten: string | null = v.file_path === fp ? v.file_ten : null;
+      if (!ten) { const { data: c } = await uc.from('cap_nhat_hien_trang').select('file_ten').eq('viec_id', viec_id).eq('file_path', fp).limit(1); ten = c?.[0]?.file_ten || null; }
+      return ten;
+    };
+
+    // 0) AI gợi ý loại việc từ văn bản vừa thả vào
+    if (action === 'goi_y_loai') {
+      const fp = String(b.file_path || '');
+      const ten = await tenTep(fp);
+      if (!ten) return out({ loi: 'Tệp không thuộc việc này' }, 403);
+      const { data: ds } = await sv.from('loai_viec').select('id,nhom,ten,goi_y').eq('hoat_dong', true).order('thu_tu');
+      if (!ds?.length) return out({ loi: 'Chưa có danh mục loại việc' }, 400);
+      const parts: any[] = [];
+      const dl = await sv.storage.from('anh').download(fp);
+      let nd = '';
+      if (!dl.error && dl.data) {
+        const buf = new Uint8Array(await dl.data.arrayBuffer());
+        try {
+          if (/\.docx$/i.test(ten)) nd = wordCoDo(buf).slice(0, 9000);
+          else if (/\.pdf$/i.test(ten) && buf.length < 8e6) { let s = ''; for (let i = 0; i < buf.length; i += 8192) s += String.fromCharCode(...buf.subarray(i, i + 8192)); parts.push({ inline_data: { mime_type: 'application/pdf', data: btoa(s) } }); }
+        } catch (_) { /* bỏ qua, dùng tiêu đề */ }
+      }
+      const dm = ds.map((x: any) => `${x.id} | ${x.nhom} | ${x.ten} | từ khóa: ${x.goi_y || ''}`).join('\n');
+      const lenh = `Bạn giúp phòng Tổ chức Hành chính của bệnh viện xếp văn bản nhận được vào đúng LOẠI VIỆC để xử lý.
+Việc: "${v.tieu_de}". ${v.mo_ta ? 'Mô tả: ' + String(v.mo_ta).slice(0, 500) + '.' : ''} Tên tệp: ${ten}.
+DANH MỤC LOẠI VIỆC (id | nhóm | tên | từ khóa):
+${dm}
+Chọn 1 đến 3 loại việc phù hợp nhất với văn bản, xếp loại phù hợp nhất lên đầu. Chỉ dùng id có trong danh mục. Nếu không loại nào phù hợp trả mảng rỗng.
+Trả JSON: {"goi_y":[{"id":số,"ly_do":"1 câu ngắn tiếng Việt nêu căn cứ trong văn bản"}]}`;
+      parts.unshift({ text: lenh + (nd ? '\n\nNỘI DUNG VĂN BẢN:\n' + nd : '') });
+      let kq: any;
+      try { kq = JSON.parse((await gem(parts, true, 1024)).replace(/^```json\s*|```$/g, '')); } catch (e) { return out({ loi: 'AI chưa gợi ý được: ' + String((e as Error).message || e).slice(0, 100) }, 502); }
+      const hop = new Map(ds.map((x: any) => [x.id, x]));
+      const gy = (kq.goi_y || []).filter((g: any) => hop.has(Number(g.id))).slice(0, 3).map((g: any) => ({ id: Number(g.id), nhom: (hop.get(Number(g.id)) as any).nhom, ten: (hop.get(Number(g.id)) as any).ten, ly_do: String(g.ly_do || '').slice(0, 200) }));
+      return out({ ok: true, goi_y: gy });
+    }
+
+    const fid = layMaThuMuc(v.thu_muc_dc || '');
+    if (!fid) return out({ loi: 'Việc này chưa gắn thư mục hồ sơ đối chiếu' }, 400);
 
     // 1) Quét thư mục: cập nhật danh sách file
     if (action === 'quet') {

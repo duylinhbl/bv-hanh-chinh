@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v65</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v66</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -180,10 +180,57 @@ function khungAI(ov,viecId,path,ten){
     so.innerHTML='<div class="vwh"><b>📝 Soạn văn bản từ file này</b><span><button class="sec" id="sox">✕ Đóng</button></span></div><div class="vwb" id="sob" style="overflow:auto"></div>';
     document.body.appendChild(so);$('#sox').onclick=()=>{if(so.dataset.vb)ov.dataset.vb=1;so.remove()};
     khungSoan($('#sob'),so,viecId,path)};
+  {const gb=document.createElement('button');gb.id='aigy';gb.style.cssText='background:#0369a1;color:#fff';gb.textContent='🧭 Gợi ý loại việc';p.querySelector('.aiq').prepend(gb);gb.onclick=()=>goiYLoai(viecId,path)}
   if(/^docx$/.test(duoiTep(ten))){const bt=document.createElement('button');bt.id='aidc';bt.style.cssText='background:#0f766e;color:#fff';bt.textContent='🔎 Đối chiếu với hồ sơ trong thư mục Drive';p.querySelector('.aiq').prepend(bt);
     bt.onclick=()=>doiChieuUI(viecId,path)}
   p.querySelectorAll('.aiq button[data-g]').forEach(x=>x.onclick=()=>{const g=GOI_Y[+x.dataset.g];if(g[2]){$('#aiq').value=g[1];$('#aiq').focus()}else gui(g[1])});
   goiAI({...base,action:'lich_su'}).then(r=>{(r.lich_su||[]).forEach(h=>them(h.vai,h.noi_dung))});
+}
+// AI gợi ý loại việc từ văn bản; người dùng chọn, AI chỉ gợi ý
+async function goiYLoai(viecId,path){
+  const so=document.createElement('div');so.className='vw';
+  so.innerHTML='<div class="vwh"><b>🧭 Loại việc</b><span><button class="sec" id="gyx">✕ Đóng</button></span></div><div class="vwb" id="gyb" style="overflow:auto;padding:14px"><p class="mut">🤖 AI đang đọc văn bản và gợi ý loại việc…</p></div>';
+  document.body.appendChild(so);$('#gyx').onclick=()=>so.remove();
+  const k=$('#gyb');
+  const [{data:ds},{data:v}]=await Promise.all([sb.from('loai_viec').select('id,nhom,ten,thu_muc_goc').eq('hoat_dong',true).order('thu_tu'),sb.from('viec').select('loai_viec_id').eq('id',viecId).single()]);
+  const r=await dcGoi({action:'goi_y_loai',viec_id:viecId,file_path:path});
+  const chon=async id=>{
+    const l=(ds||[]).find(x=>x.id===id);if(!l)return;
+    const {error}=await sb.from('viec').update({loai_viec_id:id,thu_muc_dc:l.thu_muc_goc||null}).eq('id',viecId);
+    if(error)return toast('Không lưu được: '+error.message);
+    toast('Đã chọn: '+l.ten);so.remove();
+    if(/\.docx$/i.test(path)&&l.thu_muc_goc&&confirm('Đối chiếu báo cáo này với hồ sơ trong thư mục "'+l.nhom+'" ngay?'))doiChieuUI(viecId,path)};
+  const the=x=>`<button class="full" data-lv="${x.id}" style="text-align:left;margin:6px 0;${x.id===(v&&v.loai_viec_id)?'outline:2px solid #15803d':''}"><b>${esc(x.ten)}</b><br><span style="font-weight:400;font-size:.85em">${esc(x.nhom)}${x.ly_do?' · '+esc(x.ly_do):''}</span></button>`;
+  k.innerHTML=(r.loi?`<p style="color:#b91c1c">⚠ ${esc(r.loi)}</p>`:(r.goi_y&&r.goi_y.length?'<p><b>AI gợi ý</b> <span class="mut">(bạn quyết định)</span></p>'+r.goi_y.map(the).join(''):'<p class="mut">AI chưa thấy loại nào phù hợp. Chọn thủ công bên dưới.</p>'))
+   +'<p class="mut" style="margin-top:14px">Hoặc chọn loại khác:</p>'
+   +(ds||[]).map(x=>the({...x,ly_do:''})).join('');
+  k.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>chon(+b.dataset.lv));
+}
+// Màn hình sửa danh mục loại việc (quản trị / TCHC / BGĐ)
+async function dsLoaiViec(){
+  const {data:ds,error}=await sb.from('loai_viec').select('*').order('thu_tu');
+  const so=document.createElement('div');so.className='vw';
+  so.innerHTML='<div class="vwh"><b>📂 Danh mục loại việc</b><span><button class="sec" id="lvx">✕ Đóng</button></span></div><div class="vwb" id="lvb" style="overflow:auto;padding:14px"></div>';
+  document.body.appendChild(so);$('#lvx').onclick=()=>so.remove();
+  const k=$('#lvb');if(error){k.innerHTML='<p style="color:#b91c1c">'+esc(error.message)+'</p>';return}
+  const o=x=>`<div class="card" data-id="${x.id||''}"><label class="mut">Nhóm</label><input class="lv_n" value="${esc(x.nhom||'')}"><label class="mut">Tên loại việc</label><input class="lv_t" value="${esc(x.ten||'')}">
+   <label class="mut">Thư mục Drive tham khảo (dán link, chỉ đọc)</label><input class="lv_f" value="${esc(x.thu_muc_goc||'')}">
+   <label class="mut">Từ khóa giúp AI nhận ra</label><input class="lv_g" value="${esc(x.goi_y||'')}">
+   <label><input type="checkbox" class="lv_h" ${x.hoat_dong===false?'':'checked'}> Đang dùng</label>
+   <div style="margin-top:6px"><button class="lv_s">💾 Lưu</button> ${x.id?'<button class="sec dng lv_d">Xóa</button>':''}</div></div>`;
+  k.innerHTML='<p class="mut">Mỗi loại việc gắn một thư mục Drive để AI lấy mẫu và hồ sơ căn cứ. Chỉ đọc, app không ghi vào thư mục này.</p><button class="full" id="lvm">➕ Thêm loại việc</button><div id="lvl">'+(ds||[]).map(o).join('')+'</div>';
+  const gan=c=>{
+    c.querySelector('.lv_s').onclick=async()=>{
+      const ten=c.querySelector('.lv_t').value.trim();if(!ten)return toast('Nhập tên loại việc');
+      const row={nhom:c.querySelector('.lv_n').value.trim()||'Khác',ten,thu_muc_goc:c.querySelector('.lv_f').value.trim()||null,goi_y:c.querySelector('.lv_g').value.trim()||null,hoat_dong:c.querySelector('.lv_h').checked};
+      const id=c.dataset.id;
+      const {data,error}=id?await sb.from('loai_viec').update(row).eq('id',id).select().single():await sb.from('loai_viec').insert({...row,thu_tu:200}).select().single();
+      if(error)return toast('Không lưu được: '+error.message);
+      c.dataset.id=data.id;toast('Đã lưu')};
+    const d=c.querySelector('.lv_d');if(d)d.onclick=async()=>{if(!confirm('Xóa loại việc này? Các việc đã gắn sẽ bỏ gắn loại.'))return;
+      const {error}=await sb.from('loai_viec').delete().eq('id',c.dataset.id);if(error)return toast(error.message);c.remove()}};
+  k.querySelectorAll('#lvl .card').forEach(gan);
+  $('#lvm').onclick=()=>{const t=document.createElement('div');t.innerHTML=o({});const c=t.firstElementChild;$('#lvl').prepend(c);gan(c)};
 }
 // Đối chiếu báo cáo với hồ sơ căn cứ trong thư mục Drive (AI chỉ gợi ý, người dùng quyết định)
 async function dcGoi(body){
@@ -567,6 +614,7 @@ async function taiKhoan(){
   <div class="card"><h3>Thông báo trên máy này</h3><div class="mut">${{bat:'Đang bật',tat:'Chưa bật',chan:'Đang bị chặn',ios:'Cần thêm app vào Màn hình chính',khong:'Máy không hỗ trợ'}[st]}</div>${st==='tat'?'<button class="full" id="bp">🔔 Bật thông báo</button>':st==='bat'?'<button class="sec full" id="tp">🔕 Tắt thông báo trên máy này</button>':''}</div>
   ${(me.vai_tro==='tchc'||me.vai_tro==='bgd'||me.la_quan_tri)?'<div class="card" id="cpb"><h3>Ai chưa bật thông báo</h3><div class="mut">Đang tải…</div></div>':''}
   ${TC?'<button class="full" id="kh">📊 Kế hoạch – sử dụng chi phí</button>':''}
+  ${(me.vai_tro==='tchc'||me.vai_tro==='bgd'||me.la_quan_tri)?'<button class="sec full" id="lvds">📂 Danh mục loại việc</button>':''}
   <button class="sec full" id="ra">🚪 Đăng xuất</button>`;
   if($('#bp'))$('#bp').onclick=async()=>{try{await batPush();toast('Đã bật thông báo');taiKhoan()}catch(e){toast(e.message||'Không bật được')}};
   if($('#tp'))$('#tp').onclick=async()=>{await tatPush();toast('Đã tắt');taiKhoan()};
@@ -574,6 +622,7 @@ async function taiKhoan(){
     const dn=(data||[]).filter(x=>x.da_dang_nhap),ch=(data||[]).filter(x=>!x.da_dang_nhap);
     el.innerHTML='<h3>Ai chưa bật thông báo</h3><div class="mut">'+(dn.length?'<b>Đã đăng nhập nhưng chưa bật ('+dn.length+'):</b><br>'+dn.map(x=>esc(x.ho_ten)+(x.khoa?' · '+esc(x.khoa):'')).join('<br>')+'<br><br>':'')+'<b>Chưa đăng nhập lần nào:</b> '+ch.length+' người</div>'});
   if($('#kh'))$('#kh').onclick=()=>window.KH.ve();
+  if($('#lvds'))$('#lvds').onclick=dsLoaiViec;
   $('#ra').onclick=async()=>{await sb.auth.signOut();me=null;manHinhDangNhap()};
 }
 
