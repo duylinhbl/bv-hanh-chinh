@@ -50,6 +50,7 @@ main{padding:16px;max-width:680px;margin:0 auto}
 /* Biểu mẫu */
 label{display:block;margin:16px 0 6px;font-weight:600;font-size:14px;color:var(--tx)}
 input,select,textarea{width:100%;min-height:48px;padding:11px 13px;border:1px solid #b9c8be;border-radius:10px;background:var(--card);color:var(--tx);font:inherit;transition:border-color .12s,box-shadow .12s}
+input[type=checkbox],input[type=radio]{width:22px;height:22px;min-height:0;padding:0;flex:none;margin-right:8px;vertical-align:-5px;accent-color:var(--pri)}
 input:focus,select:focus,textarea:focus{outline:0;border-color:var(--pri);box-shadow:0 0 0 3px rgba(0,122,54,.2)}
 textarea{min-height:92px;resize:vertical}
 input::placeholder,textarea::placeholder{color:var(--mut);opacity:.8}
@@ -174,3 +175,10 @@ nav button[data-t=moi] span.l{margin-top:0;color:var(--mut)}
 .tlgy{text-align:left;margin:6px 0}.tlgy span{font-weight:400;font-size:.85em}
 .tlf{padding:9px 6px;border-top:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:center}.tlf.tep{cursor:default}.tlf span{flex:1;min-width:0;word-break:break-word}.tlf button{width:auto;padding:5px 9px;font-size:13px;white-space:nowrap}
 .tlm{border:1px solid var(--line);border-left:4px solid #555;border-radius:6px;padding:8px;margin:8px 0;word-break:break-word}.tlm button{width:auto}
+
+/* Danh sách việc theo hạn */
+.dsr{display:flex;gap:8px;align-items:center;padding:8px 2px;border-top:1px solid var(--line);cursor:pointer}
+.dsr b{min-width:46px}.dsr span:nth-of-type(1){flex:1;min-width:0;word-break:break-word}
+.dsr .mut{max-width:35%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85em}
+.dsr.qua b{color:#b91c1c}
+.thg{margin-bottom:8px}.thg.trong{padding:8px 12px;opacity:.65}

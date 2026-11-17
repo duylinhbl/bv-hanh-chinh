@@ -167,3 +167,9 @@ Quy trình chuẩn của nhân viên, 4 bước trên một màn hình (máy tí
 - Chặn ở máy chủ bằng RLS (policy viec_xoa, tb_xoa, lct_xoa), không phải chỉ ẩn nút: app gọi thẳng `.delete()`, máy chủ trả 0 dòng thì báo "không phải do bạn tạo". Hàm rpc `xoa_muc` (chỉ quản trị) không còn được dùng.
 - su_kien.viec_id đổi sang ON DELETE SET NULL để xóa việc không vướng sự kiện lịch.
 - Xóa việc là xóa luôn lịch sử cập nhật và tệp đính kèm; nếu việc đã có cập nhật của người khác thì hộp xác nhận cảnh báo rõ số lượng.
+
+## v70 – Màn việc gọn lại, thêm danh sách việc theo hạn
+- **Việc (của tôi)**: chỉ hiện việc quá hạn, việc tới hạn trong **3 ngày** và việc chưa có hạn. Dưới cùng ghi rõ còn bao nhiêu việc hạn xa hơn.
+- **Giao**: chỉ hiện việc trong **1 tháng** tới (và việc chưa có hạn).
+- Nút "📋 Danh sách việc theo hạn (cả quý, cả năm)" ở cả hai màn: liệt kê đủ 12 tháng của năm chọn, mỗi việc một dòng gồm ngày hạn, tiêu đề, người, trạng thái. Tháng không có việc ghi "chưa có việc nào" để soát xem có bỏ sót việc định kỳ trong quý/năm không. Việc chưa có hạn tách thành khối riêng ở đầu. Có nút chọn năm và tùy chọn hiện cả việc đã đóng.
+- Sửa ô tích (checkbox) bị kéo giãn hết chiều ngang trên mọi màn.
