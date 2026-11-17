@@ -78,7 +78,7 @@ async function dung(){
     <div class="ct" id="ct-${e.id}" style="display:none;margin-top:8px;border-top:1px solid var(--line);padding-top:8px">
       <div style="white-space:pre-wrap">${esc(e.noi_dung)}</div>${e.dia_diem?`<div class="mut" style="white-space:pre-wrap">📍 ${esc(e.dia_diem)}</div>`:''}
       <div class="mut">👥 ${ps.length?ps.map(i=>esc((ten[i]||{}).ho_ten||'?')).join(', '):'—'}</div>
-      ${(e.nguoi_tao===mine||qt)?`<div class="row" style="margin-top:6px">${!e.huy?`<button class="sec" data-sua="${e.id}">✏️ Sửa</button>`:''}${qt?`<button class="sec dng" data-xoa="${e.id}" style="margin-left:6px">🗑 Xóa</button>`:''}</div>`:''}</div></div>`};
+      ${(e.nguoi_tao===mine||qt)?`<div class="row" style="margin-top:6px">${!e.huy?`<button class="sec" data-sua="${e.id}">✏️ Sửa</button>`:''}<button class="sec dng" data-xoa="${e.id}" style="margin-left:6px">🗑 Xóa</button></div>`:''}</div></div>`};
   const emap=Object.fromEntries((ev||[]).map(e=>[e.id,{...e,tp:tp[e.id]||[]}]));
   A().$('#nd').innerHTML=`<div class="ctwrap"><div class="ctl"><div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><button class="sec" id="pv">‹</button><b>Tháng ${view.m+1}/${view.y}</b><button class="sec" id="nx">›</button></div>
    <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:2px"><div class="mut">T2</div><div class="mut">T3</div><div class="mut">T4</div><div class="mut">T5</div><div class="mut">T6</div><div class="mut">T7</div><div class="mut">CN</div>${grid}</div></div><div id="ctdet" class="card ctdet"></div></div>

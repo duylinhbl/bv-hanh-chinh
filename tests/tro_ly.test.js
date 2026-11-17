@@ -13,11 +13,13 @@ const path = require('path'), root = path.join(__dirname, '..');
       loai_viec:[{id:1,nhom:'11. An toàn bức xạ',ten:'Báo cáo ATBX hằng năm',thu_muc_goc:'ROOTROOTROOTROOT1',hoat_dong:true},{id:2,nhom:'15. KSK',ten:'Báo cáo KSK',thu_muc_goc:null,hoat_dong:true}],
       cap_nhat_hien_trang:[],nguoi_dung:[{id:'u1',ho_ten:'Nhân viên',auth_id:'a',vai_tro:'nv'}],danh_ba:[]};
     const q=t=>{const st={};const p=new Proxy(function(){}, {get(_,k){
-      if(k==='then')return res=>{if(st.upd){Object.assign(T[t][0],st.upd);window.calls.push(['update',t,st.upd]);return res({data:null,error:null})}
+      if(k==='then')return res=>{if(st.del){window.calls.push(['delete',t]);return res({data:window.xoaDuoc?[{id:'x'}]:[],error:null})}
+        if(st.upd){Object.assign(T[t][0],st.upd);window.calls.push(['update',t,st.upd]);return res({data:null,error:null})}
         if(st.ins){window.calls.push(['insert',t,st.ins]);return res({data:null,error:null})}
         res({data:st.single?(T[t]||[])[0]:(T[t]||[]),error:null})};
       if(k==='single'||k==='maybeSingle')return()=>{st.single=true;return p};
       if(k==='update')return o=>{st.upd=o;return p};
+      if(k==='delete')return()=>{st.del=true;return p};
       if(k==='insert')return o=>{st.ins=o;return p};
       return()=>p}});return p};
     const fn=async(n,o)=>{const a=o.body;window.calls.push([n,a]);
@@ -63,6 +65,15 @@ const path = require('path'), root = path.join(__dirname, '..');
   c = await p.evaluate(() => window.calls);
   const ins = c.find(x => x[0] === 'insert' && x[1] === 'cap_nhat_hien_trang');
   kiem(ins && ins[2].file_ten === 'Báo cáo ATBX 2026.docx' && ins[2].trang_thai === 'cho_xac_nhan' && c.some(x => x[0] === 'upload'), 'lưu: bản soạn vào việc kèm báo hoàn thành');
+  // Xóa: gọi thẳng bảng (RLS chặn ở máy chủ), 0 dòng = không phải của mình
+  await p.evaluate(() => { window.confirm = () => true; window.xoaDuoc = false; window.daSau = false; });
+  await p.evaluate(() => window.BVAPP.xoaMuc('viec', 'v1', 'hoi?', () => { window.daSau = true; }));
+  let c2 = await p.evaluate(() => ({ calls: window.calls.filter(x => x[0] === 'delete'), sau: window.daSau, toast: document.querySelector('#toast').textContent }));
+  kiem(c2.calls.length === 1 && c2.calls[0][1] === 'viec' && !c2.sau && /không phải do bạn tạo/.test(c2.toast), 'xóa việc của người khác: máy chủ trả 0 dòng, app báo không có quyền');
+  await p.evaluate(() => { window.xoaDuoc = true; return window.BVAPP.xoaMuc('viec', 'v1', 'hoi?', () => { window.daSau = true; }); });
+  c2 = await p.evaluate(() => ({ sau: window.daSau, toast: document.querySelector('#toast').textContent }));
+  kiem(c2.sau && /Đã xóa/.test(c2.toast), 'xóa việc mình giao: xóa được và quay lại danh sách');
+  kiem(!(await p.evaluate(() => window.calls.some(x => x[0] === 'rpc_xoa'))), 'không còn gọi hàm xoa_muc cũ (chỉ quản trị)');
   kiem(errs.length === 0, 'không có lỗi JS' + (errs.length ? ': ' + errs[0] : ''));
   if (process.env.SHOT) { await p.addStyleTag({ path: path.join(root, 'style.css') }); await p.screenshot({ path: process.env.SHOT + '-m.png', fullPage: false }); await p.evaluate(()=>document.querySelector('.vwb').scrollTo(0,600)); await p.screenshot({ path: process.env.SHOT + '-m2.png' }); await p.setViewportSize({ width: 1280, height: 800 }); await p.evaluate(()=>document.querySelector('.vwb').scrollTo(0,0)); await p.screenshot({ path: process.env.SHOT + '-d.png' }); }
   await b.close(); ket('tro_ly');

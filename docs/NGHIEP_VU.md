@@ -160,3 +160,10 @@ Quy trình chuẩn của nhân viên, 4 bước trên một màn hình (máy tí
 - Quy tắc nghiệp vụ: chữ đỏ trong mẫu = số liệu MỚI người làm đã điền, chờ xác minh, không phải ô trống. Hồ sơ trong Drive cũ hơn số liệu trong mẫu nghĩa là Drive CHƯA CÓ hồ sơ mới: giữ nguyên mẫu, báo thiếu hồ sơ.
 - Chốt chặn cứng trên máy chủ (hàm thayLui): chỗ thay nào có ngày/năm cũ hơn chữ đang có thì không áp vào file, cả đoạn đó giữ nguyên; hiện ở mục "🛑 GIỮ NGUYÊN theo mẫu". Chỗ thay đè lên chữ đỏ luôn là "cần kiểm" và giữ màu đỏ.
 - Hiện danh sách file căn cứ AI chưa đọc được (quá 10 MB, tên "bỏ"/"cũ", lỗi). Đối chiếu: hồ sơ cũ hơn báo cáo thì xếp "thiếu căn cứ", không xếp "lệch".
+
+## v69 – Ai tạo thì người đó xóa được
+- Trước: chỉ quản trị mới xóa được việc / thông báo / lịch công tác.
+- Nay: **người tạo tự xóa được của mình** — việc do mình giao (viec.nguoi_giao), thông báo do mình phát (thong_bao.nguoi_phat), lịch do mình tạo (lich_cong_tac.nguoi_tao). Quản trị vẫn xóa được tất cả. Không ai xóa được mục của người khác.
+- Chặn ở máy chủ bằng RLS (policy viec_xoa, tb_xoa, lct_xoa), không phải chỉ ẩn nút: app gọi thẳng `.delete()`, máy chủ trả 0 dòng thì báo "không phải do bạn tạo". Hàm rpc `xoa_muc` (chỉ quản trị) không còn được dùng.
+- su_kien.viec_id đổi sang ON DELETE SET NULL để xóa việc không vướng sự kiện lịch.
+- Xóa việc là xóa luôn lịch sử cập nhật và tệp đính kèm; nếu việc đã có cập nhật của người khác thì hộp xác nhận cảnh báo rõ số lượng.
