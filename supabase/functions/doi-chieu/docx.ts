@@ -92,3 +92,22 @@ export function thayDoan(xml: string, thay: { p: number; cu: string; moi: string
   goc.forEach((m, i) => { out += xml.slice(con, m.index) + ps[i].s; con = (m.index || 0) + m[0].length; });
   return { xml: out + xml.slice(con), ok };
 }
+
+// Chặn thay LÙI: chữ mới mang ngày/năm CŨ hơn chữ đang có trong mẫu (hồ sơ trong Drive chưa có bản mới).
+// Trả về lý do nếu phải chặn, null nếu được thay.
+export function thayLui(cu: string, moi: string): string | null {
+  const ngay = (s: string): number[] => {
+    const kq: number[] = [];
+    for (const m of s.matchAll(/(\d{1,2})\s*[\/.-]\s*(\d{1,2})\s*[\/.-]\s*((?:19|20)\d{2})/g)) kq.push(+m[3] * 10000 + +m[2] * 100 + +m[1]);
+    for (const m of s.matchAll(/ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})\s*năm\s*((?:19|20)\d{2})/gi)) kq.push(+m[3] * 10000 + +m[2] * 100 + +m[1]);
+    return kq;
+  };
+  const nam = (s: string): number[] => [...s.matchAll(/(?<![\d\/.-])((?:19|20)\d{2})(?![\d])/g)].map((m) => +m[1]);
+  const c = boDau(cu), m = boDau(moi);
+  const dc = ngay(c), dm = ngay(m);
+  const fmt = (n: number) => `${String(n % 100).padStart(2, '0')}/${String(Math.floor(n / 100) % 100).padStart(2, '0')}/${Math.floor(n / 10000)}`;
+  if (dc.length && dm.length && Math.max(...dm) < Math.max(...dc)) return `mẫu đang ghi ngày ${fmt(Math.max(...dc))}, hồ sơ chỉ có ngày ${fmt(Math.max(...dm))} (cũ hơn)`;
+  const nc = [...nam(c), ...dc.map((x) => Math.floor(x / 10000))], nm = [...nam(m), ...dm.map((x) => Math.floor(x / 10000))];
+  if (nc.length && nm.length && Math.max(...nm) < Math.max(...nc)) return `mẫu đang ghi năm ${Math.max(...nc)}, hồ sơ chỉ có năm ${Math.max(...nm)} (cũ hơn)`;
+  return null;
+}

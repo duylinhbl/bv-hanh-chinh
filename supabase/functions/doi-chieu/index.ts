@@ -1,7 +1,7 @@
 // Trợ lý việc: AI gợi ý loại việc, duyệt Drive (chỉ đọc), soạn báo cáo từ mẫu kỳ trước + hồ sơ căn cứ, đối chiếu báo cáo.
 // Hồ sơ đọc qua Apps Script; mỗi file chỉ lưu bản TÓM TẮT ngắn vào bảng dc_ho_so (không lưu file) nên DB không phình.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { chuCoDo, doanVan, dongDocx, moDocx, thayDoan } from './docx.ts';
+import { chuCoDo, doanVan, dongDocx, moDocx, thayDoan, thayLui } from './docx.ts';
 
 const H = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info', 'Content-Type': 'application/json' };
 const out = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: H });
@@ -221,8 +221,11 @@ Nhiệm vụ: lập văn bản KỲ MỚI bằng cách kế thừa MẪU (văn b
 - kỳ/năm báo cáo, ngày tháng lập văn bản;
 - căn cứ: số hiệu, ngày cấp, hiệu lực của giấy phép, chứng chỉ, biên bản kiểm định/kiểm xạ, hợp đồng;
 - số liệu thực: nhân sự, thiết bị, kết quả đo, kết quả khám…;
-- các chỗ mẫu để trống dạng [ … ] hoặc đánh dấu ⟦ĐỎ: …⟧ (chỗ chờ điền/xác minh).
+- các chỗ mẫu để trống dạng [ … ].
+Về chữ đánh dấu ⟦ĐỎ: …⟧: đó là số liệu MỚI người làm đã điền tay, đang chờ xác minh, KHÔNG phải ô trống. Chỉ đưa vào danh sách thay khi hồ sơ có bản CÙNG KỲ hoặc MỚI HƠN ghi khác đi. Nếu hồ sơ chỉ có bản cũ hơn thì giữ nguyên chữ đỏ và ghi vào "thieu".
 Quy tắc bắt buộc:
+- KHÔNG BAO GIỜ thay lùi: so ngày/năm của dữ kiện trong mẫu với ngày/năm của hồ sơ. Hồ sơ cũ hơn dữ kiện trong mẫu (ví dụ mẫu ghi biên bản ngày 22/08/2026, hồ sơ chỉ có biên bản ngày 21/08/2025) nghĩa là thư mục CHƯA CÓ hồ sơ mới: không thay, ghi vào "thieu" theo dạng "Chưa có hồ sơ mới cho <dữ kiện> (mẫu ghi …; hồ sơ mới nhất trong thư mục: … ngày …)".
+- Hồ sơ đã quá "hiệu lực đến"/ngày khuyến nghị kiểm tra tiếp theo so với hôm nay thì không dùng làm căn cứ cho kỳ mới; ghi vào "thieu".
 - Mọi giá trị mới phải lấy từ HỒ SƠ CĂN CỨ, VĂN BẢN ĐỀ NGHỊ hoặc yêu cầu của người làm. Tuyệt đối không bịa số, ngày, tên.
 - Dữ kiện mà hồ sơ xác nhận vẫn đúng như mẫu thì KHÔNG đưa vào danh sách thay.
 - Dữ kiện cần đổi theo kỳ mới nhưng không có căn cứ: không thay, ghi vào "thieu" (nêu rõ thiếu hồ sơ gì, ở đoạn nào).
@@ -235,7 +238,20 @@ Trả JSON: {"ten_file":"tên file kỳ mới (không đuôi)","tom_tat":"2-3 c�
         + (sua ? `\n\nBẢN SOẠN TRƯỚC đã thay các chỗ sau:\n${JSON.stringify(cu)}\nNGƯỜI LÀM YÊU CẦU CHỈNH: ${sua}\nHãy trả lại TOÀN BỘ danh sách thay (đã điều chỉnh theo yêu cầu chỉnh), vẫn tính trên MẪU gốc.` : '');
       let kq: any;
       try { kq = JS(await gemManh([{ text: lenh + than }, ...vb.parts], 16000)); } catch (e) { return out({ loi: 'AI chưa soạn được: ' + String((e as Error).message || e).slice(0, 150) }, 502); }
-      const thay = (Array.isArray(kq.thay) ? kq.thay : []).slice(0, 200).map((t: any) => ({ p: Number(t.p), cu: String(t.cu || ''), moi: String(t.moi ?? ''), can_cu: String(t.can_cu || '').slice(0, 300), chac: t.chac !== false }));
+      const thay0 = (Array.isArray(kq.thay) ? kq.thay : []).slice(0, 200).map((t: any) => ({ p: Number(t.p), cu: String(t.cu || ''), moi: String(t.moi ?? ''), can_cu: String(t.can_cu || '').slice(0, 300), chac: t.chac !== false }));
+      // Chốt chặn cứng: không cho thay bằng ngày/năm cũ hơn chữ đang có trong mẫu; chặn luôn các chỗ thay khác cùng đoạn
+      const chuP = new Map(dv.map((d) => [d.p, d.chu]));
+      const lyDo = thay0.map((t: any) => thayLui(t.cu, t.moi));
+      const pChan = new Set(thay0.filter((_: any, i: number) => lyDo[i]).map((t: any) => t.p));
+      const chan = thay0.filter((t: any, i: number) => lyDo[i] || pChan.has(t.p)).map((t: any) => ({ p: t.p, cu: t.cu, moi: t.moi, can_cu: t.can_cu, ly_do: thayLui(t.cu, t.moi) || 'cùng đoạn với chỗ bị chặn', doan: String(chuP.get(t.p) || '').slice(0, 200) }));
+      const thay = thay0.filter((t: any) => !pChan.has(t.p));
+      // Chỗ thay đè lên chữ đỏ (số liệu người làm đã điền tay): luôn đánh dấu "cần kiểm", giữ màu đỏ trong file
+      const hienP = new Map(dv.map((d) => [d.p, d.hien]));
+      for (const t of thay) {
+        const c = String(t.cu).replace(/⟦ĐỎ:\s?|⟧/g, '').replace(/\s+/g, ' ').trim();
+        const doS = [...String(hienP.get(t.p) || '').matchAll(/⟦ĐỎ: ([^⟧]*)⟧/g)].map((m) => m[1].replace(/\s+/g, ' ').trim()).filter((x) => x.length >= 2);
+        if (c && doS.some((x) => c.includes(x) || x.includes(c))) t.chac = false;
+      }
       const r = thayDoan(xml, thay);
       const tenRa = (String(kq.ten_file || '').replace(/[\\/:*?"<>|]/g, ' ').trim().slice(0, 120) || m.ten.replace(/\.docx$/i, '') + ' (soạn mới)') + '.docx';
       const path = `${viec_id}/nhap-bc-${nd.id}.docx`;
@@ -244,8 +260,7 @@ Trả JSON: {"ten_file":"tên file kỳ mới (không đuôi)","tom_tat":"2-3 c�
       const su = await sv.storage.from('anh').createSignedUrl(path, 3600);
       await uc.from('viec').update({ mau_file_id: mauId, mau_ten: m.ten }).eq('id', viec_id);
       if (v.loai_viec_id) await sv.from('loai_viec').update({ mau_file_id: mauId, mau_ten: m.ten, can_cu: fid || null }).eq('id', v.loai_viec_id);
-      const chu = new Map(dv.map((d) => [d.p, d.chu]));
-      return out({ ok: true, url: su.data?.signedUrl, ten: tenRa, mau: m.ten, tom_tat: String(kq.tom_tat || ''), thay: thay.map((t: any, i: number) => ({ ...t, ok: r.ok[i], doan: String(chu.get(t.p) || '').slice(0, 160) })), thieu: (Array.isArray(kq.thieu) ? kq.thieu : []).slice(0, 40).map((x: any) => String(x).slice(0, 300)), so_ho_so: co.length, khong_doc: khong.length, cat });
+      return out({ ok: true, url: su.data?.signedUrl, ten: tenRa, mau: m.ten, tom_tat: String(kq.tom_tat || ''), thay: thay.map((t: any, i: number) => ({ ...t, ok: r.ok[i], doan: String(chuP.get(t.p) || '').slice(0, 160) })), thieu: (Array.isArray(kq.thieu) ? kq.thieu : []).slice(0, 40).map((x: any) => String(x).slice(0, 300)), so_ho_so: co.length, khong_doc: khong.length, khong_doc_ds: khong.slice(0, 25).map((x: any) => ({ ten: x.ten, ly_do: x.loi || 'chưa đọc' })), chan, cat });
     }
 
     // 4) Đối chiếu một báo cáo có sẵn với hồ sơ căn cứ
@@ -265,7 +280,8 @@ Trả JSON: {"ten_file":"tên file kỳ mới (không đuôi)","tom_tat":"2-3 c�
 Nhiệm vụ: đối chiếu BÁO CÁO với HỒ SƠ CĂN CỨ (bản tóm tắt từng file trong thư mục).
 Quy tắc:
 - Lấy từng dữ kiện cụ thể trong báo cáo (số giấy phép/chứng nhận/biên bản, ngày cấp, hiệu lực, tên người, số seri thiết bị, kết quả đo, kết quả khám) rồi dò trong hồ sơ. Ưu tiên các đoạn đánh dấu ⟦ĐỎ: …⟧ và các chỗ còn để trống dạng [ … ] hoặc [ghi nếu có].
-- ket_qua: "khop" (hồ sơ xác nhận đúng), "lech" (hồ sơ khác báo cáo), "thieu_can_cu" (không có hồ sơ nào nói về dữ kiện này), "can_dien" (báo cáo để trống/chờ điền nhưng hồ sơ có dữ liệu để điền), "het_han" (giấy tờ đã hết hiệu lực so với hôm nay hoặc kỳ báo cáo).
+- ket_qua: "khop" (hồ sơ xác nhận đúng), "lech" (hồ sơ CÙNG KỲ ghi khác báo cáo), "thieu_can_cu" (không có hồ sơ nào nói về dữ kiện này, HOẶC hồ sơ trong thư mục cũ hơn dữ kiện báo cáo ghi), "can_dien" (báo cáo để trống/chờ điền nhưng hồ sơ có dữ liệu để điền), "het_han" (giấy tờ đã hết hiệu lực so với hôm nay hoặc kỳ báo cáo).
+- So ngày/năm: báo cáo ghi dữ kiện MỚI HƠN hồ sơ (ví dụ báo cáo ghi biên bản năm 2026, hồ sơ chỉ có biên bản năm 2025) thì KHÔNG phải "lech" mà là "thieu_can_cu": thư mục chưa có hồ sơ mới. Không được đề xuất sửa báo cáo về số liệu cũ; de_xuat là bổ sung hồ sơ mới vào thư mục.
 - Chỉ dựa vào hồ sơ đã cho. Không có thì ghi thieu_can_cu. Tuyệt đối không bịa số hay ngày. Trích đúng số hiệu/ngày từ hồ sơ.
 - can_cu: tên file [Hn] và nội dung hồ sơ ghi gì. de_xuat: nên sửa/điền gì (nếu cần), ngắn.
 - Tối đa 40 mục, đưa mục lech/het_han/can_dien/thieu_can_cu và các mục đánh dấu đỏ lên trước. Mục khop chỉ giữ những mục quan trọng.

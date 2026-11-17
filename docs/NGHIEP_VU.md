@@ -154,3 +154,9 @@ Quy trình chuẩn của nhân viên, 4 bước trên một màn hình (máy tí
 - Nhận thêm PDF làm tệp đính kèm việc. Soạn/đối chiếu ưu tiên model mạnh (bi_mat.ai_model_manh, mặc định gemini-flash-latest), lỗi thì dùng ai_model.
 - Edge function doi-chieu v3 (index.ts + docx.ts): who, goi_y_loai, duyet, quet, doc, doc_lai, ds, soan_bc, doi_chieu. Apps Script DoiChieu.gs bản 2: một dòng route `if (/^dc_/.test(b.action)) return out(dcRoute(b));`.
 - Bộ "Loại công việc" cũ (6 loại) đã ẩn khỏi giao diện.
+
+## v68 – Chặn AI thay lùi số liệu (sửa lỗi phát hiện ngày 17/11/2026)
+- Lỗi: mẫu ghi biên bản kiểm xạ mới (325.02, 22/08/2026, chữ đỏ), Drive chỉ có bản 2025 (281.01, 21/08/2025); AI đề xuất thay mới bằng cũ.
+- Quy tắc nghiệp vụ: chữ đỏ trong mẫu = số liệu MỚI người làm đã điền, chờ xác minh, không phải ô trống. Hồ sơ trong Drive cũ hơn số liệu trong mẫu nghĩa là Drive CHƯA CÓ hồ sơ mới: giữ nguyên mẫu, báo thiếu hồ sơ.
+- Chốt chặn cứng trên máy chủ (hàm thayLui): chỗ thay nào có ngày/năm cũ hơn chữ đang có thì không áp vào file, cả đoạn đó giữ nguyên; hiện ở mục "🛑 GIỮ NGUYÊN theo mẫu". Chỗ thay đè lên chữ đỏ luôn là "cần kiểm" và giữ màu đỏ.
+- Hiện danh sách file căn cứ AI chưa đọc được (quá 10 MB, tên "bỏ"/"cũ", lỗi). Đối chiếu: hồ sơ cũ hơn báo cáo thì xếp "thiếu căn cứ", không xếp "lệch".

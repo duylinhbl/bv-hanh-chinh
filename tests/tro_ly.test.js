@@ -25,7 +25,7 @@ const path = require('path'), root = path.join(__dirname, '..');
       if(a.action==='duyet')return {data:{ok:true,id:a.folder_id||'ROOTROOTROOTROOT1',ten:a.folder_id?'2026':'11.HỒ SƠ ATBX',la_goc:!a.folder_id,thu_muc:a.folder_id?[]:[{id:'F2026F2026F2026F2',ten:'2026'}],files:[{id:'MAUMAUMAUMAUMAU1',ten:'Báo cáo ATBX 2025.docx'},{id:'PDFPDFPDFPDFPDF1',ten:'Giấy phép.pdf'}]}};
       if(a.action==='quet')return {data:{ok:true,can_doc:2,tong:2,ten_thu_muc:'2026'}};
       if(a.action==='doc')return {data:{ok:true,da_doc:2,con_lai:0}};
-      if(a.action==='soan_bc')return {data:{ok:true,url:'data:application/octet-stream;base64,UEsDBA==',ten:'Báo cáo ATBX 2026.docx',mau:'Báo cáo ATBX 2025.docx',tom_tat:'Đã cập nhật năm và giấy phép.',so_ho_so:2,khong_doc:0,thieu:['Thiếu biên bản kiểm xạ 2026'],
+      if(a.action==='soan_bc')return {data:{ok:true,url:'data:application/octet-stream;base64,UEsDBA==',ten:'Báo cáo ATBX 2026.docx',mau:'Báo cáo ATBX 2025.docx',tom_tat:'Đã cập nhật năm và giấy phép.',so_ho_so:2,khong_doc:0,thieu:['Thiếu biên bản kiểm xạ 2026'],chan:[{p:9,cu:'số 325.02 ngày 22/08/2026',moi:'số 281.01 ngày 21/08/2025',ly_do:'mẫu đang ghi ngày 22/08/2026, hồ sơ chỉ có ngày 21/08/2025 (cũ hơn)'}],khong_doc_ds:[{ten:'Biên bản kiểm xạ.pdf',ly_do:'File 11 MB'}],
         thay:[{p:1,cu:'năm 2025',moi:'năm 2026',chac:true,ok:true,can_cu:'yêu cầu'},{p:2,cu:'12/GP',moi:'45/GP',chac:false,ok:true,can_cu:'[H1]'},{p:3,cu:'abc',moi:'xyz',chac:true,ok:false}]}};
       return {data:{}}};
     window.supabase={createClient:()=>({from:q,channel:()=>q('x'),removeChannel(){},rpc:async()=>({data:false}),functions:{invoke:fn},
@@ -51,7 +51,7 @@ const path = require('path'), root = path.join(__dirname, '..');
   kiem(c.some(x => x[0] === 'update' && x[2].thu_muc_dc === 'F2026F2026F2026F2') && c.some(x => x[0] === 'update' && x[2].mau_file_id === 'MAUMAUMAUMAUMAU1'), 'thư mục căn cứ và file mẫu được lưu');
   await p.click('#tlsoan'); await p.waitForSelector('#tlluu', { timeout: 5000 });
   const kq = await p.textContent('#tlkq');
-  kiem(/Báo cáo ATBX 2026\.docx/.test(kq) && /Thiếu biên bản kiểm xạ/.test(kq) && /Cần kiểm/.test(kq) && /chưa thay được/.test(kq), 'bước ④ hiện kết quả: chỗ đã thay, chỗ cần kiểm, chỗ thiếu căn cứ, chỗ không thay được');
+  kiem(/Báo cáo ATBX 2026\.docx/.test(kq) && /Thiếu biên bản kiểm xạ/.test(kq) && /Cần kiểm/.test(kq) && /chưa thay được/.test(kq) && /GIỮ NGUYÊN theo mẫu/.test(kq) && /325\.02/.test(kq) && /chưa đọc được/.test(kq), 'bước ④ hiện kết quả: chỗ đã thay, chỗ cần kiểm, chỗ thiếu căn cứ, chỗ không thay được');
   c = await p.evaluate(() => window.calls);
   kiem(c.filter(x => x[1] && x[1].action === 'quet').length === 1 && c.some(x => x[1] && x[1].action === 'soan_bc' && x[1].mau_file_id === 'MAUMAUMAUMAUMAU1' && x[1].file_path === 'v1/a-f.docx'), 'soạn: quét căn cứ rồi gửi đúng mẫu và văn bản');
   await p.fill('#tlsua', 'ngày cấp là 05/03/2026'); await p.click('#tlsuab'); await p.waitForTimeout(300);
