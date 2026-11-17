@@ -176,9 +176,13 @@ nav button[data-t=moi] span.l{margin-top:0;color:var(--mut)}
 .tlf{padding:9px 6px;border-top:1px solid var(--line);cursor:pointer;display:flex;gap:8px;align-items:center}.tlf.tep{cursor:default}.tlf span{flex:1;min-width:0;word-break:break-word}.tlf button{width:auto;padding:5px 9px;font-size:13px;white-space:nowrap}
 .tlm{border:1px solid var(--line);border-left:4px solid #555;border-radius:6px;padding:8px;margin:8px 0;word-break:break-word}.tlm button{width:auto}
 
-/* Danh sách việc theo hạn */
-.dsr{display:flex;gap:8px;align-items:center;padding:8px 2px;border-top:1px solid var(--line);cursor:pointer}
-.dsr b{min-width:46px}.dsr span:nth-of-type(1){flex:1;min-width:0;word-break:break-word}
-.dsr .mut{max-width:35%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85em}
-.dsr.qua b{color:#b91c1c}
-.thg{margin-bottom:8px}.thg.trong{padding:8px 12px;opacity:.65}
+/* Việc 3 ngày / 1 tháng bên trái, danh sách cả năm bên phải */
+.hai{display:flex;gap:12px;align-items:flex-start}.hai>div{flex:1;min-width:0}
+@media(max-width:860px){.hai{flex-direction:column}.hai>div{width:100%}}
+table.tb{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.tb th,.tb td{padding:7px 5px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tb th{font-size:12px;color:var(--mut);font-weight:600;white-space:nowrap}
+.tb td:first-child{width:30px;color:var(--mut)}
+.tb tbody tr{cursor:pointer}.tb tbody tr:hover{background:rgba(0,122,54,.05)}
+.tb td.han,.tb td:last-child{white-space:nowrap}.tb td.han.qua{color:#b91c1c;font-weight:600}
+.tb td .mut{font-size:.85em}

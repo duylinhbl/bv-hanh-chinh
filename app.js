@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v70</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v71</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -97,54 +97,41 @@ async function dsToi2(){
   const nay=new Date().toDateString(),kq=data.filter(qua).length,kh=data.filter(v=>v.han&&new Date(v.han).toDateString()===nay).length,gio=new Date().getHours(),ch=gio<11?'Chào buổi sáng':gio<14?'Chào buổi trưa':gio<18?'Chào buổi chiều':'Chào buổi tối';
   const kpi=`<div class="hero"><div class="hi"><b>${ch}, ${esc((me.ho_ten||'').split(' ').slice(-1)[0])}</b><span class="mut">${data.length?'Bạn có '+data.length+' việc đang mở':'Hôm nay chưa có việc nào cho bạn'}</span></div><div class="kpi"><div class="r"><b>${kq}</b><span>Quá hạn</span></div><div class="a"><b>${kh}</b><span>Hạn hôm nay</span></div><div><b>${data.length}</b><span>Đang mở</span></div></div></div>`;
   const moc=Date.now()+3*NGAY,sap=data.filter(v=>!v.han||new Date(v.han)<=moc),xa=data.length-sap.length;
-  $('#nd').innerHTML=(await theBatPush())+kpi
+  $('#nd').innerHTML=`<div class="hai"><div>${await theBatPush()}${kpi}`
     +(sap.length?sap.map(v=>the({...v,ben:v.tu_giao?'Tự giao':'Giao bởi '+ten(v.nguoi_giao)})).join(''):'<p class="mut">Không có việc nào tới hạn trong 3 ngày.</p>')
-    +nutTheoHan('toi','3 ngày tới',xa);
-  gan();ganNutPush();nganTheoHan('toi');
+    +ghiLoc('3 ngày tới',xa)+`</div><div id="bnam"><p class="mut">Đang tải danh sách năm…</p></div></div>`;
+  gan();ganNutPush();bangNam('toi');
 }
 async function dsGiao(){
   $('#nd').innerHTML='Đang tải…';
   const {data,error}=await sb.from('viec').select('*').neq('trang_thai','huy').order('tao_luc',{ascending:false}).limit(300);
   if(error)return $('#nd').textContent=error.message;
   const moc=Date.now()+30*NGAY,sap=data.filter(v=>!v.han||new Date(v.han)<=moc),xa=data.length-sap.length;
-  $('#nd').innerHTML=(sap.map(v=>the({...v,ben:'Người nhận: '+ten(v.nguoi_nhan)})).join('')||'<p class="mut">Không có việc nào trong 1 tháng tới.</p>')
-    +nutTheoHan('giao','1 tháng tới',xa);
-  gan();nganTheoHan('giao');
+  $('#nd').innerHTML=`<div class="hai"><div>`
+    +(sap.map(v=>the({...v,ben:'Người nhận: '+ten(v.nguoi_nhan)})).join('')||'<p class="mut">Không có việc nào trong 1 tháng tới.</p>')
+    +ghiLoc('1 tháng tới',xa)+`</div><div id="bnam"><p class="mut">Đang tải danh sách năm…</p></div></div>`;
+  gan();bangNam('giao');
 }
 const NGAY=864e5;
-const nutTheoHan=(pv,ky,xa)=>`<p class="mut" style="margin-top:14px">Đang hiện việc tới hạn trong <b>${ky}</b> và việc chưa có hạn.${xa?' Còn <b>'+xa+'</b> việc có hạn xa hơn.':''}</p><button class="sec full" id="dshan">📋 Danh sách việc theo hạn (cả quý, cả năm)</button>`;
-const nganTheoHan=pv=>{if($('#dshan'))$('#dshan').onclick=()=>theoHan(pv)};
+const ghiLoc=(ky,xa)=>`<p class="mut" style="margin-top:12px">Đang hiện việc tới hạn trong <b>${ky}</b> và việc chưa có hạn.${xa?' Còn <b>'+xa+'</b> việc có hạn xa hơn, xem ở danh sách cả năm.':''}</p>`;
 
-// Danh sách việc theo hạn: xem đủ 12 tháng để biết tháng nào đang trống việc
-async function theoHan(pv,nam,kinCa){
-  const quay=()=>{tab=pv;ve()};
-  $('#nd').innerHTML='<button class="sec" id="lui">← Quay lại</button><p class="mut">Đang tải…</p>';
-  $('#lui').onclick=quay;
-  let q=sb.from('viec').select('*').neq('trang_thai','huy').order('han',{nullsFirst:false}).limit(1000);
+// Danh sách việc cả năm, hiện ngay bên cạnh (máy tính) hoặc bên dưới (điện thoại) để nhớ đủ số việc trong năm
+async function bangNam(pv,nam){
+  const o=$('#bnam');if(!o)return;
+  let q=sb.from('viec').select('*').neq('trang_thai','huy').order('han',{nullsFirst:false}).limit(500);
   if(pv==='toi')q=q.eq('nguoi_nhan',me.id);
   const {data,error}=await q;
-  if(error)return $('#nd').innerHTML='<p class="mut">Lỗi: '+esc(error.message)+'</p>';
-  const ca=kinCa!==false?data:data.filter(v=>v.trang_thai!=='da_dong');
-  const nams=[...new Set(data.filter(v=>v.han).map(v=>new Date(v.han).getFullYear()))].sort();
-  const n=nam||new Date().getFullYear();
-  if(!nams.includes(n))nams.push(n);nams.sort();
-  const chuaHan=ca.filter(v=>!v.han&&v.trang_thai!=='da_dong');
-  const trongNam=ca.filter(v=>v.han&&new Date(v.han).getFullYear()===n);
-  const dong=v=>`<div class="dsr ${qua(v)?'qua':''}" data-id="${v.id}"><b>${v.han?new Date(v.han).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}):'--/--'}</b><span>${esc(v.tieu_de)}</span><span class="mut">${esc(pv==='toi'?(v.tu_giao?'tự giao':ten(v.nguoi_giao)):ten(v.nguoi_nhan))}</span>${tag(v.trang_thai)}</div>`;
-  const thang=Array.from({length:12},(_,i)=>{
-    const ds=trongNam.filter(v=>new Date(v.han).getMonth()===i),mo=ds.filter(v=>v.trang_thai!=='da_dong').length;
-    return `<div class="card thg${ds.length?'':' trong'}"><b>Tháng ${i+1}/${n}</b> <span class="mut">${ds.length?ds.length+' việc'+(mo?', '+mo+' đang mở':', đã xong hết'):'chưa có việc nào'}</span>${ds.map(dong).join('')}</div>`}).join('');
-  $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button>
-  <div class="card" style="margin-top:10px"><b>📋 Việc theo hạn — ${pv==='toi'?'việc của tôi':'việc đã giao'}</b>
-    <div class="row" style="margin-top:8px;flex-wrap:wrap">${nams.map(y=>`<button class="${y===n?'':'sec'}" data-nam="${y}" style="width:auto;padding:6px 12px">${y}</button>`).join('')}</div>
-    <label style="display:block;margin-top:8px"><input type="checkbox" id="dsca" ${kinCa!==false?'checked':''}> Hiện cả việc đã đóng</label>
-    <div class="mut">Tháng nào ghi "chưa có việc nào" là chỗ cần soát lại xem có bỏ sót việc không.</div></div>
-  ${chuaHan.length?`<div class="card" style="margin-bottom:8px;border-left:4px solid #b45309"><b>⚠ ${chuaHan.length} việc chưa có hạn</b> <span class="mut">app không nhắc được</span>${chuaHan.map(dong).join('')}</div>`:''}
-  ${thang}`;
-  $('#lui').onclick=quay;
-  $('#dsca').onchange=()=>theoHan(pv,n,$('#dsca').checked);
-  document.querySelectorAll('[data-nam]').forEach(b=>b.onclick=()=>theoHan(pv,+b.dataset.nam,$('#dsca').checked));
-  document.querySelectorAll('.dsr[data-id]').forEach(c=>c.onclick=()=>chiTiet(c.dataset.id));
+  if(error)return o.innerHTML='<p class="mut">Lỗi: '+esc(error.message)+'</p>';
+  const namCua=v=>new Date(v.han||v.tao_luc).getFullYear();
+  const nams=[...new Set((data||[]).map(namCua))].sort((x,y)=>y-x),n=nam||new Date().getFullYear();
+  if(!nams.includes(n)){nams.push(n);nams.sort((x,y)=>y-x)}
+  const ds=(data||[]).filter(v=>namCua(v)===n),mo=ds.filter(v=>v.trang_thai!=='da_dong').length;
+  o.innerHTML=`<div class="card bnam"><div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+    <b>📋 Việc trong năm</b><select id="nnam" style="width:auto;min-height:38px;padding:6px 8px">${nams.map(y=>`<option value="${y}" ${y===n?'selected':''}>${y}</option>`).join('')}</select></div>
+    <div class="mut">${ds.length} việc${mo?', '+mo+' đang mở':''}</div>
+    ${ds.length?`<table class="tb"><thead><tr><th>STT</th><th>Nội dung</th><th>Đến hạn</th><th>Tình trạng</th></tr></thead><tbody>${ds.map((v,i)=>`<tr data-id="${v.id}"><td>${i+1}</td><td>${esc(v.tieu_de)}${pv==='giao'?`<div class="mut">${esc(ten(v.nguoi_nhan))}</div>`:''}</td><td class="han${qua(v)?' qua':''}">${v.han?new Date(v.han).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}):'chưa có'}</td><td>${tag(v.trang_thai)}</td></tr>`).join('')}</tbody></table>`:'<p class="mut">Năm này chưa có việc nào.</p>'}</div>`;
+  $('#nnam').onchange=()=>bangNam(pv,+$('#nnam').value);
+  o.querySelectorAll('tr[data-id]').forEach(r=>r.onclick=()=>chiTiet(r.dataset.id));
 }
 const gan=()=>document.querySelectorAll('.card[data-id]').forEach(c=>c.onclick=()=>chiTiet(c.dataset.id));
 

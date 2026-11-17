@@ -173,3 +173,8 @@ Quy trình chuẩn của nhân viên, 4 bước trên một màn hình (máy tí
 - **Giao**: chỉ hiện việc trong **1 tháng** tới (và việc chưa có hạn).
 - Nút "📋 Danh sách việc theo hạn (cả quý, cả năm)" ở cả hai màn: liệt kê đủ 12 tháng của năm chọn, mỗi việc một dòng gồm ngày hạn, tiêu đề, người, trạng thái. Tháng không có việc ghi "chưa có việc nào" để soát xem có bỏ sót việc định kỳ trong quý/năm không. Việc chưa có hạn tách thành khối riêng ở đầu. Có nút chọn năm và tùy chọn hiện cả việc đã đóng.
 - Sửa ô tích (checkbox) bị kéo giãn hết chiều ngang trên mọi màn.
+
+## v71 – Danh sách việc cả năm hiện ngay tại màn hình (thay cách làm v70)
+- Bỏ màn riêng phải bấm mới xem. Màn **Việc** và màn **Giao** chia hai cột: trái là các thẻ việc gần hạn (3 ngày / 1 tháng), phải là **bảng việc cả năm** (điện thoại thì bảng nằm dưới).
+- Bảng gồm 4 cột: STT, Nội dung, Đến hạn, Tình trạng. Chỉ liệt kê việc có thật, không liệt kê tháng trống. Việc không có hạn ghi "chưa có" ở cột Đến hạn; việc quá hạn in đỏ. Bảng tính cả việc đã đóng để đếm đủ số việc trong năm; có ô chọn năm.
+- Mục đích: nhân viên tự giao thêm việc thì bảng tự dài ra, nhìn một chỗ là biết cả năm đã làm bao nhiêu việc, có sót việc định kỳ nào không.
