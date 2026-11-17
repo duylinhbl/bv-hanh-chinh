@@ -54,7 +54,15 @@ const ngay = d => new Date(Date.now() + d * 864e5).toISOString();
   kiem(await p.$('.tb') === null, 'bấm một dòng trong bảng thì mở chi tiết việc');
   kiem(errs.length === 0, 'không có lỗi JS' + (errs.length ? ': ' + errs[0] : ''));
   if (process.env.SHOT) { await p.addStyleTag({ path: path.join(root, 'style.css') });
-    await p.evaluate(() => window.BVAPP.veTab('toi')); await p.waitForSelector('.tb tbody tr'); await p.screenshot({ path: process.env.SHOT + '-dt.png', fullPage: true });
-    await p.setViewportSize({ width: 1180, height: 820 }); await p.evaluate(() => window.BVAPP.veTab('toi')); await p.waitForSelector('.tb tbody tr'); await p.screenshot({ path: process.env.SHOT + '-pc.png', fullPage: true }); }
+    const chup = async (ten, w, h, lam) => { await p.setViewportSize({ width: w, height: h }); await lam(); await p.waitForTimeout(400); await p.screenshot({ path: process.env.SHOT + '-' + ten + '.png' }); };
+    const tab = t => p.evaluate(x => window.BVAPP.veTab(x), t);
+    await chup('dt-viec', 400, 800, () => tab('toi'));
+    await chup('pc-viec', 1920, 950, () => tab('toi'));
+    await chup('pc-giao', 1920, 950, () => tab('giao'));
+    await chup('pc-moi', 1920, 950, () => tab('moi'));
+    await chup('pc-tk', 1920, 950, () => tab('tk'));
+    await chup('pc-tin', 1920, 950, () => tab('tb'));
+    await chup('pc-ct', 1920, 950, async () => { await tab('toi'); await p.waitForSelector('.card.v'); await p.click('.card.v'); });
+  }
   await b.close(); ket('ds_viec');
 })();

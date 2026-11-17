@@ -60,7 +60,18 @@ async function nhap(){
   .nh-dz{border:2px dashed #9fb8a6;border-radius:12px;padding:14px;text-align:center;color:#4c5f53;background:#f6faf7;margin:10px 0 6px;cursor:pointer;font-size:14px}.nh-dz.on{background:#e3f3e8;border-color:var(--pri)}
   .nh-f{background:#fff;border-radius:10px;padding:8px 10px;margin:5px 0;box-shadow:0 1px 3px rgba(0,60,30,.08)}.nh-f .t{display:flex;justify-content:space-between;gap:8px;font-size:13px}.nh-f .t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .nh-f input{margin:4px 0 2px}.nh-c{display:flex;gap:5px;flex-wrap:wrap}.nh-c button{width:auto!important;margin:0;padding:3px 9px;font-size:12px;border-radius:12px;border:1px solid #cfdcd3!important;background:#fff!important;color:#334!important;box-shadow:none!important}
-  .nh-bar .sel{font-size:13px;margin-bottom:6px;color:#334}.nh-bar input{margin:0 0 6px}`;
+  .nh-bar .sel{font-size:13px;margin-bottom:6px;color:#334}.nh-bar input{margin:0 0 6px}
+  .nh-wrap{display:flex;flex-direction:column}.nh-l,.nh-p{display:contents}.nh-a{order:1}#dz{order:2}#fl{order:3}#nl{order:4}.nh-bar{order:5}
+  @media (min-width:1000px){
+   .nh-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(400px,520px);gap:28px;align-items:start}
+   .nh-l,.nh-p{display:block;min-width:0}
+   .nh-p{position:sticky;top:76px;max-height:calc(100vh - 96px);overflow:auto;background:#fff;border:1px solid #cfdcd3;border-radius:14px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,60,30,.08)}
+   .nh-bar{position:static;border-top:0;box-shadow:none;padding:6px 0 0;margin:8px 0 0}
+   .nh-bar button.full{max-width:none}
+   .nh-t{flex-wrap:wrap;overflow:visible}
+   .nh-dz{margin-top:0;padding:22px 14px}
+  }
+  @media (min-width:1400px){#nl{columns:2;column-gap:20px}.nh-r{break-inside:avoid}.nh-g{break-after:avoid}.nh-g:first-child{margin-top:0}}`;
   document.getElementById('khst')?.remove();document.head.appendChild(st);
   const dsHtml=()=>{const q=f(tk),m=+document.querySelector('.nh-t .on')?.dataset.m||t0;let g='',h='';
     ds.filter(r=>!q||f(r.hang_muc+' '+(r.stt||'')).includes(q)).forEach(r=>{const c=cha(r);if(c!==g){g=c;h+=`<div class="nh-g">${esc(c)}</div>`}
@@ -68,12 +79,11 @@ async function nhap(){
     return h||'<p class="mut">Không thấy khoản nào</p>'};
   let rq=uid();
   const bn=vua&&Date.now()-vua.t<15*60000?`<div class="card" id="nhok" style="background:#eef8f1;border:1px solid #9fd0ad"><b>✓ Vừa ghi:</b> ${esc(vua.txt)}<br><button id="nhoan" style="width:auto;margin-top:6px;padding:4px 12px;font-size:13px;background:#fff!important;color:#b03a2e!important;border:1px solid #d9a9a3!important;box-shadow:none!important">↩ Hoàn tác phiếu này</button></div>`:'';
-  $('#nd').innerHTML=`<h3>Nhập phiếu đề nghị thanh toán</h3>${bn}<div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
+  $('#nd').innerHTML=`<div class="nh-wrap"><div class="nh-l"><div class="nh-a"><h3>Nhập phiếu đề nghị thanh toán</h3>${bn}<div class="mut">Số tiền được <b>cộng thêm</b> vào tháng đã chọn, ghi thẳng vào Google Sheet.</div>
   <div class="nh-t">${[...Array(12)].map((_,i)=>`<button data-m="${i+1}" class="${i+1===t0?'on':''}">Tháng ${i+1}</button>`).join('')}</div>
-  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"><div class="nh-dz" id="dz">📎 <b>Thả phiếu / hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF và ảnh hiện ngay để bồ nhìn rồi gõ số tiền · file lưu vào Drive khi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
-  <div id="nl">${dsHtml()}</div>
-
-  <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" autocomplete="off" placeholder="Số tiền nhập tay (nếu không có hồ sơ)"><div id="nsp" style="font-size:20px;font-weight:700;color:var(--pri2);min-height:26px;margin:0 0 6px"></div><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div>`;
+  <input id="nq" placeholder="🔍 Tìm khoản chi (vd: điện, thuốc, văn phòng phẩm)"></div><div id="nl">${dsHtml()}</div></div>
+  <div class="nh-p"><div class="nh-dz" id="dz">📎 <b>Thả phiếu / hồ sơ vào đây</b> hoặc bấm để chọn file<br><span style="font-size:12px">PDF và ảnh hiện ngay để bồ nhìn rồi gõ số tiền · file lưu vào Drive khi bấm Cộng</span><input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.doc,.xlsx,.xls,image/*" style="display:none"></div><div id="fl"></div>
+  <div class="nh-bar"><div class="sel" id="nsel">Chọn một khoản chi ở trên</div><input id="ns" inputmode="numeric" autocomplete="off" placeholder="Số tiền nhập tay (nếu không có hồ sơ)"><div id="nsp" style="font-size:20px;font-weight:700;color:var(--pri2);min-height:26px;margin:0 0 6px"></div><input id="ng2" placeholder="Nội dung / số phiếu (không bắt buộc)"><button class="full" id="ng">Cộng vào tháng</button><button class="sec full" id="nv">← Quay lại</button></div></div></div>`;
   const bind=()=>document.querySelectorAll('.nh-r').forEach(e=>e.onclick=()=>{chon=+e.dataset.k;const r=rows.find(x=>x.id===chon);$('#nsel').innerHTML='Đã chọn: <b>'+esc((r.stt||'')+' '+r.hang_muc)+'</b>';$('#nl').innerHTML=dsHtml();bind();$('#ns').focus()});
   const ve3=()=>{$('#nl').innerHTML=dsHtml();bind()};bind();
   $('#nq').oninput=e=>{tk=e.target.value;ve3()};
@@ -208,7 +218,7 @@ function ve2(){
     ${r.ghi_chu?`<div class="mut" style="font-size:12px">${esc(r.ghi_chu)}</div>`:''}</div>`};
   $('#nd').innerHTML=`<h3>Kế hoạch – sử dụng 2026</h3><div class="mut">Nguồn: Bảng thu chi (tab KH 2026). Số đã dùng đến tháng gần nhất có dữ liệu.</div>
   <div class="kpi" style="display:flex;gap:8px;margin:8px 0">${[thu,chi].filter(Boolean).map(r=>`<div class="card" style="flex:1"><div class="mut">${esc(r.hang_muc)}</div><b>${n(r.kh_nam)}</b></div>`).join('')}</div>
-  ${bieuDo()}${NT?'<button class="full" id="nhn">✍️ Nhập số chi tháng</button>':''}<div class="mut" style="font-size:12px;margin:4px 0">Số liệu cập nhật lúc ${esc(capNhat())} · <a href="#" id="khlm">🔄 Làm mới từ Sheet</a></div><label><input type="checkbox" id="khct" ${ds?'checked':''}> Hiện chi tiết</label>${L.map(hien).join('')}`;
+  ${bieuDo()}${NT?'<button class="full" id="nhn">✍️ Nhập số chi tháng</button>':''}<div class="mut" style="font-size:12px;margin:4px 0">Số liệu cập nhật lúc ${esc(capNhat())} · <a href="#" id="khlm">🔄 Làm mới từ Sheet</a></div><label><input type="checkbox" id="khct" ${ds?'checked':''}> Hiện chi tiết</label><div class="khl">${L.map(hien).join('')}</div>`;
   document.querySelectorAll('[data-k]').forEach(e=>e.onclick=()=>{const r=rows.find(x=>x.id==e.dataset.k);if(r.thang){mo=r.id;ve2();scrollTo(0,0)}});
   if($('#nhn'))$('#nhn').onclick=nhap;
   $('#khlm').onclick=async e=>{e.preventDefault();const a=e.target;a.textContent='Đang đọc Sheet…';

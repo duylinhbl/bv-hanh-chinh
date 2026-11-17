@@ -178,3 +178,11 @@ Quy trình chuẩn của nhân viên, 4 bước trên một màn hình (máy tí
 - Bỏ màn riêng phải bấm mới xem. Màn **Việc** và màn **Giao** chia hai cột: trái là các thẻ việc gần hạn (3 ngày / 1 tháng), phải là **bảng việc cả năm** (điện thoại thì bảng nằm dưới).
 - Bảng gồm 4 cột: STT, Nội dung, Đến hạn, Tình trạng. Chỉ liệt kê việc có thật, không liệt kê tháng trống. Việc không có hạn ghi "chưa có" ở cột Đến hạn; việc quá hạn in đỏ. Bảng tính cả việc đã đóng để đếm đủ số việc trong năm; có ô chọn năm.
 - Mục đích: nhân viên tự giao thêm việc thì bảng tự dài ra, nhìn một chỗ là biết cả năm đã làm bao nhiêu việc, có sót việc định kỳ nào không.
+
+## v72 – Giao diện máy tính riêng (từ 1000px), điện thoại giữ nguyên
+- Nguyên tắc: máy tính dùng hết bề ngang, việc chính bên trái, ô thao tác/tra cứu bên phải; điện thoại là giao diện riêng, không dùng chung bố cục.
+- Việc / Giao: thẻ việc xếp lưới bên trái, bảng việc cả năm ghim bên phải.
+- Chi tiết việc: thông tin + nút AI + cập nhật bên trái, dòng thời gian bên phải.
+- Nhập phiếu chi: danh sách khoản chi bên trái (2 cột khi màn rộng, 12 tháng hiện đủ một hàng), khung thả hồ sơ + số tiền + nút Cộng ghim bên phải (không còn thanh đè ở đáy).
+- Kế hoạch chi phí: 2–3 cột. Giao việc: biểu mẫu 2 cột. Tin, Tôi, Trực: thẻ xếp lưới.
+- Kỹ thuật: lớp CSS `@media (min-width:1000px)` ở cuối style.css và trong kh.js; khung bọc `.luoi`, `.hai`, `.nh-wrap`, `.fgiao`, `.khl`.

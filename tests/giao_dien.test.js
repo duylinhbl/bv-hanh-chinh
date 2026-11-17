@@ -42,6 +42,8 @@ const path = require('path'), root = path.join(__dirname, '..');
   await p.evaluate(() => { window.confirm = () => true; }); await p.click('#ng'); await p.waitForTimeout(500);
   const g2 = await p.evaluate(() => window.calls.filter(c => c[0] === 'kh-ghi' && !c[1].action).map(c => c[1]));
   kiem(g2.length === 2 && g2[1].items[0].so === 2500000 && g2[1].items[0].ten_file === 'phieu.png', 'ghi đúng số tiền gõ tay kèm tên hồ sơ');
+  if (process.env.SHOT) { await p.addStyleTag({ path: path.join(root, 'style.css') }); await p.setViewportSize({ width: 1920, height: 950 }); await p.waitForTimeout(300); await p.screenshot({ path: process.env.SHOT + '-nhap.png' });
+    await p.click('#nv'); await p.waitForSelector('#khlm'); await p.waitForTimeout(200); await p.screenshot({ path: process.env.SHOT + '-kh.png' }); }
   kiem(errs.length === 0, 'không có lỗi JS' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); ket('giao_dien');
 })();

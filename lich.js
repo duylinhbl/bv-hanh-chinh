@@ -64,9 +64,9 @@ async function ve(){
     const dts=(await A().sb.from('doi_truc').select('*').gte('tao_luc',new Date(Date.now()-45*864e5).toISOString()).order('tao_luc',{ascending:false}).limit(40)).data||[];
     const dds=dts.length?((await A().sb.from('doi_truc_duyet').select('*').in('doi_id',dts.map(x=>x.id))).data||[]):[];
     const vtn=Object.fromEntries(VT.map(v=>[v.id,v.ten]));
-    q('#nd').innerHTML=doiHtml(dts,dds,vtn)+`<div class="card"><h3>Ca trực sắp tới của tôi</h3>${(mine.data||[]).map(r=>`<div class="row" style="justify-content:space-between;padding:4px 0"><b>${TH[pd(r.ngay).getDay()]} ${dm(r.ngay)}</b><span>${esc(vtn[r.vi_tri_id]||'')} ${r.ngay>today?`<button class="sec" style="padding:4px 10px;font-size:13px" data-dt="${r.ngay}|${r.vi_tri_id}|${r.thu_tu}">🔄 Đổi trực</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có ca nào được công bố.</p>'}</div>
+    q('#nd').innerHTML=doiHtml(dts,dds,vtn)+`<div class="luoi l2"><div class="card"><h3>Ca trực sắp tới của tôi</h3>${(mine.data||[]).map(r=>`<div class="row" style="justify-content:space-between;padding:4px 0"><b>${TH[pd(r.ngay).getDay()]} ${dm(r.ngay)}</b><span>${esc(vtn[r.vi_tri_id]||'')} ${r.ngay>today?`<button class="sec" style="padding:4px 10px;font-size:13px" data-dt="${r.ngay}|${r.vi_tri_id}|${r.thu_tu}">🔄 Đổi trực</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có ca nào được công bố.</p>'}</div>
     <div class="card"><h3>Lịch trực toàn viện</h3>${(ks.data||[]).map(k=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span>${dm(k.tu_ngay)} – ${dm(k.den_ngay)} ${k.trang_thai==='nhap'?'<span class="tag amb">Nháp</span>':'<span class="tag grn">Đã công bố</span>'}</span><span><button class="sec" data-xem="${k.id}">👁 Xem</button> ${duocXep?`<button data-sua="${k.id}">✏️ Sửa</button>`:''} ${A().me.la_quan_tri?`<button class="dng" data-xoa="${k.id}">🗑 Xóa</button>`:''}</span></div>`).join('')||'<p class="mut">Chưa có kỳ lịch.</p>'}
-    ${duocXep?'<button class="full" id="moiky">🗓 Tạo kỳ lịch mới</button>':''}</div>`;
+    ${duocXep?'<button class="full" id="moiky">🗓 Tạo kỳ lịch mới</button>':''}</div></div>`;
     ganDoi(dts,dds);
     document.querySelectorAll('[data-dt]').forEach(b=>b.onclick=()=>formDoi(b.dataset.dt));
     const kmap=Object.fromEntries((ks.data||[]).map(k=>[k.id,k]));
