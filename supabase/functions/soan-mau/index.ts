@@ -162,23 +162,43 @@ function phuLucDocx(noi: string): Uint8Array {
   return zipSync({ '[Content_Types].xml': e.encode(ct), '_rels/.rels': e.encode(rels), 'word/document.xml': e.encode(doc) }, { level: 6 });
 }
 
-// Tách BẢNG đã chốt trong kết quả chat AI (khối nhiều dòng có dấu |). Máy chủ tự dựng phụ lục từ đây,
-// không bắt Gemini chép lại bảng (chép lại vừa chậm, vừa bị cắt, vừa dính lỗi RECITATION).
-function bangTuKQ(s: string): string[][] {
-  const dong = String(s || '').replace(/\r/g, '').split('\n');
-  let tot: string[][] = [], cur: string[][] = [];
-  const chot = () => { if (cur.length > tot.length) tot = cur; cur = []; };
-  for (const l0 of dong) {
-    const l = l0.trim();
-    if (l.includes('|') && /^[|\s:\-\u2013\u2014+]+$/.test(l)) continue; // dòng kẻ của bảng markdown
-    if (l.includes('|')) {
-      const c = l.replace(/^\||\|$/g, '').split('|').map((x) => x.replace(/\*\*/g, '').trim());
-      if (c.length >= 2 && c.length <= 8 && c.some((x) => x)) { cur.push(c); continue; }
+// Tách TẤT CẢ phụ lục đã chốt trong kết quả chat AI: mỗi khối bảng (nhiều dòng có dấu |)
+// kèm theo mấy dòng tiêu đề ngay phía trên nó ("PHỤ LỤC 2", "DANH MỤC ...", "(Đính kèm ...)").
+// Máy chủ tự dựng file Word cho từng phụ lục, không bắt Gemini chép lại bảng.
+function phuLucTuKQ(src: string): { tieu: string[]; rows: string[][] }[] {
+  const dong = String(src || '').replace(/\r/g, '').split('\n');
+  const hang = (l: string): string[] | null => {
+    const t = l.trim();
+    if (!t.includes('|')) return null;
+    if (/^[|\s:\-\u2013\u2014+]+$/.test(t)) return null; // dòng kẻ của bảng markdown
+    const c = t.replace(/^\||\|$/g, '').split('|').map((x) => x.replace(/\*\*/g, '').trim());
+    return c.length >= 2 && c.length <= 8 && c.some((x) => x) ? c : null;
+  };
+  const ra: { tieu: string[]; rows: string[][] }[] = [];
+  let cur: string[][] = [], dau = 0;
+  const chot = () => {
+    if (cur.length >= 3) {
+      const tieu: string[] = [];
+      for (let k = dau - 1; k >= 0 && tieu.length < 3; k--) {
+        const t = dong[k].trim();
+        if (!t) { if (tieu.length) break; else continue; }
+        if (hang(t) || t.length > 200) break;
+        tieu.unshift(t);
+        if (/^PH[\u1ee4U]\s*L[\u1ee4U]C/i.test(t)) break;
+      }
+      const coTen = tieu.some((x) => /PH[\u1ee4U]\s*L[\u1ee4U]C|DANH M[\u1ee4U]C|B[\u1ea2A]NG/i.test(x));
+      ra.push({ tieu: coTen ? tieu : [], rows: cur });
     }
-    chot();
-  }
+    cur = [];
+  };
+  dong.forEach((l, i2) => {
+    const t = l.trim();
+    if (t.includes('|') && /^[|\s:\-\u2013\u2014+]+$/.test(t)) return; // dòng kẻ markdown: bỏ qua, KHÔNG ngắt bảng
+    const h = hang(l);
+    if (h) { if (!cur.length) dau = i2; cur.push(h); } else chot();
+  });
   chot();
-  return tot.length >= 3 ? tot : [];
+  return ra;
 }
 
 // Dựng thân văn bản THEO MẪU, không cần AI. Dùng khi Gemini từ chối (RECITATION) hoặc quá tải:
@@ -308,11 +328,12 @@ Deno.serve(async (req) => {
     // Kết quả người dùng đã chốt khi làm việc với AI về tệp — đây mới là số liệu cuối, ưu tiên hơn tệp gốc
     const kqAI = String(b.ket_qua_ai || '').slice(0, 25000);
 
-    // Bảng đã chốt: máy chủ tự dựng phụ lục, chỉ gửi cho Gemini bản mô tả ngắn
-    const bangKQ = bangTuKQ(kqAI);
-    const kqGui = bangKQ.length
+    // Các phụ lục đã chốt: máy chủ tự dựng file Word, chỉ gửi cho Gemini bản mô tả ngắn
+    const dsPL = phuLucTuKQ(kqAI);
+    const moTaPL = dsPL.map((x, k) => `${x.tieu[0] || 'PHỤ LỤC ' + (k + 1)}: ${x.rows.length} dòng, cột: ${x.rows[0].join(' | ')}`).join('; ');
+    const kqGui = dsPL.length
       ? kqAI.split('\n').filter((l) => !l.includes('|')).join('\n').trim().slice(0, 4000) +
-        `\n\n[BẢNG DANH MỤC đã chốt: ${bangKQ.length} dòng, các cột: ${bangKQ[0].join(' | ')}. Hệ thống TỰ đưa bảng này vào Phụ lục riêng — tuyệt đối KHÔNG chép bảng vào thân văn bản, chỉ dẫn chiếu "(chi tiết theo Phụ lục đính kèm)".]`
+        `\n\n[\u0110\u00c3 CH\u1ed0T ${dsPL.length} PH\u1ee4 L\u1ee4C: ${moTaPL}. Hệ thống TỰ dựng các phụ lục này thành file Word riêng — tuyệt đối KHÔNG chép bảng vào thân văn bản, chỉ dẫn chiếu "(chi tiết theo Phụ lục ${dsPL.length > 1 ? '1, ' + dsPL.length : ''} đính kèm)".]`
       : kqAI;
 
     // Tệp đính kèm của việc (nếu có) làm dữ liệu nguồn
@@ -344,7 +365,7 @@ Deno.serve(async (req) => {
       if (o && o.viec_id === viec_id) { const dl = await sv.storage.from('anh').download(o.storage_path); if (!dl.error && dl.data) cu = docxText(new Uint8Array(await dl.data.arrayBuffer())).slice(0, 20000); }
     }
     const mau = await layMau(sv, m.ma);
-    const dungNguoi = (kemTep: boolean) => `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${kqAI ? '\n\nSỐ LIỆU CHỐT — BẮT BUỘC DÙNG (người soạn đã làm việc với AI trên tệp này và chốt kết quả dưới đây; mọi con số, danh sách, tên gọi trong văn bản phải lấy từ đây, KHÔNG lấy số cũ trong tệp gốc):\n' + kqGui : ''}${tep && kemTep && !bangKQ.length ? '\n\nTỆP GỐC' + (kqAI ? ' (chỉ để hiểu bối cảnh, số liệu trong đây ĐÃ CŨ, không đưa vào văn bản)' : ' (dữ liệu nguồn)') + ':\n' + tep : ''}${cu ? '\n\nVĂN BẢN ĐÃ SOẠN TRƯỚC ĐÓ (toàn văn, gồm cả phần khung đầu/cuối):\n' + cu + '\n\nĐây là yêu cầu CHỈNH SỬA: giữ nguyên phần đúng, chỉ sửa theo ý trong mục YÊU CẦU, trả về lại ĐẦY ĐỦ thân văn bản (không chỉ phần sửa).' : ''}`;
+    const dungNguoi = (kemTep: boolean) => `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${kqAI ? '\n\nSỐ LIỆU CHỐT — BẮT BUỘC DÙNG (người soạn đã làm việc với AI trên tệp này và chốt kết quả dưới đây; mọi con số, danh sách, tên gọi trong văn bản phải lấy từ đây, KHÔNG lấy số cũ trong tệp gốc):\n' + kqGui : ''}${tep && kemTep && !dsPL.length ? '\n\nTỆP GỐC' + (kqAI ? ' (chỉ để hiểu bối cảnh, số liệu trong đây ĐÃ CŨ, không đưa vào văn bản)' : ' (dữ liệu nguồn)') + ':\n' + tep : ''}${cu ? '\n\nVĂN BẢN ĐÃ SOẠN TRƯỚC ĐÓ (toàn văn, gồm cả phần khung đầu/cuối):\n' + cu + '\n\nĐây là yêu cầu CHỈNH SỬA: giữ nguyên phần đúng, chỉ sửa theo ý trong mục YÊU CẦU, trả về lại ĐẦY ĐỦ thân văn bản (không chỉ phần sửa).' : ''}`;
     // Ưu tiên model mạnh (bảng dài không bị cắt). Quá tải / hết hạn mức -> tụt xuống model nhẹ.
     // Gemini báo RECITATION (bản thảo giống nguyên văn tài liệu nguồn) -> thử lại: bỏ TỆP GỐC, tăng temperature, bắt diễn đạt lại.
     const dsModel = [...new Set([cfg.ai_model_manh || 'gemini-flash-latest', cfg.ai_model || 'gemini-flash-lite-latest'])];
@@ -359,7 +380,7 @@ Deno.serve(async (req) => {
       for (const l of lan) {
         if (HAN_CHOT - Date.now() < 10000) break;
         try {
-          const gen: any = { temperature: l.t, maxOutputTokens: bangKQ.length ? 6144 : 16384 };
+          const gen: any = { temperature: l.t, maxOutputTokens: dsPL.length ? 6144 : 16384 };
           if (!l.tho) { gen.responseMimeType = 'application/json'; gen.responseSchema = { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' }, ten_phu_luc: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] }; }
           const t = await goiGemini(key, l.mo, {
             systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: dungNguoi(l.tep) + them + l.nhac }] }],
@@ -378,12 +399,12 @@ Deno.serve(async (req) => {
     try { kq = await soanMot(''); } catch (e) { canhBao = String((e as Error).message || e).slice(0, 160); }
     if (!kq || !String(kq.noi_dung || '').trim()) {
       if (!yc.trim()) return out({ loi: (canhBao || 'Gemini không soạn được') + ' — bồ gõ Ý chính rồi bấm soạn lại để hệ thống tự dựng theo mẫu.' }, 502);
-      kq = soanTheoMau(m.loai, v.tieu_de, yc, bangKQ.length > 0);
+      kq = soanTheoMau(m.loai, v.tieu_de, yc, dsPL.length > 0);
       canhBao = 'AI đang bị chặn (' + canhBao + '). Bản này do hệ thống tự dựng theo mẫu bệnh viện từ Ý chính của bồ — đọc kỹ lại câu chữ, phần căn cứ và số liệu trước khi trình.';
     } else canhBao = '';
     // Nhắc "Phụ lục đính kèm" mà không xuất bảng phụ lục: soạn lại MỘT lần
     const coPL = (x: string) => /^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im.test(x);
-    if (!bangKQ.length && /phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung)) && HAN_CHOT - Date.now() > 25000) {
+    if (!dsPL.length && /phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung)) && HAN_CHOT - Date.now() > 25000) {
       try {
         const k2 = await soanMot('\n\nSỬA LẠI: bản vừa soạn có nhắc "Phụ lục đính kèm" nhưng THIẾU hẳn phần phụ lục. Soạn lại toàn bộ, cuối noi_dung phải có một dòng chỉ gồm chữ "PHỤ LỤC", dòng tên phụ lục, rồi BẢNG ĐẦY ĐỦ các hàng lấy từ số liệu chốt (mỗi hàng một dòng "ô 1 | ô 2 | ô 3").');
         if (String(k2?.noi_dung || '').trim() && coPL(String(k2.noi_dung))) kq = k2;
@@ -396,37 +417,41 @@ Deno.serve(async (req) => {
     let than = String(kq.noi_dung), pl = '';
     const iPL = than.search(/^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im);
     if (iPL > 0) { const sau = than.slice(iPL).trim(); if (sau.length > 40) { than = than.slice(0, iPL).trimEnd(); pl = sau; } }
-    if (bangKQ.length) {
-      // Phụ lục dựng thẳng từ bảng người dùng đã chốt: đủ dòng, đúng số, không qua Gemini
-      const tenPL = String(kq.ten_phu_luc || '').trim() || ('DANH MỤC ' + vViec.toUpperCase());
-      pl = ['PHỤ LỤC', tenPL, '(Đính kèm Tờ trình số [    ] ngày [    ] tháng [    ] năm [    ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)']
-        .concat(bangKQ.map((r) => r.join(' | '))).join('\n');
+    // Mỗi phụ lục đã chốt thành MỘT file Word riêng: đủ dòng, đúng số, không qua Gemini
+    const loaiTen = m.loai === 'to_trinh' ? 'Tờ trình' : 'Quyết định';
+    const dsFile: { ten: string; noi: string }[] = [];
+    if (dsPL.length) {
+      const tenChung = String(kq.ten_phu_luc || '').trim() || ('DANH MỤC ' + vViec.toUpperCase());
+      dsPL.forEach((x, k) => {
+        const so = dsPL.length > 1 ? ' ' + (k + 1) : '';
+        const tieu = x.tieu.length ? x.tieu.slice() : ['PHỤ LỤC' + so, tenChung];
+        if (!tieu.some((t) => /^\(/.test(t))) tieu.push(`(Đính kèm ${loaiTen} số [    ] ngày [    ] tháng [    ] năm [    ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)`);
+        dsFile.push({ ten: sach('Phu luc' + so + ' - ' + vViec, 100) + '.docx', noi: tieu.concat(x.rows.map((r) => r.join(' | '))).join('\n') });
+      });
       // thân văn bản không được chứa bảng nữa
       than = than.split('\n').filter((l) => !(l.includes(' | ') && l.split('|').length >= 3)).join('\n');
-    }
+    } else if (pl) dsFile.push({ ten: sach('Phu luc - ' + vViec, 100) + '.docx', noi: pl });
     const docx = ghepWord(mau, vViec, than, { d: g('day'), m: g('month'), y: g('year') }, m.loai === 'to_trinh');
-    const tf = sach(`${m.loai === 'to_trinh' ? 'Tờ trình' : 'Quyết định'} - ${vViec}`, 100) + '.docx';
+    const tf = sach(`${loaiTen} - ${vViec}`, 100) + '.docx';
     const p = `${viec_id}/vb-${crypto.randomUUID()}.docx`;
     const up = await sv.storage.from('anh').upload(p, docx, { contentType: MIME });
     if (up.error) return out({ loi: 'Không lưu được file Word: ' + up.error.message }, 500);
     const { data: row, error: e2 } = await sv.from('van_ban_viec').insert({ viec_id, mau_ma: m.ma, ten_file: tf, storage_path: p, yeu_cau: yc || null, nguoi_id: nd.id }).select('id').single();
     if (e2) return out({ loi: 'Không ghi được danh sách văn bản: ' + e2.message }, 500);
     const sg = await sv.storage.from('anh').createSignedUrl(p, 3600, { download: tf });
-    let phu: any = null;
-    if (pl) {
+    const dsPhu: any[] = [];
+    for (const f of dsFile) {
       try {
-        const d2 = phuLucDocx(pl);
-        const tf2 = sach('Phu luc - ' + vViec, 100) + '.docx';
+        const d2 = phuLucDocx(f.noi);
         const p2 = `${viec_id}/vb-${crypto.randomUUID()}.docx`;
         const u2 = await sv.storage.from('anh').upload(p2, d2, { contentType: MIME });
-        if (!u2.error) {
-          const { data: r2 } = await sv.from('van_ban_viec').insert({ viec_id, mau_ma: m.ma, ten_file: tf2, storage_path: p2, yeu_cau: 'Phụ lục kèm theo', nguoi_id: nd.id }).select('id').single();
-          const s2 = await sv.storage.from('anh').createSignedUrl(p2, 3600, { download: tf2 });
-          if (r2) phu = { id: r2.id, ten: tf2, url: s2.data?.signedUrl, text: pl.slice(0, 20000) };
-        }
-      } catch (_) { /* không dựng được phụ lục thì thôi, thân văn bản vẫn có */ }
+        if (u2.error) continue;
+        const { data: r2 } = await sv.from('van_ban_viec').insert({ viec_id, mau_ma: m.ma, ten_file: f.ten, storage_path: p2, yeu_cau: 'Phụ lục kèm theo', nguoi_id: nd.id }).select('id').single();
+        const s2 = await sv.storage.from('anh').createSignedUrl(p2, 3600, { download: f.ten });
+        if (r2) dsPhu.push({ id: r2.id, ten: f.ten, url: s2.data?.signedUrl, text: f.noi.slice(0, 20000) });
+      } catch (_) { /* phụ lục nào hỏng thì bỏ qua, thân văn bản vẫn có */ }
     }
-    return out({ ok: true, id: row.id, ten: tf, url: sg.data?.signedUrl, mau: m.ten, text: docxText(docx).slice(0, 20000), phu_luc: phu, canh_bao: canhBao || undefined });
+    return out({ ok: true, id: row.id, ten: tf, url: sg.data?.signedUrl, mau: m.ten, text: docxText(docx).slice(0, 20000), phu_luc: dsPhu[0] || null, phu_lucs: dsPhu, canh_bao: canhBao || undefined });
   } catch (e) {
     return out({ loi: String((e as Error).message || e).slice(0, 300) }, 500);
   }

@@ -311,3 +311,11 @@ Dù prompt đã rút còn ~5.000 ký tự (v81), Gemini vẫn trả RECITATION. 
 - Khi phải dựng theo mẫu, trả `canh_bao`, app hiện "⚠ AI đang bị chặn … đọc kỹ lại câu chữ, căn cứ, số liệu trước khi trình".
 - Kiểm thử: 7 bài mới cho `soanTheoMau` (đúng cấu trúc tờ trình/quyết định, căn cứ ghi rõ số ngày, không tự thêm kinh phí, quyết định không có Kính gửi).
 - BÀI HỌC: với văn bản hành chính theo khuôn mẫu, phần khung nên do MÃ dựng, chỉ để AI lo phần nội dung riêng. Đừng để cả quy trình phụ thuộc một dịch vụ AI có thể từ chối bất cứ lúc nào.
+
+## v83 – Chat có NHIỀU phụ lục thì ra ĐỦ từng file (18/11/2026)
+Thực tế: hội thoại chốt tới 2 phụ lục (PHỤ LỤC 1 – tuyến thường xuyên, PHỤ LỤC 2 – tuyến công tác xa/đột xuất) nhưng app chỉ ra 1 file, vì hàm cắt bảng v81 chỉ lấy **khối bảng dài nhất**.
+- Đổi `bangTuKQ` → `phuLucTuKQ`: quét hết mọi khối bảng trong hội thoại, mỗi khối kèm **tối đa 3 dòng tiêu đề ngay phía trên** ("PHỤ LỤC 2", "DANH MỤC …", "(Đính kèm Tờ trình số …)"). Dòng kẻ markdown `| --- |` không còn làm đứt bảng.
+- Mỗi phụ lục thành **một file Word riêng**: "Phu luc 1 - …", "Phu luc 2 - …"; thiếu dòng "(Đính kèm …)" thì máy chủ tự thêm. Chỉ có 1 phụ lục thì giữ tên "Phu luc - …" như cũ.
+- Trả về `phu_lucs` (danh sách); app đưa tất cả vào danh sách văn bản để xem/tải/lưu Drive từng file. `phu_luc` vẫn còn cho tương thích.
+- Mô tả gửi Gemini nêu rõ "ĐÃ CHỐT n PHỤ LỤC: … – hệ thống tự dựng file riêng, đừng chép bảng".
+- Kiểm thử: 5 bài mới (tách đủ 2 phụ lục, đúng tiêu đề từng cái, giữ dòng Đính kèm, đúng cột/số liệu) + sửa bài app thành 3 văn bản.

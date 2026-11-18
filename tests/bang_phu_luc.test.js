@@ -4,12 +4,13 @@ const { kiem, ket } = require('./lib');
 const fs = require('fs'), path = require('path');
 
 const src = fs.readFileSync(path.join(__dirname, '..', 'supabase/functions/soan-mau/index.ts'), 'utf8');
-const i = src.indexOf('function bangTuKQ');
+const i = src.indexOf('function phuLucTuKQ');
 const j = src.indexOf('\n}', i) + 2;
 const ts = src.slice(i, j)
-  .replace(/: string\[\]\[\]/g, '').replace(/: string/g, '')
-  .replace(/let tot = \[\], cur = \[\];/, 'let tot = [], cur = [];');
-const bangTuKQ = new Function(ts + '; return bangTuKQ;')();
+  .replace(/: \{ tieu: string\[\]; rows: string\[\]\[\] \}\[\]/g, '')
+  .replace(/: string\[\] \| null/g, '').replace(/: string\[\]\[\]/g, '').replace(/: string\[\]/g, '').replace(/: string/g, '');
+const phuLucTuKQ = new Function(ts + '; return phuLucTuKQ;')();
+const bangTuKQ = (x) => { const r = phuLucTuKQ(x); return r.length ? r[0].rows : []; };
 
 const chat = `Đây là bảng định mức sau khi tính lại theo thực tế:
 
@@ -31,6 +32,26 @@ kiem(bangTuKQ('Chỉ là câu trả lời bình thường, không có bảng nà
 // bảng viết kiểu "a | b | c" không có dấu | ở đầu dòng
 const b2 = bangTuKQ('STT | Nội dung | Số tiền\n1 | Mua giấy | 1.000.000\n2 | Mua mực | 2.000.000');
 kiem(b2.length === 3 && b2[2][2] === '2.000.000', 'nhận cả bảng không có dấu | ở đầu dòng');
+
+// ---- chat có NHIỀU phụ lục thì phải ra đủ từng phụ lục ----
+const hai = `PHỤ LỤC 1
+DANH MỤC CÁC TUYẾN THƯỜNG XUYÊN
+STT | Điểm đến | Số km
+1 | Chợ Rẫy | 74
+2 | Hồng Hưng | 72
+
+PHỤ LỤC 2
+DANH MỤC CÁC TUYẾN CÔNG TÁC XA - ĐỘT XUẤT
+(Đính kèm Tờ trình số [ ] ngày [ ] tháng [ ] năm [ ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)
+STT | Điểm xuất phát | Điểm đến | Số km | Số chuyến
+1 | Dầu Tiếng | Công ty CP Cao su Bà Rịa | 800 | 2
+2 | Dầu Tiếng | Bình Phước | 300 | 1`;
+const ds = phuLucTuKQ(hai);
+kiem(ds.length === 2, 'tách được CẢ HAI phụ lục (được ' + ds.length + ')');
+kiem(ds[0].rows.length === 3 && ds[1].rows.length === 3, 'mỗi phụ lục giữ đủ hàng tiêu đề + dữ liệu');
+kiem(/PHỤ LỤC 1/.test(ds[0].tieu.join(' ')) && /PHỤ LỤC 2/.test(ds[1].tieu.join(' ')), 'giữ đúng tiêu đề của từng phụ lục');
+kiem(ds[1].tieu.some(t => t.startsWith('(Đính kèm')), 'giữ luôn dòng (Đính kèm Tờ trình số …)');
+kiem(ds[1].rows[0][4] === 'Số chuyến' && ds[1].rows[1][3] === '800', 'phụ lục 2 đúng cột và số liệu');
 
 // ---- dựng văn bản theo mẫu khi AI bị chặn ----
 const i2 = src.indexOf('function soanTheoMau');
