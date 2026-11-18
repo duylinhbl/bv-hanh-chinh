@@ -214,3 +214,21 @@ Lỗi: ở khung "Hỏi AI về tệp này", người dùng chat nhiều lượt
 - Khung soạn luôn lấy **câu trả lời cuối cùng của AI**, không hiện ô chọn nguồn (đã thử ô chọn ở v75, bỏ ở v76 vì rối — người dùng tự bảo AI đưa bản đầy đủ rồi mới bấm soạn).
 - Gửi kèm `ket_qua_ai` ở cả `goi_y` và `soan` (kể cả khi bấm "Chỉnh & soạn lại").
 - soan-mau (v9): dựng prompt với "SỐ LIỆU CHỐT — BẮT BUỘC DÙNG" đặt trên, còn tệp gốc hạ xuống "TỆP GỐC (chỉ để hiểu bối cảnh, số liệu ĐÃ CŨ, không đưa vào văn bản)". Giới hạn 25.000 ký tự.
+
+## v77 – Phụ lục ra file Word riêng + nút xác nhận không còn "nhấn mà không có gì xảy ra"
+Ba lỗi người dùng báo cùng lúc.
+
+**1. Yêu cầu AI tách phụ lục nhưng file Word tải về vẫn gộp một văn bản**
+- `soan-mau` (v10): thêm quy tắc PHỤ LỤC vào prompt — bảng dài quá 10 hàng hoặc người soạn yêu cầu tách thì thân văn bản chỉ ghi "(chi tiết theo Phụ lục đính kèm)", phần phụ lục đặt ở cuối, mở đầu bằng một dòng chỉ có chữ "PHỤ LỤC".
+- Máy chủ cắt từ chữ "PHỤ LỤC" trở đi, dựng **một file Word riêng** (`phuLucDocx`): không quốc hiệu, không chữ ký; bảng từ 6 cột trở lên thì **tự xoay trang ngang** (A4 landscape).
+- Phụ lục được ghi thành **văn bản thứ 2** của việc (bảng `van_ban_viec`), nên hiện ngay trong khung soạn và trong thẻ "Văn bản đã soạn": xem, tải, lưu Drive riêng từng file. Nút 💾 Lưu ghi "Lưu (2 văn bản)".
+
+**2. Bấm nút xác nhận mà không thấy gì xảy ra**
+Nguyên nhân: hàng chờ offline (IndexedDB) bị **một bản ghi lỗi chặn cả hàng** — vòng gửi cũ `break` ngay khi gặp lỗi, nên mọi cập nhật sau đó (kể cả xác nhận đóng việc) nằm im, chỉ còn dòng chữ "2 cập nhật chờ gửi".
+- Gửi từng bản ghi độc lập, lỗi 3 lần thì **đánh dấu hỏng** và nhảy qua, không chặn bản ghi sau.
+- Dòng trạng thái góc trên bên phải: "⚠ N cập nhật gửi hỏng" / "N cập nhật chờ gửi" — **bấm được** để xem lý do, gửi lại hoặc bỏ.
+- Quay lại tab (visibilitychange) là tự gửi lại hàng chờ.
+- Nút xác nhận chỉ báo "Đã đóng việc" khi hàng chờ đã sạch; chưa gửi được thì bật nút lại và chỉ chỗ xem lý do.
+
+**3. Đóng việc rồi vẫn còn trên màn hình**
+Cả ba nút kết thúc việc (xác nhận đóng ở chi tiết, "Kết thúc việc" trong khung soạn, trong thẻ văn bản) giờ **về danh sách** sau khi gửi xong, không vẽ lại chi tiết. Danh sách Việc/Giao vốn đã loại `da_dong`, nên việc đóng rồi biến khỏi màn hình.

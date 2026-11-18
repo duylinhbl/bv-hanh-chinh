@@ -19,7 +19,7 @@ const path = require('path'), root = path.join(__dirname, '..');
     window.supabase={createClient:()=>({from:q,rpc:async()=>({data:true}),channel:()=>q('x'),removeChannel(){},
       functions:{invoke:async(n,o)=>{window.calls.push([n,o.body]);
         if(o.body.action==='goi_y')return{data:{ok:true,mau_ma:'tt_giam_doc',y_chinh:'Trình duyệt định mức mới'}};
-        if(o.body.action==='soan')return{data:{ok:true,id:'vb1',ten:'To trinh.docx',url:'about:blank',mau:'Tờ trình',text:'noi dung'}};
+        if(o.body.action==='soan')return{data:{ok:true,id:'vb1',ten:'To trinh.docx',url:'about:blank',mau:'Tờ trình',text:'noi dung',phu_luc:{id:'vb2',ten:'Phu luc - dinh muc.docx',url:'about:blank',text:'PHỤ LỤC'}}};
         return{data:{}}}},
       auth:{getSession:async()=>({data:{session:{user:{id:'a'}}}}),signOut:async()=>{}},
       storage:{from:()=>({createSignedUrl:async()=>({data:{signedUrl:'about:blank'}})})}})};` });
@@ -41,6 +41,10 @@ const path = require('path'), root = path.join(__dirname, '..');
   await p.click('#vsoan'); await p.waitForTimeout(400);
   c = await p.evaluate(() => window.calls.filter(x => x[1].action === 'soan'));
   kiem(c.length === 1 && /ĐỊNH MỨC CHỐT/.test(c[0][1].ket_qua_ai) && c[0][1].file_path === 'v1/f.xlsx', 'bấm soạn: gửi kèm số liệu chốt mới nhất và cả tệp gốc');
+
+  const ten = await p.$$eval('#vkq .ait', e => e.map(x => x.textContent));
+  kiem(ten.length === 2 && /Phu luc/.test(ten.join('|')), 'phụ lục ra file Word riêng, hiện thành văn bản thứ 2 để tải và lưu');
+  kiem(await p.$eval('#vtai', e => !e.disabled) && /2 văn bản/.test(await p.$eval('#vluu', e => e.textContent)), 'lưu và tải được cả văn bản chính lẫn phụ lục');
 
   kiem(errs.length === 0, 'không có lỗi JS' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); ket('soan_vb');

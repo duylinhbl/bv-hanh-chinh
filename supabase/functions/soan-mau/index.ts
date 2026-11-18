@@ -24,6 +24,7 @@ Quy tắc:
 - Chỉ dùng căn cứ pháp lý có trong mẫu tham khảo hoặc người dùng cung cấp; không tự thêm điều luật.
 - BẢNG: khi nội dung là danh mục/bảng số liệu từ Excel thì dựng bảng ĐẦY ĐỦ: giữ ĐÚNG và ĐỦ các cột, đúng thứ tự và tên cột của Excel (tối đa 8 cột; tuyệt đối không bỏ cột nào, đặc biệt các cột định mức/số km, kể cả cột định mức của bệnh viện nếu có trong Excel hoặc trong yêu cầu), giữ ĐỦ các hàng (đến 100 hàng), mỗi hàng một dòng riêng dạng "ô 1 | ô 2 | ô 3", ô ngắn gọn. Không dán nguyên dữ liệu Excel vào một dòng.
 - Quyết định KHÔNG có dòng "Kính gửi".
+- PHỤ LỤC: khi người soạn yêu cầu tách phụ lục, hoặc bảng dài quá 10 hàng, thì KHÔNG để bảng trong thân văn bản. Thân văn bản chỉ dẫn chiếu "(chi tiết theo Phụ lục đính kèm)". Đặt phụ lục ở CUỐI, bắt đầu bằng một dòng chỉ có chữ "PHỤ LỤC", dòng kế là tên phụ lục, rồi dòng "(Đính kèm Tờ trình số [ ] ngày [ ] tháng [ ] năm [ ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)", rồi mới đến bảng. Hệ thống sẽ tự tách phần từ chữ "PHỤ LỤC" trở đi thành MỘT FILE WORD RIÊNG.
 - Nội dung chính (Điều 1 / phần đề nghị) phải nói ĐÚNG đối tượng của việc được giao và ý của người soạn (VD: phê duyệt định mức thì viết định mức, không đổi thành kế hoạch hay việc khác). Chỉ dùng căn cứ liên quan trực tiếp, không chép căn cứ của việc khác. Theo cấu trúc chuẩn trong mẫu tham khảo.
 Trả về JSON: {"ve_viec": "trích yếu ngắn, viết thường, không có chữ 'Về việc', không dấu chấm cuối", "noi_dung": "thân văn bản"}.`;
 
@@ -51,7 +52,7 @@ async function layMau(sv: any, ma: string) {
   cacheMau.set(ma, m); return m;
 }
 
-function bangXml(rows: string[][], pr: any, W: number): string {
+function bangXml(rows: string[][], _pr: any, W: number): string {
   const n = Math.max(...rows.map((r) => r.length));
   const h0 = rows[0].map((c) => c.toLowerCase());
   const hep = (c: string) => /^(stt|tt|số tt|stt\.?)$/.test(c.trim());
@@ -91,9 +92,9 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
   };
   const z = unzipSync(mau.docx);
   let x = new TextDecoder().decode(z['word/document.xml']);
-  const ps: string[] = []; let tb: string[][] = [];
   const dm = (x0: string) => { const g = (r: RegExp) => Number((x0.match(r) || [])[1] || 0); const w = g(/<w:pgSz [^>]*w:w="(\d+)"/), l = g(/<w:pgMar [^>]*w:left="(\d+)"/), r2 = g(/<w:pgMar [^>]*w:right="(\d+)"/); return w && w - l - r2 > 5000 ? w - l - r2 : 9070; };
   const TW = dm(x);
+  const ps: string[] = []; let tb: string[][] = [];
   let boKg = false;
   const flush = () => { if (!tb.length) return; ps.push(bangXml(tb, pr, TW), mk('thuong', '')); tb = []; };
   let nt = noi.replace(/\r/g, '');
@@ -125,6 +126,38 @@ function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: s
   x = x.replaceAll('{{SO}}', '').replaceAll('{{NGAY}}', ngay.d).replaceAll('{{THANG}}', ngay.m).replaceAll('{{NAM}}', ngay.y).replaceAll('{{VE_VIEC}}', () => esc(veViec));
   z['word/document.xml'] = new TextEncoder().encode(x);
   return zipSync(z, { level: 6 });
+}
+
+// Phụ lục in rời: dựng file Word tối giản (không quốc hiệu, không chữ ký) — bảng rộng thì xoay ngang
+function phuLucDocx(noi: string): Uint8Array {
+  const dong = noi.replace(/\r/g, '').split('\n').map((x) => x.trim()).filter(Boolean);
+  const soCot = Math.max(0, ...dong.filter((l) => l.includes(' | ')).map((l) => l.split('|').length));
+  const ngang = soCot >= 6;
+  const W = ngang ? 14570 : 9638;
+  const run = (t: string, b: boolean) => `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>${b ? '<w:b/><w:bCs/>' : ''}<w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
+  const P = (t: string, giua: boolean, dam: boolean) => `<w:p><w:pPr><w:spacing w:before="60" w:after="60" w:line="300" w:lineRule="auto"/><w:jc w:val="${giua ? 'center' : 'both'}"/></w:pPr>${t ? run(t, dam) : ''}</w:p>`;
+  const ps: string[] = []; let tb: string[][] = [];
+  const flush = () => { if (tb.length) { ps.push(bangXml(tb, null, W)); tb = []; } };
+  let dauBang = true;
+  for (const l of dong) {
+    if (l.includes(' | ')) {
+      const c = l.replace(/^\||\|$/g, '').split('|').map((x) => x.trim());
+      if (c.length >= 2 && c.length <= 8) { if (tb.length < 200) tb.push(c); continue; }
+    }
+    flush();
+    const tieu = dauBang && ps.length < 4;
+    ps.push(P(l, tieu, tieu && /^(PH\u1ee4 L\u1ee4C|DANH|B\u1ea2NG)/i.test(l)));
+    if (!/^\(/.test(l) && ps.length >= 3) dauBang = false;
+  }
+  flush();
+  const sect = ngang
+    ? '<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>'
+    : '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1588" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>';
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${ps.join('')}${sect}</w:body></w:document>`;
+  const ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>';
+  const rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+  const e = new TextEncoder();
+  return zipSync({ '[Content_Types].xml': e.encode(ct), '_rels/.rels': e.encode(rels), 'word/document.xml': e.encode(doc) }, { level: 6 });
 }
 
 function docxText(buf: Uint8Array): string {
@@ -263,7 +296,10 @@ Deno.serve(async (req) => {
     const hn = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(new Date());
     const g = (t: string) => hn.find((p) => p.type === t)!.value;
     const vViec = String(kq.ve_viec || v.tieu_de).replace(/^về việc\s*/i, '').trim();
-    const docx = ghepWord(mau, vViec, String(kq.noi_dung), { d: g('day'), m: g('month'), y: g('year') }, m.loai === 'to_trinh');
+    let than = String(kq.noi_dung), pl = '';
+    const iPL = than.search(/^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im);
+    if (iPL > 0) { const sau = than.slice(iPL).trim(); if (sau.length > 40) { than = than.slice(0, iPL).trimEnd(); pl = sau; } }
+    const docx = ghepWord(mau, vViec, than, { d: g('day'), m: g('month'), y: g('year') }, m.loai === 'to_trinh');
     const tf = sach(`${m.loai === 'to_trinh' ? 'Tờ trình' : 'Quyết định'} - ${vViec}`, 100) + '.docx';
     const p = `${viec_id}/vb-${crypto.randomUUID()}.docx`;
     const up = await sv.storage.from('anh').upload(p, docx, { contentType: MIME });
@@ -271,7 +307,21 @@ Deno.serve(async (req) => {
     const { data: row, error: e2 } = await sv.from('van_ban_viec').insert({ viec_id, mau_ma: m.ma, ten_file: tf, storage_path: p, yeu_cau: yc || null, nguoi_id: nd.id }).select('id').single();
     if (e2) return out({ loi: 'Không ghi được danh sách văn bản: ' + e2.message }, 500);
     const sg = await sv.storage.from('anh').createSignedUrl(p, 3600, { download: tf });
-    return out({ ok: true, id: row.id, ten: tf, url: sg.data?.signedUrl, mau: m.ten, text: docxText(docx).slice(0, 20000) });
+    let phu: any = null;
+    if (pl) {
+      try {
+        const d2 = phuLucDocx(pl);
+        const tf2 = sach('Phu luc - ' + vViec, 100) + '.docx';
+        const p2 = `${viec_id}/vb-${crypto.randomUUID()}.docx`;
+        const u2 = await sv.storage.from('anh').upload(p2, d2, { contentType: MIME });
+        if (!u2.error) {
+          const { data: r2 } = await sv.from('van_ban_viec').insert({ viec_id, mau_ma: m.ma, ten_file: tf2, storage_path: p2, yeu_cau: 'Phụ lục kèm theo', nguoi_id: nd.id }).select('id').single();
+          const s2 = await sv.storage.from('anh').createSignedUrl(p2, 3600, { download: tf2 });
+          if (r2) phu = { id: r2.id, ten: tf2, url: s2.data?.signedUrl, text: pl.slice(0, 20000) };
+        }
+      } catch (_) { /* không dựng được phụ lục thì thôi, thân văn bản vẫn có */ }
+    }
+    return out({ ok: true, id: row.id, ten: tf, url: sg.data?.signedUrl, mau: m.ten, text: docxText(docx).slice(0, 20000), phu_luc: phu });
   } catch (e) {
     return out({ loi: String((e as Error).message || e).slice(0, 300) }, 500);
   }

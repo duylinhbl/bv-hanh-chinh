@@ -38,10 +38,34 @@ async function guiMot(o){
 let dangDay=false;
 async function day(){
   if(dangDay||!me||!navigator.onLine)return;dangDay=true;
-  try{for(const o of await qAll()){try{await guiMot(o);await qDel(o.ma_khach)}catch(e){console.warn(e);break}}}finally{dangDay=false}
-  const n=(await qAll()).length;const b=$('#hang');if(b)b.textContent=n?`${n} cập nhật chờ gửi`:'';
+  let loiCuoi='';
+  try{for(const o of await qAll()){
+    if(o.hong)continue;
+    try{await guiMot(o);await qDel(o.ma_khach)}
+    catch(e){const m=String(e&&e.message||e);console.warn(m);loiCuoi=m;
+      const n=(o.so_loi||0)+1;
+      if(n>=3){await qDel(o.ma_khach);await qAdd({...o,ma_khach:'hong-'+o.ma_khach,hong:true,loi:m,anh:null,tep:null})}
+      else await qAdd({...o,so_loi:n});
+      if(!navigator.onLine)break}
+  }}finally{dangDay=false}
+  await demHang(loiCuoi);
+}
+// Đếm việc còn trong hàng đợi. Một mục hỏng hẳn không được chặn các mục sau; bấm vào để xem lý do và bỏ.
+async function demHang(loi){
+  const ds=await qAll(),cho=ds.filter(o=>!o.hong),hong=ds.filter(o=>o.hong),b=$('#hang');
+  if(!b)return;
+  b.textContent=hong.length?`⚠ ${hong.length} cập nhật gửi hỏng`:cho.length?`${cho.length} cập nhật chờ gửi`:'';
+  b.style.cursor=ds.length?'pointer':'';
+  b.onclick=!ds.length?null:async()=>{
+    if(hong.length){
+      if(!confirm(hong.length+' cập nhật không gửi được (đã thử 3 lần):\n\n'+hong.map(o=>'• '+(o.ghi_chu||'(không ghi chú)')+'\n  Lỗi: '+(o.loi||'')).join('\n')+'\n\nBỏ các mục này đi?'))return;
+      for(const o of hong)await qDel(o.ma_khach);
+      toast('Đã bỏ');await demHang('')}
+    else{toast('Đang thử gửi lại…');await day()}};
+  if(loi&&hong.length)toast('Có cập nhật không gửi được: '+loi.slice(0,90));
 }
 addEventListener('online',day);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)day()});
 
 // ---- đăng nhập ----
 const email=p=>p.replace(/\D/g,'')+'@bv.local';
@@ -74,7 +98,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v76</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v77</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -476,7 +500,7 @@ async function khungSoan(k,ov,viecId,path,aiKQ){
   const capNhatNut=()=>{const chua=DS.filter(d=>!d.luu).length;$('#vluu').disabled=!DS.length||!chua;$('#vluu').textContent=!DS.length?'💾 Lưu':chua?`💾 Lưu (${chua} văn bản)`:'✅ Đã lưu hết';$('#vtai').disabled=!DS.length};
   const xem=async r=>{const x=await goiVB({action:'tai',van_ban_id:r.id});if(!x.url)return toast(x.loi||'Lỗi');xemTep(null,r.ten,null,x.url,r.text)};
   const luuMot=async r=>{const x=await goiVB({action:'luu',van_ban_id:r.id});if(x.loi){toast(x.loi);return null}r.luu=true;r.drive=!!x.drive;r.thu=x.thu_muc||'';r.canh=x.canh||'';return x};
-  const ve=r=>{
+  const veVB=r=>{
     const d=r.el||(r.el=document.createElement('div'));d.className='aib m';
     d.innerHTML=`<div class="ait">📄 ${esc(r.ten)}</div><div class="mut">${r.luu?(r.drive?'✅ Đã lưu vào Drive: '+esc(r.thu):'✅ Đã lưu trong app'+(r.canh?' (chưa vào Drive: '+esc(r.canh)+')':'')):'Chưa lưu'}</div><div class="aia"><button class="sec" data-x>👁 Xem</button> <button class="sec" data-c>✏️ Chỉnh lại</button></div>
     <div data-cf style="display:none;margin-top:6px"><textarea rows="2" placeholder="Chỗ nào chưa vừa ý? VD: thêm căn cứ Quy chế chi tiêu, đổi mức chi thành 2.500.000 đ" style="width:100%"></textarea><button data-cg style="width:100%">Chỉnh &amp; soạn lại</button></div>`;
@@ -485,7 +509,9 @@ async function khungSoan(k,ov,viecId,path,aiKQ){
     d.querySelector('[data-cg]').onclick=async e=>{const t=d.querySelector('textarea').value.trim();if(!t)return toast('Ghi chỗ cần chỉnh');const b=e.target;b.disabled=true;b.textContent='Đang chỉnh…';
       const x=await goiVB({action:'soan',viec_id:viecId,mau_ma:r.mau,file_path:path,van_ban_cu:r.id,ket_qua_ai:layKQ(),yeu_cau:'CHỈNH SỬA văn bản đã soạn theo ý sau: '+t});
       if(x.loi){b.disabled=false;b.textContent='Chỉnh & soạn lại';return toast(x.loi)}
-      const n={id:x.id,ten:x.ten,mau:r.mau,luu:false,text:x.text};DS.splice(DS.indexOf(r),1,n);ve(n);kq.insertBefore(n.el,d);d.remove();capNhatNut();xem(n)};
+      const n={id:x.id,ten:x.ten,mau:r.mau,luu:false,text:x.text};DS.splice(DS.indexOf(r),1,n);veVB(n);kq.insertBefore(n.el,d);d.remove();
+      if(x.phu_luc&&x.phu_luc.id){const pl={id:x.phu_luc.id,ten:x.phu_luc.ten,mau:r.mau,luu:false,text:x.phu_luc.text};DS.push(pl);veVB(pl)}
+      capNhatNut();xem(n)};
     if(!d.parentNode)kq.appendChild(d)};
   $('#vsoan').onclick=async()=>{
     const ma=(k.querySelector('.vck:checked')||{}).value;
@@ -495,11 +521,13 @@ async function khungSoan(k,ov,viecId,path,aiKQ){
     const r=await goiVB({action:'soan',viec_id:viecId,mau_ma:ma,file_path:path,ket_qua_ai:layKQ(),yeu_cau:$('#vyc').value.trim()});
     b.disabled=false;
     if(r.loi){$('#vtt').textContent='⚠ '+r.loi;return}
-    ov.dataset.vb=1;const o={id:r.id,ten:r.ten,mau:ma,luu:false,text:r.text};DS.push(o);ve(o);capNhatNut();
+    ov.dataset.vb=1;const o={id:r.id,ten:r.ten,mau:ma,luu:false,text:r.text};DS.push(o);veVB(o);
+    if(r.phu_luc&&r.phu_luc.id){const pl={id:r.phu_luc.id,ten:r.phu_luc.ten,mau:ma,luu:false,text:r.phu_luc.text};DS.push(pl);veVB(pl)}
+    capNhatNut();
     $('#vtt').textContent='✅ Đã soạn xong. Bấm "👁 Xem" kiểm tra, chưa vừa ý thì "✏️ Chỉnh lại", ổn thì bấm 💾 Lưu.';xem(o)};
   $('#vluu').onclick=async()=>{
     const b=$('#vluu');b.disabled=true;b.textContent='Đang lưu…';let nd=0,loiN=0,canh='';
-    for(const r of DS.filter(d=>!d.luu)){const x=await luuMot(r);if(x){x.drive?nd++:canh=x.canh;ve(r)}else loiN++}
+    for(const r of DS.filter(d=>!d.luu)){const x=await luuMot(r);if(x){x.drive?nd++:canh=x.canh;veVB(r)}else loiN++}
     capNhatNut();
     $('#vtt').textContent=loiN?'⚠ Có văn bản chưa lưu được, bấm Lưu lần nữa.':nd?'✅ Đã lưu vào thư mục Drive của loại công việc. Xem lại xong thì bấm ✔ Kết thúc việc.':'✅ Đã lưu trong app. Chưa đưa được vào Drive'+(canh?': '+canh:'')+'. Tải Word về để tự cất nếu cần.'};
   $('#vtai').onclick=async()=>{for(const r of DS){const x=await goiVB({action:'tai',van_ban_id:r.id});if(x.url){await taiVe(x.url,r.ten);await new Promise(o=>setTimeout(o,600))}else toast(x.loi||'Lỗi')}};
@@ -507,7 +535,9 @@ async function khungSoan(k,ov,viecId,path,aiKQ){
     const chua=DS.filter(d=>!d.luu).length;
     if(!confirm((chua?`Còn ${chua} văn bản chưa lưu.\n\n`:'')+'Kết thúc việc này, xem như đã hoàn chỉnh?'))return;
     await qAdd({ma_khach:uid(),viec_id:viecId,trang_thai:'da_dong',ghi_chu:'Kết thúc: hồ sơ đã hoàn chỉnh',anh:null,tep:null,tep_ten:null,gio_bam:new Date().toISOString(),vi_tri_loi:'Không lấy vị trí khi kết thúc việc'});
-    await day();document.querySelectorAll('.vw').forEach(x=>x.remove());toast('Đã kết thúc việc');chiTiet(viecId);
+    await day();
+    if((await qAll()).some(o=>o.viec_id===viecId))return toast('Chưa gửi được, bấm dòng chữ góc trên bên phải để xem lý do');
+    document.querySelectorAll('.vw').forEach(x=>x.remove());toast('Đã kết thúc việc, việc không còn trong danh sách');ve();
   };
 }
 // ---- Trình xem Word tự viết (không cần tải thư viện ngoài, không bị treo) ----
@@ -625,7 +655,9 @@ async function bangVB(v,laGiao){
     const chua=(data||[]).filter(d=>!d.drive_url).length;
     if(!confirm((chua?`Còn ${chua} văn bản chưa lưu vào Drive.\n\n`:'')+'Kết thúc việc này, xem như đã hoàn chỉnh?'))return;
     await qAdd({ma_khach:uid(),viec_id:id,trang_thai:'da_dong',ghi_chu:'Kết thúc: hồ sơ đã hoàn chỉnh',anh:null,tep:null,tep_ten:null,gio_bam:new Date().toISOString(),vi_tri_loi:'Không lấy vị trí khi kết thúc việc'});
-    await day();toast('Đã kết thúc việc');chiTiet(id);
+    await day();
+    if((await qAll()).some(o=>o.viec_id===id))return toast('Chưa gửi được, bấm dòng chữ góc trên bên phải để xem lý do');
+    toast('Đã kết thúc việc, việc không còn trong danh sách');ve();
   };
 }
 async function chiTiet(id){
@@ -670,7 +702,10 @@ async function chiTiet(id){
   if(v.trang_thai==='cho_xac_nhan'&&v.nguoi_giao===me.id){
     $('#nd').querySelector('.card').insertAdjacentHTML('afterend',`<div class="card" style="border:2px solid #2e7d4f"><b>${esc(ten(v.nguoi_nhan))} đã báo hoàn thành, đang chờ bồ xác nhận.</b><p class="mut">Xem báo cáo/tệp bên dưới xong thì bấm một trong hai nút. Việc chưa đóng thì app còn nhắc bồ.</p>
       <button class="full" id="xnd">✔ Xác nhận, đóng việc</button><button class="sec" id="xnl" style="width:100%;margin-top:6px">↩ Chưa đạt, yêu cầu làm lại</button></div>`);
-    const chot=async(tt,gc)=>{[$('#xnd'),$('#xnl')].forEach(b=>b.disabled=true);await qAdd({ma_khach:uid(),viec_id:id,trang_thai:tt,ghi_chu:gc,anh:null,tep:null,tep_ten:null,gio_bam:new Date().toISOString()});await day();toast(tt==='da_dong'?'Đã đóng việc':'Đã trả lại để làm lại');chiTiet(id)};
+    const chot=async(tt,gc)=>{[$('#xnd'),$('#xnl')].forEach(b=>b.disabled=true);
+      await qAdd({ma_khach:uid(),viec_id:id,trang_thai:tt,ghi_chu:gc,anh:null,tep:null,tep_ten:null,gio_bam:new Date().toISOString()});await day();
+      if((await qAll()).some(o=>o.viec_id===id)){[$('#xnd'),$('#xnl')].forEach(b=>b&&(b.disabled=false));return toast('Chưa gửi được, bấm dòng chữ góc trên bên phải để xem lý do')}
+      toast(tt==='da_dong'?'Đã đóng việc':'Đã trả lại để làm lại');if(tt==='da_dong')ve();else chiTiet(id)};
     $('#xnd').onclick=()=>chot('da_dong','Đã xem và xác nhận hoàn thành');
     $('#xnl').onclick=()=>{const g=prompt('Cần làm lại điểm nào? (ghi ngắn để người nhận biết)');if(g===null)return;chot('dang_lam',g.trim()||'Chưa đạt, làm lại')};
   }
