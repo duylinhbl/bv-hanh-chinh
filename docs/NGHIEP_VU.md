@@ -288,3 +288,16 @@ Màn hình báo cụt lủn "Edge Function returned a non-2xx status code". Nh�
 - `soan-mau` v14: đặt **hạn chót chung 115 giây** cho cả lần soạn. Hết giờ thì dừng, trả lỗi tiếng Việt rõ ràng thay vì để máy chủ cắt ngang. `goiGemini` nhận hạn chót, tự rút ngắn thời gian chờ và bỏ qua việc thử lại khi không còn đủ giờ. Gợi ý loại văn bản cũng có hạn 60 giây.
 - App: khi máy chủ trả lỗi không kèm nội dung, hiện câu dễ hiểu theo mã lỗi (546/504 = soạn lâu quá bị cắt, 502/503 = máy chủ AI bận) thay vì câu tiếng Anh của thư viện.
 - BÀI HỌC: mọi vòng thử lại gọi API bên ngoài trong Edge Function phải có hạn chót chung, không chỉ giới hạn từng lần.
+
+## v81 – ĐỔI CÁCH LÀM: máy chủ tự dựng phụ lục, không bắt AI chép lại bảng (18/11/2026)
+Sau v79–v80 vẫn tắc: Gemini lần thì RECITATION, lần thì quá tải. Gốc rễ là **bắt AI chép lại nguyên cái bảng dài** — vừa tốn token, vừa chậm, vừa bị chặn.
+
+**Cách mới:**
+1. Máy chủ **tự tách bảng** đã chốt trong hội thoại AI (`bangTuKQ`): lấy khối dòng có dấu `|` dài nhất, bỏ dòng kẻ markdown, bỏ `**`.
+2. Gửi cho Gemini **bản mô tả ngắn** thay cho cả bảng: "BẢNG DANH MỤC đã chốt: N dòng, các cột: … — hệ thống tự đưa vào Phụ lục, KHÔNG chép bảng vào thân văn bản". Khi đã có bảng thì **không gửi kèm tệp gốc** nữa.
+3. Gemini chỉ viết phần chữ (ngắn, nhanh, maxOutputTokens 6144) và trả thêm `ten_phu_luc`.
+4. Máy chủ **dựng phụ lục thẳng từ bảng đã tách**: đủ dòng, đúng số, không phụ thuộc AI. Thân văn bản bị lọc sạch dòng bảng nếu AI lỡ chép.
+
+Lợi: prompt giảm từ ~55.000 xuống ~5.000 ký tự → hết RECITATION, ít gặp quá tải, nhanh hơn nhiều, và **phụ lục chắc chắn đủ dòng**.
+Không tách được bảng (chat không có bảng) thì chạy y luồng cũ.
+Kiểm thử mới `tests/bang_phu_luc.test.js` (6 bài) lấy thẳng hàm `bangTuKQ` trong mã nguồn Edge Function ra chạy.

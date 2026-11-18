@@ -1,5 +1,5 @@
 // Soạn văn bản theo mẫu của bệnh viện (Mức 2): Gemini viết nội dung, ghép vào khung Word gốc (giữ quốc hiệu, bảng, chữ ký).
-// Khung mẫu (docx + json) nằm trong Drive thư mục "_mau", lấy qua Apps Script (action vb_mau_lay). Lưu vào Drive: action luu_van_ban.
+// BẢNG đã chốt trong chat AI thì MÁY CHỦ tự dựng phụ lục, không bắt Gemini chép lại.
 // Cấu hình bi_mat: kh_script_url, kh_token, ai_model. Khóa: secret GEMINI_API_KEY.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { unzipSync, zipSync } from 'npm:fflate@0.8.2';
@@ -26,7 +26,7 @@ Quy tắc:
 - Quyết định KHÔNG có dòng "Kính gửi".
 - KINH PHÍ: CHỈ đưa mục "Kinh phí và nguồn kinh phí" khi việc này THỰC SỰ CHI TIỀN (mua sắm, sửa chữa, thuê dịch vụ, chi hỗ trợ, thanh toán, phê duyệt dự toán) hoặc người soạn có nêu số tiền. Việc ban hành/phê duyệt định mức, danh mục, quy trình, quy chế, cơ cấu tổ chức, kế hoạch công tác, báo cáo, nhân sự thì TUYỆT ĐỐI KHÔNG có mục kinh phí và KHÔNG đưa "Phòng Tài chính Kế toán" vào phần Kính gửi. Không bao giờ bịa câu "chi từ nguồn kinh phí hoạt động thường xuyên".
 - CĂN CỨ phải nêu RÕ văn bản: số, ngày tháng năm, cơ quan ban hành, trích yếu. Căn cứ Điều lệ bệnh viện ghi nguyên văn: "Căn cứ Quyết định số 73/QĐ-HĐTV-CSDT ngày 05 tháng 5 năm 2017 của Hội đồng thành viên Công ty TNHH MTV Cao su Dầu Tiếng về việc ban hành Điều lệ tổ chức và hoạt động của Bệnh viện đa khoa Cao su Dầu Tiếng;". Cấm viết căn cứ chung chung kiểu "Căn cứ Điều lệ tổ chức và hoạt động của Bệnh viện đã được phê duyệt". Chưa biết số/ngày thì để [ ], không bỏ trống cũng không bịa.
-- PHỤ LỤC: khi người soạn yêu cầu tách phụ lục, hoặc bảng dài quá 10 hàng, thì KHÔNG để bảng trong thân văn bản. Thân văn bản chỉ dẫn chiếu "(chi tiết theo Phụ lục đính kèm)". Đặt phụ lục ở CUỐI, bắt đầu bằng một dòng chỉ có chữ "PHỤ LỤC", dòng kế là tên phụ lục, rồi dòng "(Đính kèm Tờ trình số [ ] ngày [ ] tháng [ ] năm [ ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)", rồi mới đến bảng. Hệ thống sẽ tự tách phần từ chữ "PHỤ LỤC" trở đi thành MỘT FILE WORD RIÊNG. Đã nhắc "Phụ lục đính kèm" trong thân văn bản thì BẮT BUỘC phải có phần PHỤ LỤC ở cuối với BẢNG ĐỦ CỘT ĐỦ HÀNG; tuyệt đối không nhắc phụ lục rồi bỏ trống.
+- PHỤ LỤC: khi người soạn yêu cầu tách phụ lục, hoặc bảng dài quá 10 hàng, thì KHÔNG để bảng trong thân văn bản. Thân văn bản chỉ dẫn chiếu "(chi tiết theo Phụ lục đính kèm)". Đặt phụ lục ở CUỐI, bắt đầu bằng một dòng chỉ có chữ "PHỤ LỤC", dòng kế là tên phụ lục, rồi dòng "(Đính kèm Tờ trình số [ ] ngày [ ] tháng [ ] năm [ ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)", rồi mới đến bảng. Hệ thống sẽ tự tách phần từ chữ "PHỤ LỤC" trở đi thành MỘT FILE WORD RIÊNG. Đã nhắc "Phụ lục đính kèm" trong thân văn bản thì BẮT BUỘC phải có phần PHỤ LỤC ở cuối với BẢNG ĐỦ CỘT ĐỦ HÀNG; tuyệt đối không nhắc phụ lục rồi bỏ trống. RIÊNG trường hợp lời nhắc nói rõ hệ thống đã có sẵn bảng và tự đưa vào Phụ lục thì bạn KHÔNG viết bảng và KHÔNG viết phần PHỤ LỤC, chỉ dẫn chiếu trong thân văn bản; khi đó trả thêm trường ten_phu_luc là tên danh mục viết hoa (VD: "DANH MỤC ĐỊNH MỨC TUYẾN ĐƯỜNG CHUYỂN VIỆN VÀ CÔNG TÁC").
 - Nội dung chính (Điều 1 / phần đề nghị) phải nói ĐÚNG đối tượng của việc được giao và ý của người soạn (VD: phê duyệt định mức thì viết định mức, không đổi thành kế hoạch hay việc khác). Chỉ dùng căn cứ liên quan trực tiếp, không chép căn cứ của việc khác. Theo cấu trúc chuẩn trong mẫu tham khảo.
 Trả về JSON: {"ve_viec": "trích yếu ngắn, viết thường, không có chữ 'Về việc', không dấu chấm cuối", "noi_dung": "thân văn bản"}.`;
 
@@ -162,6 +162,25 @@ function phuLucDocx(noi: string): Uint8Array {
   return zipSync({ '[Content_Types].xml': e.encode(ct), '_rels/.rels': e.encode(rels), 'word/document.xml': e.encode(doc) }, { level: 6 });
 }
 
+// Tách BẢNG đã chốt trong kết quả chat AI (khối nhiều dòng có dấu |). Máy chủ tự dựng phụ lục từ đây,
+// không bắt Gemini chép lại bảng (chép lại vừa chậm, vừa bị cắt, vừa dính lỗi RECITATION).
+function bangTuKQ(s: string): string[][] {
+  const dong = String(s || '').replace(/\r/g, '').split('\n');
+  let tot: string[][] = [], cur: string[][] = [];
+  const chot = () => { if (cur.length > tot.length) tot = cur; cur = []; };
+  for (const l0 of dong) {
+    const l = l0.trim();
+    if (l.includes('|') && /^[|\s:\-\u2013\u2014+]+$/.test(l)) continue; // dòng kẻ của bảng markdown
+    if (l.includes('|')) {
+      const c = l.replace(/^\||\|$/g, '').split('|').map((x) => x.replace(/\*\*/g, '').trim());
+      if (c.length >= 2 && c.length <= 8 && c.some((x) => x)) { cur.push(c); continue; }
+    }
+    chot();
+  }
+  chot();
+  return tot.length >= 3 ? tot : [];
+}
+
 function docxText(buf: Uint8Array): string {
   const z = unzipSync(buf, { filter: (f) => f.name === 'word/document.xml' });
   if (!z['word/document.xml']) return '';
@@ -260,6 +279,13 @@ Deno.serve(async (req) => {
     // Kết quả người dùng đã chốt khi làm việc với AI về tệp — đây mới là số liệu cuối, ưu tiên hơn tệp gốc
     const kqAI = String(b.ket_qua_ai || '').slice(0, 25000);
 
+    // Bảng đã chốt: máy chủ tự dựng phụ lục, chỉ gửi cho Gemini bản mô tả ngắn
+    const bangKQ = bangTuKQ(kqAI);
+    const kqGui = bangKQ.length
+      ? kqAI.split('\n').filter((l) => !l.includes('|')).join('\n').trim().slice(0, 4000) +
+        `\n\n[BẢNG DANH MỤC đã chốt: ${bangKQ.length} dòng, các cột: ${bangKQ[0].join(' | ')}. Hệ thống TỰ đưa bảng này vào Phụ lục riêng — tuyệt đối KHÔNG chép bảng vào thân văn bản, chỉ dẫn chiếu "(chi tiết theo Phụ lục đính kèm)".]`
+      : kqAI;
+
     // Tệp đính kèm của việc (nếu có) làm dữ liệu nguồn
     let tep = '';
     const fp = b.file_path || v.file_path;
@@ -276,7 +302,7 @@ Deno.serve(async (req) => {
       const ls = (ds || []).map((x: any) => `- ${x.ma}: ${x.ten} (${x.mo_ta || ''})`).join('\n');
       const tx = await goiGemini(key, cfg.ai_model || 'gemini-flash-lite-latest', {
         systemInstruction: { parts: [{ text: 'Bạn là trợ lý của Phòng Tổ chức Hành chính bệnh viện. Đọc việc được giao và dữ liệu tệp, chọn loại văn bản cần soạn phù hợp nhất trong danh sách, và viết sẵn y_chinh: 2-4 câu tóm tắt ý chính cần trình/quyết định (nội dung, số liệu chính lấy từ tệp, đối tượng, thời gian; chỗ chưa rõ ghi [ ]). Không bịa số. Chỉ trả JSON.' }] },
-        contents: [{ role: 'user', parts: [{ text: `VIỆC: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nDANH SÁCH LOẠI VĂN BẢN:\n${ls}${kqAI ? '\n\nSỐ LIỆU CHỐT (người dùng đã làm việc với AI về tệp này, DÙNG CÁI NÀY):\n' + kqAI : ''}\n\nDỮ LIỆU TỆP GỐC${kqAI ? ' (chỉ tham khảo, số liệu đã cũ)' : ''}:\n${tep || '(không đọc được tệp)'}` }] }],
+        contents: [{ role: 'user', parts: [{ text: `VIỆC: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nDANH SÁCH LOẠI VĂN BẢN:\n${ls}${kqAI ? '\n\nSỐ LIỆU CHỐT (người dùng đã làm việc với AI về tệp này, DÙNG CÁI NÀY):\n' + kqAI : ''}\n\nDỮ LIỆU TỆP GỐC${kqAI ? ' (chỉ tham khảo, số liệu đã cũ)' : ''}:\n${tep.slice(0, 12000) || '(không đọc được tệp)'}` }] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 1024, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { mau_ma: { type: 'STRING' }, y_chinh: { type: 'STRING' } }, required: ['mau_ma', 'y_chinh'] } },
       }, Date.now() + 60000);
       let g: any = {}; try { g = JSON.parse(tx.replace(/^```json\s*|```$/g, '')); } catch (_) { /* bỏ qua */ }
@@ -289,7 +315,7 @@ Deno.serve(async (req) => {
       if (o && o.viec_id === viec_id) { const dl = await sv.storage.from('anh').download(o.storage_path); if (!dl.error && dl.data) cu = docxText(new Uint8Array(await dl.data.arrayBuffer())).slice(0, 20000); }
     }
     const mau = await layMau(sv, m.ma);
-    const dungNguoi = (kemTep: boolean) => `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${kqAI ? '\n\nSỐ LIỆU CHỐT — BẮT BUỘC DÙNG (người soạn đã làm việc với AI trên tệp này và chốt kết quả dưới đây; mọi con số, danh sách, tên gọi trong văn bản phải lấy từ đây, KHÔNG lấy số cũ trong tệp gốc):\n' + kqAI : ''}${tep && kemTep ? '\n\nTỆP GỐC' + (kqAI ? ' (chỉ để hiểu bối cảnh, số liệu trong đây ĐÃ CŨ, không đưa vào văn bản)' : ' (dữ liệu nguồn)') + ':\n' + tep : ''}${cu ? '\n\nVĂN BẢN ĐÃ SOẠN TRƯỚC ĐÓ (toàn văn, gồm cả phần khung đầu/cuối):\n' + cu + '\n\nĐây là yêu cầu CHỈNH SỬA: giữ nguyên phần đúng, chỉ sửa theo ý trong mục YÊU CẦU, trả về lại ĐẦY ĐỦ thân văn bản (không chỉ phần sửa).' : ''}`;
+    const dungNguoi = (kemTep: boolean) => `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${kqAI ? '\n\nSỐ LIỆU CHỐT — BẮT BUỘC DÙNG (người soạn đã làm việc với AI trên tệp này và chốt kết quả dưới đây; mọi con số, danh sách, tên gọi trong văn bản phải lấy từ đây, KHÔNG lấy số cũ trong tệp gốc):\n' + kqGui : ''}${tep && kemTep && !bangKQ.length ? '\n\nTỆP GỐC' + (kqAI ? ' (chỉ để hiểu bối cảnh, số liệu trong đây ĐÃ CŨ, không đưa vào văn bản)' : ' (dữ liệu nguồn)') + ':\n' + tep : ''}${cu ? '\n\nVĂN BẢN ĐÃ SOẠN TRƯỚC ĐÓ (toàn văn, gồm cả phần khung đầu/cuối):\n' + cu + '\n\nĐây là yêu cầu CHỈNH SỬA: giữ nguyên phần đúng, chỉ sửa theo ý trong mục YÊU CẦU, trả về lại ĐẦY ĐỦ thân văn bản (không chỉ phần sửa).' : ''}`;
     // Ưu tiên model mạnh (bảng dài không bị cắt). Quá tải / hết hạn mức -> tụt xuống model nhẹ.
     // Gemini báo RECITATION (bản thảo giống nguyên văn tài liệu nguồn) -> thử lại: bỏ TỆP GỐC, tăng temperature, bắt diễn đạt lại.
     const dsModel = [...new Set([cfg.ai_model_manh || 'gemini-flash-latest', cfg.ai_model || 'gemini-flash-lite-latest'])];
@@ -304,7 +330,7 @@ Deno.serve(async (req) => {
         try {
           const t = await goiGemini(key, l.mo, {
             systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: dungNguoi(l.tep) + them + l.nhac }] }],
-            generationConfig: { temperature: l.t, maxOutputTokens: 16384, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
+            generationConfig: { temperature: l.t, maxOutputTokens: bangKQ.length ? 6144 : 16384, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' }, ten_phu_luc: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
           }, HAN_CHOT);
           return JSON.parse(t.replace(/^```json\s*|```$/g, ''));
         } catch (e) { loi = e; }
@@ -315,7 +341,7 @@ Deno.serve(async (req) => {
     if (!String(kq.noi_dung || '').trim()) return out({ loi: 'Gemini không soạn được nội dung, thử bổ sung yêu cầu.' }, 502);
     // Nhắc "Phụ lục đính kèm" mà không xuất bảng phụ lục: soạn lại MỘT lần
     const coPL = (x: string) => /^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im.test(x);
-    if (/phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung)) && HAN_CHOT - Date.now() > 25000) {
+    if (!bangKQ.length && /phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung)) && HAN_CHOT - Date.now() > 25000) {
       try {
         const k2 = await soanMot('\n\nSỬA LẠI: bản vừa soạn có nhắc "Phụ lục đính kèm" nhưng THIẾU hẳn phần phụ lục. Soạn lại toàn bộ, cuối noi_dung phải có một dòng chỉ gồm chữ "PHỤ LỤC", dòng tên phụ lục, rồi BẢNG ĐẦY ĐỦ các hàng lấy từ số liệu chốt (mỗi hàng một dòng "ô 1 | ô 2 | ô 3").');
         if (String(k2?.noi_dung || '').trim() && coPL(String(k2.noi_dung))) kq = k2;
@@ -328,6 +354,14 @@ Deno.serve(async (req) => {
     let than = String(kq.noi_dung), pl = '';
     const iPL = than.search(/^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im);
     if (iPL > 0) { const sau = than.slice(iPL).trim(); if (sau.length > 40) { than = than.slice(0, iPL).trimEnd(); pl = sau; } }
+    if (bangKQ.length) {
+      // Phụ lục dựng thẳng từ bảng người dùng đã chốt: đủ dòng, đúng số, không qua Gemini
+      const tenPL = String(kq.ten_phu_luc || '').trim() || ('DANH MỤC ' + vViec.toUpperCase());
+      pl = ['PHỤ LỤC', tenPL, '(Đính kèm Tờ trình số [    ] ngày [    ] tháng [    ] năm [    ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)']
+        .concat(bangKQ.map((r) => r.join(' | '))).join('\n');
+      // thân văn bản không được chứa bảng nữa
+      than = than.split('\n').filter((l) => !(l.includes(' | ') && l.split('|').length >= 3)).join('\n');
+    }
     const docx = ghepWord(mau, vViec, than, { d: g('day'), m: g('month'), y: g('year') }, m.loai === 'to_trinh');
     const tf = sach(`${m.loai === 'to_trinh' ? 'Tờ trình' : 'Quyết định'} - ${vViec}`, 100) + '.docx';
     const p = `${viec_id}/vb-${crypto.randomUUID()}.docx`;
