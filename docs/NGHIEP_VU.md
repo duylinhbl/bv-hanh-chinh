@@ -257,4 +257,5 @@ Phát hiện từ tờ trình "ban hành định mức tuyến đường" ngày 
 - Bệnh viện hiện **chưa có Giám đốc**, Phó Giám đốc ký thay. Sửa khối chữ ký của 7 khung mẫu (`mau/`): dòng "GIÁM ĐỐC" → **"KT.GIÁM ĐỐC"**, thêm dòng dưới **"PHÓ GIÁM ĐỐC"** (tt_muon_xe và tt_tong_giam_doc vốn đã đúng).
 - Dòng thẩm quyền trong Quyết định ("GIÁM ĐỐC BỆNH VIỆN ĐA KHOA CAO SU DẦU TIẾNG" nằm trên phần Căn cứ) **giữ nguyên** — quyết định vẫn ban hành nhân danh chức danh Giám đốc, chỉ phần ký là ký thay.
 - Ba mẫu có bảng chữ ký 3 cột (tt_giam_doc, tt_ho_tro_ksk, tt_phe_duyet_du_toan): cột 1 quá hẹp làm "PHÓ GIÁM ĐỐC" bị xuống dòng → nới cột thành 2450/3402/3788 twip và thu lề phải 2cm → 1,5cm (vẫn đúng NĐ30). Đã dựng thử và xem bản in của cả 3 mẫu bảng + mẫu ký bằng tab.
+- Khối chữ ký 3 cột xuống dòng cho gọn: "KT.GIÁM ĐỐC / PHÓ GIÁM ĐỐC", "P. TÀI CHÍNH / KẾ TOÁN", "P. TỔ CHỨC / HÀNH CHÍNH" — mỗi ô 2 dòng. Nhờ vậy lề phải trả lại 2cm và bảng về bề ngang cũ 9356 twip (cột 2450/3402/3504).
 - Cách kiểm nhanh khi sửa mẫu: dựng thử file từ mẫu → `soffice --headless --convert-to pdf` → `pdftoppm` → xem ảnh. Xem XML không phát hiện được lỗi đậm/xuống dòng vì chúng thừa kế từ kiểu đoạn.
