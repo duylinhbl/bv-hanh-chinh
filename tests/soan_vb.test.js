@@ -18,7 +18,7 @@ const path = require('path'), root = path.join(__dirname, '..');
       return()=>p}});return p};
     window.supabase={createClient:()=>({from:q,rpc:async()=>({data:true}),channel:()=>q('x'),removeChannel(){},
       functions:{invoke:async(n,o)=>{window.calls.push([n,o.body]);
-        if(o.body.action==='goi_y')return{data:{ok:true,mau_ma:'tt_giam_doc',y_chinh:'Trình duyệt định mức mới'}};
+        if(o.body.action==='goi_y'){await new Promise(r=>setTimeout(r,600));return{data:{ok:true,mau_ma:'tt_giam_doc',y_chinh:'Trình duyệt định mức mới'}}}
         if(o.body.action==='soan')return{data:{ok:true,id:'vb1',ten:'To trinh.docx',url:'about:blank',mau:'Tờ trình',text:'noi dung',phu_luc:{id:'vb2',ten:'Phu luc - dinh muc.docx',url:'about:blank',text:'PHỤ LỤC'}}};
         return{data:{}}}},
       auth:{getSession:async()=>({data:{session:{user:{id:'a'}}}}),signOut:async()=>{}},
@@ -36,7 +36,11 @@ const path = require('path'), root = path.join(__dirname, '..');
   let c = await p.evaluate(() => window.calls);
   kiem(c[0][1].action === 'goi_y' && /ĐỊNH MỨC CHỐT/.test(c[0][1].ket_qua_ai) && !/lần 1/.test(c[0][1].ket_qua_ai), 'gợi ý loại văn bản dùng kết quả AI cuối cùng');
 
-  await p.waitForFunction(() => document.querySelector('.vck:checked'), null, { timeout: 5000 });
+  // Người dùng bấm chọn NGAY, gợi ý của AI về sau không được đè lên lựa chọn đó
+  await p.evaluate(() => { const qd = document.querySelector('.vck[value="qd_giam_doc"]'); qd.checked = true; qd.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.waitForTimeout(900);
+  kiem(await p.$eval('.vck:checked', e => e.value) === 'qd_giam_doc', 'người dùng chọn loại văn bản rồi thì gợi ý AI tới sau không đổi lựa chọn đó');
+  await p.evaluate(() => { const x = document.querySelector('.vck[value="tt_giam_doc"]'); x.checked = true; x.dispatchEvent(new Event('change', { bubbles: true })); });
   await p.evaluate(() => { window.calls = []; });
   await p.click('#vsoan'); await p.waitForTimeout(400);
   c = await p.evaluate(() => window.calls.filter(x => x[1].action === 'soan'));

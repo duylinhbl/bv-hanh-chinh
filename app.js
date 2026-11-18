@@ -98,7 +98,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v78</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v79</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -492,10 +492,13 @@ async function khungSoan(k,ov,viecId,path,aiKQ){
   <p class="mut" id="vtt"></p><div id="vkq"></div></div>
   <div class="vfoot"><button id="vluu" class="full" disabled>💾 Lưu</button><button id="vtai" class="sec" disabled>⬇ Tải Word</button>${choKet?'<button id="vket" class="full" style="background:#15803d">✔ Kết thúc việc</button>':''}</div>`;
   const kq=$('#vkq'),DS=[];
+  // AI trả lời chậm hơn người dùng: nếu người dùng đã tự chọn loại văn bản thì KHÔNG được đè lên
+  k.querySelectorAll('.vck').forEach(c=>c.addEventListener('change',()=>{k.dataset.tuchon='1';$('#vgy').textContent='(bạn đã chọn)'}));
   goiYP.then(r=>{
-    if(r.mau_ma){const x=k.querySelector(`.vck[value="${r.mau_ma}"]`);if(x)x.checked=true}
+    const daChon=k.dataset.tuchon==='1'||k.querySelector('.vck:checked');
+    if(r.mau_ma&&!daChon){const x=k.querySelector(`.vck[value="${r.mau_ma}"]`);if(x)x.checked=true}
     if(r.y_chinh&&!$('#vyc').value)$('#vyc').value=r.y_chinh;
-    $('#vgy').textContent=r.loi?'(không gợi ý được, bạn tự chọn)':(r.mau_ma?'(AI đã chọn sẵn, bạn đổi được)':'(bạn chọn giúp)');
+    $('#vgy').textContent=daChon?'(bạn đã chọn)':r.loi?'(không gợi ý được, bạn tự chọn)':(r.mau_ma?'(AI đã chọn sẵn, bạn đổi được)':'(bạn chọn giúp)');
     if(r.loi)toast(r.loi)});
   const capNhatNut=()=>{const chua=DS.filter(d=>!d.luu).length;$('#vluu').disabled=!DS.length||!chua;$('#vluu').textContent=!DS.length?'💾 Lưu':chua?`💾 Lưu (${chua} văn bản)`:'✅ Đã lưu hết';$('#vtai').disabled=!DS.length};
   const xem=async r=>{const x=await goiVB({action:'tai',van_ban_id:r.id});if(!x.url)return toast(x.loi||'Lỗi');xemTep(null,r.ten,null,x.url,r.text)};

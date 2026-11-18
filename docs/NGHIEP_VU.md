@@ -272,3 +272,12 @@ Sau khi v77 cho hiện lý do lỗi, app báo rõ: `new row violates row-level s
 - Sau khi chuyển soạn văn bản sang model mạnh (v78), Gemini báo "đang quá tải" (503) và chặn luôn việc soạn.
 - `soan-mau` v12: thử lần lượt `ai_model_manh` → `ai_model`. Model nào quá tải/hết hạn mức thì tự chuyển, chỉ báo lỗi khi cả hai đều không được. Người dùng không còn phải ngồi chờ bấm lại.
 - Lưu ý: bản nhẹ dễ cắt bớt bảng dài; nếu rơi xuống bản nhẹ mà thiếu phụ lục thì cơ chế "soạn lại một lần" của v78 vẫn chạy.
+
+## v79 – Gemini báo RECITATION + gợi ý AI đè lên lựa chọn của người dùng (18/11/2026)
+**1. "Gemini không trả lời được (RECITATION)"** — Gemini chặn câu trả lời khi bản thảo bám quá sát nguyên văn tài liệu đưa vào (ở đây là kết quả chat + toàn văn tệp Excel). Không phải quá tải, bấm lại bao nhiêu lần cũng vậy.
+- `soan-mau` v13 thử tối đa 4 lượt: (model mạnh, nhiệt 0.3, có TỆP GỐC) → (model mạnh, nhiệt 0.9, **bỏ TỆP GỐC**, nhắc "tự diễn đạt, không chép nguyên văn") → hai lượt tương tự với model nhẹ. Lượt nào ra kết quả thì dùng.
+- Vì vậy prompt được tách thành hàm `dungNguoi(kemTep)` để lượt sau dựng lại không kèm tệp gốc.
+
+**2. Bấm "Tờ trình" mà nhảy xuống "Quyết định"** — gợi ý loại văn bản của AI về sau mới tới và **ghi đè lựa chọn người dùng vừa bấm**.
+- App: đánh dấu khi người dùng tự chọn; gợi ý AI tới sau chỉ điền khi người dùng **chưa** chọn. Nhãn đổi thành "(bạn đã chọn)".
+- Thêm kiểm thử: gợi ý AI trả về chậm 600ms, người dùng bấm trước → lựa chọn của người dùng phải giữ nguyên.
