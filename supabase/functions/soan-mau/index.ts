@@ -181,6 +181,35 @@ function bangTuKQ(s: string): string[][] {
   return tot.length >= 3 ? tot : [];
 }
 
+// Dựng thân văn bản THEO MẪU, không cần AI. Dùng khi Gemini từ chối (RECITATION) hoặc quá tải:
+// cấu trúc là cố định, nội dung riêng lấy từ "Ý chính" người dùng đã gõ.
+function soanTheoMau(loai: string, tieuDe: string, yc: string, coBang: boolean): { ve_viec: string; noi_dung: string } {
+  const CC73 = 'Căn cứ Quyết định số 73/QĐ-HĐTV-CSDT ngày 05 tháng 5 năm 2017 của Hội đồng thành viên Công ty TNHH MTV Cao su Dầu Tiếng về việc ban hành Điều lệ tổ chức và hoạt động của Bệnh viện đa khoa Cao su Dầu Tiếng;';
+  const y = String(yc || '').replace(/\r/g, '').split('\n').map((x) => x.trim().replace(/^[-–•]\s*/, '')).filter(Boolean);
+  const veViec = String(tieuDe || '').replace(/^về việc\s*/i, '').replace(/\.$/, '').trim().toLowerCase();
+  const dan = coBang ? 'Chi tiết theo Phụ lục đính kèm văn bản này.' : '';
+  const d: string[] = [];
+  if (loai === 'to_trinh') {
+    d.push('Kính gửi: Giám đốc Bệnh viện Đa khoa Cao su Dầu Tiếng;');
+    d.push(CC73);
+    d.push('Căn cứ nhu cầu thực tế của công tác chuyên môn tại Bệnh viện;');
+    d.push('Phòng Tổ chức Hành chính kính trình Giám đốc xem xét, phê duyệt nội dung sau:');
+    for (const x of y) d.push('- ' + x);
+    if (dan) d.push('- ' + dan);
+    d.push('Trân trọng kính trình./.');
+  } else {
+    d.push(CC73);
+    d.push('Căn cứ nhu cầu thực tế của công tác chuyên môn tại Bệnh viện;');
+    d.push('Xét đề nghị tại Tờ trình số [    ]/TTr-BVĐK-TCHC ngày [    ] của Phòng Tổ chức Hành chánh,');
+    d.push('QUYẾT ĐỊNH:');
+    d.push('Điều 1: ' + (y[0] || veViec) + (dan ? ' ' + dan : ''));
+    for (const x of y.slice(1)) d.push('- ' + x);
+    d.push('Điều 2: Quyết định này có hiệu lực kể từ ngày ký.');
+    d.push('Điều 3: Trưởng các khoa, phòng Bệnh viện và các đơn vị liên quan chịu trách nhiệm thi hành Quyết định này./.');
+  }
+  return { ve_viec: veViec, noi_dung: d.join('\n') };
+}
+
 function docxText(buf: Uint8Array): string {
   const z = unzipSync(buf, { filter: (f) => f.name === 'word/document.xml' });
   if (!z['word/document.xml']) return '';
@@ -319,26 +348,39 @@ Deno.serve(async (req) => {
     // Ưu tiên model mạnh (bảng dài không bị cắt). Quá tải / hết hạn mức -> tụt xuống model nhẹ.
     // Gemini báo RECITATION (bản thảo giống nguyên văn tài liệu nguồn) -> thử lại: bỏ TỆP GỐC, tăng temperature, bắt diễn đạt lại.
     const dsModel = [...new Set([cfg.ai_model_manh || 'gemini-flash-latest', cfg.ai_model || 'gemini-flash-lite-latest'])];
+    const THO = '\n\nTrả lời dạng VĂN BẢN THUẦN (không JSON): dòng đầu ghi "VE_VIEC: <trích yếu ngắn>", từ dòng thứ hai trở đi là thân văn bản, mỗi đoạn một dòng.';
     const DIEN_LAI = '\n\nLƯU Ý: hãy TỰ DIỄN ĐẠT bằng lời văn hành chính của bạn, không chép nguyên văn đoạn dài nào từ tài liệu nguồn. Số liệu trong bảng giữ nguyên, nhưng câu chữ phải do bạn viết.';
     const HAN_CHOT = Date.now() + 115000; // Edge Function bị cắt (lỗi 546) nếu chạy quá lâu
     const soanMot = async (them: string) => {
-      const lan: { mo: string; t: number; tep: boolean; nhac: string }[] = [];
+      const lan: { mo: string; t: number; tep: boolean; nhac: string; tho?: boolean }[] = [];
       for (const mo of dsModel) { lan.push({ mo, t: 0.3, tep: true, nhac: '' }); lan.push({ mo, t: 0.9, tep: false, nhac: DIEN_LAI }); }
+      lan.push({ mo: dsModel[0], t: 1, tep: false, nhac: DIEN_LAI + THO, tho: true });
       let loi: unknown = null;
       for (const l of lan) {
         if (HAN_CHOT - Date.now() < 10000) break;
         try {
+          const gen: any = { temperature: l.t, maxOutputTokens: bangKQ.length ? 6144 : 16384 };
+          if (!l.tho) { gen.responseMimeType = 'application/json'; gen.responseSchema = { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' }, ten_phu_luc: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] }; }
           const t = await goiGemini(key, l.mo, {
             systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: dungNguoi(l.tep) + them + l.nhac }] }],
-            generationConfig: { temperature: l.t, maxOutputTokens: bangKQ.length ? 6144 : 16384, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' }, ten_phu_luc: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
+            generationConfig: gen,
           }, HAN_CHOT);
-          return JSON.parse(t.replace(/^```json\s*|```$/g, ''));
+          if (!l.tho) return JSON.parse(t.replace(/^```json\s*|```$/g, ''));
+          const mm = t.match(/VE_VIEC\s*:\s*(.*)/i);
+          const nd = t.replace(/^[\s\S]*?VE_VIEC\s*:.*\n/i, '').trim();
+          if (!nd) throw new Error('Gemini trả về rỗng');
+          return { ve_viec: (mm ? mm[1] : '').trim(), noi_dung: nd };
         } catch (e) { loi = e; }
       }
       throw loi || new Error('Gemini soạn lâu quá nên máy chủ dừng, bồ bấm soạn lại.');
     };
-    let kq: any; try { kq = await soanMot(''); } catch (e) { const m2 = String((e as Error).message || e); return out({ loi: /Gemini/.test(m2) ? m2 : 'Gemini trả về sai định dạng, bồ bấm soạn lại.' }, 502); }
-    if (!String(kq.noi_dung || '').trim()) return out({ loi: 'Gemini không soạn được nội dung, thử bổ sung yêu cầu.' }, 502);
+    let kq: any = null, canhBao = '';
+    try { kq = await soanMot(''); } catch (e) { canhBao = String((e as Error).message || e).slice(0, 160); }
+    if (!kq || !String(kq.noi_dung || '').trim()) {
+      if (!yc.trim()) return out({ loi: (canhBao || 'Gemini không soạn được') + ' — bồ gõ Ý chính rồi bấm soạn lại để hệ thống tự dựng theo mẫu.' }, 502);
+      kq = soanTheoMau(m.loai, v.tieu_de, yc, bangKQ.length > 0);
+      canhBao = 'AI đang bị chặn (' + canhBao + '). Bản này do hệ thống tự dựng theo mẫu bệnh viện từ Ý chính của bồ — đọc kỹ lại câu chữ, phần căn cứ và số liệu trước khi trình.';
+    } else canhBao = '';
     // Nhắc "Phụ lục đính kèm" mà không xuất bảng phụ lục: soạn lại MỘT lần
     const coPL = (x: string) => /^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im.test(x);
     if (!bangKQ.length && /phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung)) && HAN_CHOT - Date.now() > 25000) {
@@ -384,7 +426,7 @@ Deno.serve(async (req) => {
         }
       } catch (_) { /* không dựng được phụ lục thì thôi, thân văn bản vẫn có */ }
     }
-    return out({ ok: true, id: row.id, ten: tf, url: sg.data?.signedUrl, mau: m.ten, text: docxText(docx).slice(0, 20000), phu_luc: phu });
+    return out({ ok: true, id: row.id, ten: tf, url: sg.data?.signedUrl, mau: m.ten, text: docxText(docx).slice(0, 20000), phu_luc: phu, canh_bao: canhBao || undefined });
   } catch (e) {
     return out({ loi: String((e as Error).message || e).slice(0, 300) }, 500);
   }

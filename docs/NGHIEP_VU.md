@@ -301,3 +301,13 @@ Sau v79–v80 vẫn tắc: Gemini lần thì RECITATION, lần thì quá tải. 
 Lợi: prompt giảm từ ~55.000 xuống ~5.000 ký tự → hết RECITATION, ít gặp quá tải, nhanh hơn nhiều, và **phụ lục chắc chắn đủ dòng**.
 Không tách được bảng (chat không có bảng) thì chạy y luồng cũ.
 Kiểm thử mới `tests/bang_phu_luc.test.js` (6 bài) lấy thẳng hàm `bangTuKQ` trong mã nguồn Edge Function ra chạy.
+
+## v82 – AI bị chặn thì HỆ THỐNG TỰ DỰNG văn bản theo mẫu (18/11/2026)
+Dù prompt đã rút còn ~5.000 ký tự (v81), Gemini vẫn trả RECITATION. Kết luận: lỗi **không phải do bảng dài** mà do **văn phong hành chính chuẩn** (quốc hiệu, "Căn cứ Quyết định số …", "Điều 1/2/3", câu kết) trùng với hàng triệu văn bản công khai → bộ lọc chống chép của Google chặn. Không prompt nào tránh được chắc chắn.
+
+**Giải pháp: AI thành tùy chọn, không còn là điều kiện bắt buộc.**
+- Thêm hàm `soanTheoMau()` trong soan-mau: dựng thân văn bản bằng mã, theo đúng cấu trúc mẫu BV, nội dung riêng lấy từ **Ý chính người dùng đã gõ** (tờ trình: Kính gửi → căn cứ Điều lệ QĐ 73 → "kính trình … phê duyệt nội dung sau" → các gạch đầu dòng từ Ý chính → dẫn chiếu phụ lục → "Trân trọng kính trình./."; quyết định: căn cứ → QUYẾT ĐỊNH → Điều 1/2/3).
+- Thứ tự chạy: 4 lượt gọi Gemini (JSON) → 1 lượt **văn bản thuần** nhiệt độ 1,0 (đôi khi thoát được bộ lọc) → **dựng theo mẫu**. Luôn ra được văn bản.
+- Khi phải dựng theo mẫu, trả `canh_bao`, app hiện "⚠ AI đang bị chặn … đọc kỹ lại câu chữ, căn cứ, số liệu trước khi trình".
+- Kiểm thử: 7 bài mới cho `soanTheoMau` (đúng cấu trúc tờ trình/quyết định, căn cứ ghi rõ số ngày, không tự thêm kinh phí, quyết định không có Kính gửi).
+- BÀI HỌC: với văn bản hành chính theo khuôn mẫu, phần khung nên do MÃ dựng, chỉ để AI lo phần nội dung riêng. Đừng để cả quy trình phụ thuộc một dịch vụ AI có thể từ chối bất cứ lúc nào.
