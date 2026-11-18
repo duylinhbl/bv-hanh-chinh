@@ -259,3 +259,11 @@ Phát hiện từ tờ trình "ban hành định mức tuyến đường" ngày 
 - Ba mẫu có bảng chữ ký 3 cột (tt_giam_doc, tt_ho_tro_ksk, tt_phe_duyet_du_toan): cột 1 quá hẹp làm "PHÓ GIÁM ĐỐC" bị xuống dòng → nới cột thành 2450/3402/3788 twip và thu lề phải 2cm → 1,5cm (vẫn đúng NĐ30). Đã dựng thử và xem bản in của cả 3 mẫu bảng + mẫu ký bằng tab.
 - Khối chữ ký 3 cột xuống dòng cho gọn: "KT.GIÁM ĐỐC / PHÓ GIÁM ĐỐC", "P. TÀI CHÍNH / KẾ TOÁN", "P. TỔ CHỨC / HÀNH CHÍNH" — mỗi ô 2 dòng. Nhờ vậy lề phải trả lại 2cm và bảng về bề ngang cũ 9356 twip (cột 2450/3402/3504).
 - Cách kiểm nhanh khi sửa mẫu: dựng thử file từ mẫu → `soffice --headless --convert-to pdf` → `pdftoppm` → xem ảnh. Xem XML không phát hiện được lỗi đậm/xuống dòng vì chúng thừa kế từ kiểu đoạn.
+
+## v78c – LỖI GỐC của "nút xác nhận không có gì xảy ra" (18/11/2026)
+Sau khi v77 cho hiện lý do lỗi, app báo rõ: `new row violates row-level security policy for table "cap_nhat_hien_trang"`.
+- **Nguyên nhân thật**: policy `ct_them` (INSERT) chỉ cho **người NHẬN** việc ghi cập nhật. Mọi thao tác của **người GIAO** — "Xác nhận đóng việc", "Trả lại để làm lại", "Kết thúc việc (hồ sơ đã hoàn chỉnh)" — đều ghi một dòng `cap_nhat_hien_trang` nên bị máy chủ chặn. App thì nuốt lỗi (chỉ `console.warn`) nên nhìn như bấm không ăn. Đây là lý do 3 việc nằm mãi ở "Chờ xác nhận".
+- **Sửa**: `ct_them` cho phép `nguoi_id` là người nhận **hoặc** người giao của việc đó. Không nới cho ai khác.
+- Thêm bài kiểm thử DB `kiem_thu_them()` (E1) và cho `kiem_thu_va_bao()` chạy luôn bộ này, để lần sau siết RLS mà quên người giao thì 03:30 đêm có cảnh báo.
+- Nhân tiện vá 2 bài đang đỏ của `kiem_thu()`: thu hồi quyền ghi của `anon` ở 4 bảng mới (file_chat, loai_cong_viec, mau_van_ban, van_ban_viec) và thêm 5 index cho khóa ngoại. Hiện **23/23 + 1 bài đều đạt**.
+- BÀI HỌC: thêm bảng/tính năng mới phải rà lại cả hai phía — ai ĐƯỢC GHI (policy INSERT) chứ không chỉ ai được xem; và app không bao giờ được nuốt lỗi gửi dữ liệu.
