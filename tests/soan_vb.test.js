@@ -31,12 +31,10 @@ const path = require('path'), root = path.join(__dirname, '..');
     document.getElementById('nd').innerHTML = '<div id="sob"></div>';
     window.BVAPP.khungSoan(document.getElementById('sob'), document.getElementById('sob'), 'v1', 'v1/f.xlsx', KQ);
   });
-  await p.waitForSelector('#vnguon', { timeout: 5000 });
-  const opt = await p.$$eval('#vnguon option', os => os.map(o => [o.value, o.textContent, o.selected]));
-  kiem(opt.length === 3 && opt[1][2] === true && /mới nhất/i.test(opt[1][1]), 'mặc định chọn kết quả AI mới nhất, không phải cái đầu tiên');
-  kiem(/ĐỊNH MỨC CHỐT/.test(await p.textContent('#vnxem')), 'xem trước đúng nội dung kết quả mới nhất');
+  await p.waitForSelector('#vsoan', { timeout: 5000 });
+  kiem(await p.$('#vnguon') === null, 'không thêm ô chọn nguồn số liệu cho rối, cứ lấy kết quả AI cuối cùng');
   let c = await p.evaluate(() => window.calls);
-  kiem(c[0][1].action === 'goi_y' && /ĐỊNH MỨC CHỐT/.test(c[0][1].ket_qua_ai) && !/lần 1/.test(c[0][1].ket_qua_ai), 'gợi ý loại văn bản cũng dùng kết quả mới nhất');
+  kiem(c[0][1].action === 'goi_y' && /ĐỊNH MỨC CHỐT/.test(c[0][1].ket_qua_ai) && !/lần 1/.test(c[0][1].ket_qua_ai), 'gợi ý loại văn bản dùng kết quả AI cuối cùng');
 
   await p.waitForFunction(() => document.querySelector('.vck:checked'), null, { timeout: 5000 });
   await p.evaluate(() => { window.calls = []; });
@@ -44,16 +42,6 @@ const path = require('path'), root = path.join(__dirname, '..');
   c = await p.evaluate(() => window.calls.filter(x => x[1].action === 'soan'));
   kiem(c.length === 1 && /ĐỊNH MỨC CHỐT/.test(c[0][1].ket_qua_ai) && c[0][1].file_path === 'v1/f.xlsx', 'bấm soạn: gửi kèm số liệu chốt mới nhất và cả tệp gốc');
 
-  // chọn bản cũ hơn
-  await p.selectOption('#vnguon', '0'); await p.evaluate(() => { window.calls = []; });
-  await p.click('#vsoan'); await p.waitForTimeout(400);
-  c = await p.evaluate(() => window.calls.filter(x => x[1].action === 'soan'));
-  kiem(c.length === 1 && /lần 1/.test(c[0][1].ket_qua_ai), 'đổi sang kết quả AI lần trước thì gửi đúng bản đó');
-  // chỉ dùng tệp gốc
-  await p.selectOption('#vnguon', '-1'); await p.evaluate(() => { window.calls = []; });
-  await p.click('#vsoan'); await p.waitForTimeout(400);
-  c = await p.evaluate(() => window.calls.filter(x => x[1].action === 'soan'));
-  kiem(c.length === 1 && !c[0][1].ket_qua_ai, 'chọn "chỉ dùng tệp gốc" thì không gửi kết quả AI');
   kiem(errs.length === 0, 'không có lỗi JS' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); ket('soan_vb');
 })();

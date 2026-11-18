@@ -211,6 +211,6 @@ Cách nghĩ lấy từ ERP: mỗi LOẠI VIỆC là một quy trình có các b�
 ## v75 – Soạn tờ trình lấy KẾT QUẢ AI MỚI NHẤT, không lấy tệp gốc
 Lỗi: ở khung "Hỏi AI về tệp này", người dùng chat nhiều lượt để tính lại số liệu, nhưng bấm "Soạn tờ trình / quyết định từ file này" thì `soan-mau` **không hề đọc hội thoại** — nó chỉ đọc việc + nội dung tệp gốc, nên văn bản ra toàn số cũ.
 - App gom các câu trả lời của AI trong khung chat (dài hơn 60 ký tự) rồi truyền sang khung soạn.
-- Khung soạn thêm mục **⓪ Số liệu đưa vào văn bản**: mặc định **Kết quả AI mới nhất**, chọn được kết quả lần trước, hoặc "Không dùng, chỉ lấy nội dung tệp gốc". Có ô xem trước.
+- Khung soạn luôn lấy **câu trả lời cuối cùng của AI**, không hiện ô chọn nguồn (đã thử ô chọn ở v75, bỏ ở v76 vì rối — người dùng tự bảo AI đưa bản đầy đủ rồi mới bấm soạn).
 - Gửi kèm `ket_qua_ai` ở cả `goi_y` và `soan` (kể cả khi bấm "Chỉnh & soạn lại").
 - soan-mau (v9): dựng prompt với "SỐ LIỆU CHỐT — BẮT BUỘC DÙNG" đặt trên, còn tệp gốc hạ xuống "TỆP GỐC (chỉ để hiểu bối cảnh, số liệu ĐÃ CŨ, không đưa vào văn bản)". Giới hạn 25.000 ký tự.
