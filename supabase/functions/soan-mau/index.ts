@@ -24,7 +24,9 @@ Quy tắc:
 - Chỉ dùng căn cứ pháp lý có trong mẫu tham khảo hoặc người dùng cung cấp; không tự thêm điều luật.
 - BẢNG: khi nội dung là danh mục/bảng số liệu từ Excel thì dựng bảng ĐẦY ĐỦ: giữ ĐÚNG và ĐỦ các cột, đúng thứ tự và tên cột của Excel (tối đa 8 cột; tuyệt đối không bỏ cột nào, đặc biệt các cột định mức/số km, kể cả cột định mức của bệnh viện nếu có trong Excel hoặc trong yêu cầu), giữ ĐỦ các hàng (đến 100 hàng), mỗi hàng một dòng riêng dạng "ô 1 | ô 2 | ô 3", ô ngắn gọn. Không dán nguyên dữ liệu Excel vào một dòng.
 - Quyết định KHÔNG có dòng "Kính gửi".
-- PHỤ LỤC: khi người soạn yêu cầu tách phụ lục, hoặc bảng dài quá 10 hàng, thì KHÔNG để bảng trong thân văn bản. Thân văn bản chỉ dẫn chiếu "(chi tiết theo Phụ lục đính kèm)". Đặt phụ lục ở CUỐI, bắt đầu bằng một dòng chỉ có chữ "PHỤ LỤC", dòng kế là tên phụ lục, rồi dòng "(Đính kèm Tờ trình số [ ] ngày [ ] tháng [ ] năm [ ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)", rồi mới đến bảng. Hệ thống sẽ tự tách phần từ chữ "PHỤ LỤC" trở đi thành MỘT FILE WORD RIÊNG.
+- KINH PHÍ: CHỈ đưa mục "Kinh phí và nguồn kinh phí" khi việc này THỰC SỰ CHI TIỀN (mua sắm, sửa chữa, thuê dịch vụ, chi hỗ trợ, thanh toán, phê duyệt dự toán) hoặc người soạn có nêu số tiền. Việc ban hành/phê duyệt định mức, danh mục, quy trình, quy chế, cơ cấu tổ chức, kế hoạch công tác, báo cáo, nhân sự thì TUYỆT ĐỐI KHÔNG có mục kinh phí và KHÔNG đưa "Phòng Tài chính Kế toán" vào phần Kính gửi. Không bao giờ bịa câu "chi từ nguồn kinh phí hoạt động thường xuyên".
+- CĂN CỨ phải nêu RÕ văn bản: số, ngày tháng năm, cơ quan ban hành, trích yếu. Căn cứ Điều lệ bệnh viện ghi nguyên văn: "Căn cứ Quyết định số 73/QĐ-HĐTV-CSDT ngày 05 tháng 5 năm 2017 của Hội đồng thành viên Công ty TNHH MTV Cao su Dầu Tiếng về việc ban hành Điều lệ tổ chức và hoạt động của Bệnh viện đa khoa Cao su Dầu Tiếng;". Cấm viết căn cứ chung chung kiểu "Căn cứ Điều lệ tổ chức và hoạt động của Bệnh viện đã được phê duyệt". Chưa biết số/ngày thì để [ ], không bỏ trống cũng không bịa.
+- PHỤ LỤC: khi người soạn yêu cầu tách phụ lục, hoặc bảng dài quá 10 hàng, thì KHÔNG để bảng trong thân văn bản. Thân văn bản chỉ dẫn chiếu "(chi tiết theo Phụ lục đính kèm)". Đặt phụ lục ở CUỐI, bắt đầu bằng một dòng chỉ có chữ "PHỤ LỤC", dòng kế là tên phụ lục, rồi dòng "(Đính kèm Tờ trình số [ ] ngày [ ] tháng [ ] năm [ ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)", rồi mới đến bảng. Hệ thống sẽ tự tách phần từ chữ "PHỤ LỤC" trở đi thành MỘT FILE WORD RIÊNG. Đã nhắc "Phụ lục đính kèm" trong thân văn bản thì BẮT BUỘC phải có phần PHỤ LỤC ở cuối với BẢNG ĐỦ CỘT ĐỦ HÀNG; tuyệt đối không nhắc phụ lục rồi bỏ trống.
 - Nội dung chính (Điều 1 / phần đề nghị) phải nói ĐÚNG đối tượng của việc được giao và ý của người soạn (VD: phê duyệt định mức thì viết định mức, không đổi thành kế hoạch hay việc khác). Chỉ dùng căn cứ liên quan trực tiếp, không chép căn cứ của việc khác. Theo cấu trúc chuẩn trong mẫu tham khảo.
 Trả về JSON: {"ve_viec": "trích yếu ngắn, viết thường, không có chữ 'Về việc', không dấu chấm cuối", "noi_dung": "thân văn bản"}.`;
 
@@ -59,7 +61,7 @@ function bangXml(rows: string[][], _pr: any, W: number): string {
   const w0 = hep(h0[0]) ? 700 : 0;
   const cw = (i: number) => w0 ? (i === 0 ? w0 : Math.floor((W - w0) / (n - 1))) : Math.floor(W / n);
   const tot = Array.from({ length: n }, (_, i) => cw(i)).reduce((a, b) => a + b, 0);
-  const ro = (b: boolean) => `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>${b ? '<w:b/><w:bCs/>' : ''}<w:sz w:val="26"/><w:szCs w:val="26"/><w:lang w:val="nl-NL"/></w:rPr>`;
+  const ro = (b: boolean) => `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>${b ? '<w:b/><w:bCs/>' : '<w:b w:val="0"/><w:bCs w:val="0"/>'}<w:sz w:val="26"/><w:szCs w:val="26"/><w:lang w:val="nl-NL"/></w:rPr>`;
   const soCot = (c: string) => /^[\d.,\s-]+$/.test(c.trim());
   const tr = rows.map((r, ri) => '<w:tr>' + (ri === 0 ? '<w:trPr><w:tblHeader/></w:trPr>' : '<w:trPr><w:cantSplit/></w:trPr>') + Array.from({ length: n }, (_, i) => {
     const t = r[i] || '', ctr = ri === 0 || i === 0 || soCot(t);
@@ -71,8 +73,8 @@ function bangXml(rows: string[][], _pr: any, W: number): string {
 
 function ghepWord(mau: { docx: Uint8Array; protos: any }, veViec: string, noi: string, ngay: { d: string; m: string; y: string }, laTT = false): Uint8Array {
   const pr = mau.protos;
-  const RP = '<ns0:rPr><ns0:sz ns0:val="26"/><ns0:szCs ns0:val="26"/><ns0:lang ns0:val="nl-NL"/></ns0:rPr>';
-  const RB = '<ns0:rPr><ns0:b/><ns0:sz ns0:val="26"/><ns0:szCs ns0:val="26"/><ns0:lang ns0:val="nl-NL"/></ns0:rPr>';
+  const RP = '<ns0:rPr><ns0:b ns0:val="0"/><ns0:bCs ns0:val="0"/><ns0:i ns0:val="0"/><ns0:sz ns0:val="26"/><ns0:szCs ns0:val="26"/><ns0:lang ns0:val="nl-NL"/></ns0:rPr>';
+  const RB = '<ns0:rPr><ns0:b/><ns0:bCs/><ns0:i ns0:val="0"/><ns0:sz ns0:val="26"/><ns0:szCs ns0:val="26"/><ns0:lang ns0:val="nl-NL"/></ns0:rPr>';
   const run = (t: string, b = false) => t ? `<ns0:r>${b ? RB : RP}<ns0:t xml:space="preserve">${esc(t)}</ns0:t></ns0:r>` : '';
   const jc = (p: string, v: string) => p.replace(/<ns0:jc [^>]*\/>/, '').replace(/(<ns0:pPr>[\s\S]*?)(<ns0:rPr>|<\/ns0:pPr>)/, `$1<ns0:jc ns0:val="${v}"/>$2`);
   const body = (k: string, runs: string, ind: string, v: string) => {
@@ -134,7 +136,7 @@ function phuLucDocx(noi: string): Uint8Array {
   const soCot = Math.max(0, ...dong.filter((l) => l.includes(' | ')).map((l) => l.split('|').length));
   const ngang = soCot >= 6;
   const W = ngang ? 14570 : 9638;
-  const run = (t: string, b: boolean) => `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>${b ? '<w:b/><w:bCs/>' : ''}<w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
+  const run = (t: string, b: boolean) => `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>${b ? '<w:b/><w:bCs/>' : '<w:b w:val="0"/><w:bCs w:val="0"/>'}<w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
   const P = (t: string, giua: boolean, dam: boolean) => `<w:p><w:pPr><w:spacing w:before="60" w:after="60" w:line="300" w:lineRule="auto"/><w:jc w:val="${giua ? 'center' : 'both'}"/></w:pPr>${t ? run(t, dam) : ''}</w:p>`;
   const ps: string[] = []; let tb: string[][] = [];
   const flush = () => { if (tb.length) { ps.push(bangXml(tb, null, W)); tb = []; } };
@@ -249,7 +251,7 @@ Deno.serve(async (req) => {
     }
     const key = Deno.env.get('GEMINI_API_KEY');
     if (!key) return out({ loi: 'Chưa cài khóa Gemini (GEMINI_API_KEY).' }, 503);
-    const { data: bm } = await sv.from('bi_mat').select('k,v').in('k', ['ai_model', 'ai_tat']);
+    const { data: bm } = await sv.from('bi_mat').select('k,v').in('k', ['ai_model', 'ai_model_manh', 'ai_tat']);
     const cfg: Record<string, string> = Object.fromEntries((bm || []).map((x: any) => [x.k, x.v]));
     if (cfg.ai_tat === '1') return out({ loi: 'Trợ lý AI đang tạm tắt' }, 503);
 
@@ -286,12 +288,23 @@ Deno.serve(async (req) => {
     }
     const mau = await layMau(sv, m.ma);
     const nguoi = `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${kqAI ? '\n\nSỐ LIỆU CHỐT — BẮT BUỘC DÙNG (người soạn đã làm việc với AI trên tệp này và chốt kết quả dưới đây; mọi con số, danh sách, tên gọi trong văn bản phải lấy từ đây, KHÔNG lấy số cũ trong tệp gốc):\n' + kqAI : ''}${tep ? '\n\nTỆP GỐC' + (kqAI ? ' (chỉ để hiểu bối cảnh, số liệu trong đây ĐÃ CŨ, không đưa vào văn bản)' : ' (dữ liệu nguồn)') + ':\n' + tep : ''}${cu ? '\n\nVĂN BẢN ĐÃ SOẠN TRƯỚC ĐÓ (toàn văn, gồm cả phần khung đầu/cuối):\n' + cu + '\n\nĐây là yêu cầu CHỈNH SỬA: giữ nguyên phần đúng, chỉ sửa theo ý trong mục YÊU CẦU, trả về lại ĐẦY ĐỦ thân văn bản (không chỉ phần sửa).' : ''}`;
-    const txt = await goiGemini(key, cfg.ai_model || 'gemini-flash-lite-latest', {
-      systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: nguoi }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 8192, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
-    });
-    let kq: any; try { kq = JSON.parse(txt.replace(/^```json\s*|```$/g, '')); } catch (_) { return out({ loi: 'Gemini trả về sai định dạng, bồ bấm soạn lại.' }, 502); }
+    const soanMot = async (them: string) => {
+      const t = await goiGemini(key, cfg.ai_model_manh || cfg.ai_model || 'gemini-flash-latest', {
+        systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: nguoi + them }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 16384, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
+      });
+      return JSON.parse(t.replace(/^```json\s*|```$/g, ''));
+    };
+    let kq: any; try { kq = await soanMot(''); } catch (e) { const m2 = String((e as Error).message || e); return out({ loi: /Gemini/.test(m2) ? m2 : 'Gemini trả về sai định dạng, bồ bấm soạn lại.' }, 502); }
     if (!String(kq.noi_dung || '').trim()) return out({ loi: 'Gemini không soạn được nội dung, thử bổ sung yêu cầu.' }, 502);
+    // Nhắc "Phụ lục đính kèm" mà không xuất bảng phụ lục: soạn lại MỘT lần
+    const coPL = (x: string) => /^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im.test(x);
+    if (/phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung))) {
+      try {
+        const k2 = await soanMot('\n\nSỬA LẠI: bản vừa soạn có nhắc "Phụ lục đính kèm" nhưng THIẾU hẳn phần phụ lục. Soạn lại toàn bộ, cuối noi_dung phải có một dòng chỉ gồm chữ "PHỤ LỤC", dòng tên phụ lục, rồi BẢNG ĐẦY ĐỦ các hàng lấy từ số liệu chốt (mỗi hàng một dòng "ô 1 | ô 2 | ô 3").');
+        if (String(k2?.noi_dung || '').trim() && coPL(String(k2.noi_dung))) kq = k2;
+      } catch (_) { /* giữ bản đầu */ }
+    }
 
     const hn = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(new Date());
     const g = (t: string) => hn.find((p) => p.type === t)!.value;

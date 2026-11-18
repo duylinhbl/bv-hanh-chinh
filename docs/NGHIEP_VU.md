@@ -232,3 +232,22 @@ Nguyên nhân: hàng chờ offline (IndexedDB) bị **một bản ghi lỗi ch�
 
 **3. Đóng việc rồi vẫn còn trên màn hình**
 Cả ba nút kết thúc việc (xác nhận đóng ở chi tiết, "Kết thúc việc" trong khung soạn, trong thẻ văn bản) giờ **về danh sách** sau khi gửi xong, không vẽ lại chi tiết. Danh sách Việc/Giao vốn đã loại `da_dong`, nên việc đóng rồi biến khỏi màn hình.
+
+## v78 – Tờ trình: hết in đậm cả bài, có phụ lục thật, căn cứ rõ văn bản, biết việc nào có kinh phí
+Phát hiện từ tờ trình "ban hành định mức tuyến đường" ngày 18/11/2026 (anh Linh tô vàng chỗ sai).
+
+**1. Cả thân văn bản bị in đậm** — nguyên nhân: proto `thuong` trong `mau/tt_giam_doc.json` mang `pStyle="chuky"` (kiểu chữ ký, vốn in đậm), run của ta không ghi rõ đậm/không nên thừa kế kiểu đó. Sửa: mọi run thường ép `<w:b w:val="0"/><w:bCs w:val="0"/><w:i w:val="0"/>`, run đậm ép `<w:b/><w:bCs/>` (cả trong bảng và trong file phụ lục). Bài học: **ghép đoạn vào mẫu thì phải ghi rõ đậm/nghiêng ở cấp run**, đừng tin kiểu đoạn của mẫu.
+
+**2. Thân văn bản ghi "theo Phụ lục đính kèm" nhưng không có phụ lục, bảng danh mục biến mất** — model `gemini-flash-lite` bỏ hẳn bảng. Sửa 3 lớp:
+- Soạn văn bản dùng **model mạnh** `bi_mat.ai_model_manh` (= gemini-flash-latest, đã thêm vào bi_mat), maxOutputTokens 8192 → **16384**.
+- Prompt: đã nhắc "Phụ lục đính kèm" thì BẮT BUỘC có phần PHỤ LỤC với bảng đủ cột đủ hàng.
+- Máy chủ tự kiểm: nhắc phụ lục mà không có phần PHỤ LỤC thì **soạn lại một lần** kèm yêu cầu bổ sung bảng.
+
+**3. Căn cứ chung chung** ("Căn cứ Điều lệ tổ chức và hoạt động của Bệnh viện đã được phê duyệt;"). Quy tắc mới: căn cứ phải có **số, ngày tháng năm, cơ quan ban hành, trích yếu**; Điều lệ BV ghi nguyên văn "Căn cứ Quyết định số 73/QĐ-HĐTV-CSDT ngày 05 tháng 5 năm 2017 của Hội đồng thành viên Công ty TNHH MTV Cao su Dầu Tiếng về việc ban hành Điều lệ tổ chức và hoạt động của Bệnh viện đa khoa Cao su Dầu Tiếng;". Chưa biết số/ngày thì để [ ].
+
+**4. Việc nào CÓ kinh phí, việc nào KHÔNG** (anh Linh: "bồ phải hiểu cái nào có kinh phí và cái nào ko"):
+- CÓ mục "Kinh phí và nguồn kinh phí" + gửi Phòng Tài chính Kế toán: mua sắm, sửa chữa, thuê dịch vụ, chi hỗ trợ, thanh toán, phê duyệt dự toán — hoặc người soạn có nêu số tiền.
+- KHÔNG có mục kinh phí, cũng không gửi TCKT: ban hành/phê duyệt định mức, danh mục, quy trình, quy chế, cơ cấu tổ chức, kế hoạch công tác, báo cáo, nhân sự.
+- Cấm bịa câu "chi từ nguồn kinh phí hoạt động thường xuyên". Quy tắc ghi cả trong prompt lẫn trong `mau_van_ban.mau_text` của tt_giam_doc.
+
+**Còn tồn:** cả 9 khung mẫu trong `mau/` đều ghi địa danh **"Tp.Hồ Chí Minh"** ở dòng ngày tháng (chép từ file gốc). Bệnh viện ở Dầu Tiếng — chờ anh Linh xác nhận để sửa một lượt.
