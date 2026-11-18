@@ -14,7 +14,7 @@ const duoiTep=n=>((n||'').split('.').pop()||'').toLowerCase();
 const kiemTep=f=>!f?null:!TEP_DUOI.includes(duoiTep(f.name))?'Chỉ nhận file Word (.doc, .docx), Excel (.xls, .xlsx) hoặc PDF':f.size>TEP_MAX?'File quá 10 MB':null;
 const bieuTuongTep=n=>/^xls/.test(duoiTep(n))?'📊':duoiTep(n)==='pdf'?'📕':/^(jpe?g|png|webp)$/.test(duoiTep(n))?'🖼':'📄';
 async function linkTep(path,ten){const r=await sb.storage.from('anh').createSignedUrl(path,3600,{download:ten||true});return r.data?.signedUrl||null}
-window.BVAPP={xoaMuc,sb,$,esc,fmt,toast,troLy,chiTiet,veTab(t){tab=t;ve()},get me(){return me}};
+window.BVAPP={xoaMuc,sb,$,esc,fmt,toast,troLy,chiTiet,khungSoan,veTab(t){tab=t;ve()},get me(){return me}};
 function toast(m){const t=$('#toast');t.textContent=m;t.className='on';setTimeout(()=>t.className='',2600)}
 const tag=s=>`<span class="tag ${s==='da_dong'?'grn':s==='cho_xac_nhan'?'amb':''}">${TT[s]||s}</span>`;
 
@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v74</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v75</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -230,7 +230,8 @@ function khungAI(ov,viecId,path,ten){
   $('#aimau').onclick=()=>{const so=document.createElement('div');so.className='vw';
     so.innerHTML='<div class="vwh"><b>📝 Soạn văn bản từ file này</b><span><button class="sec" id="sox">✕ Đóng</button></span></div><div class="vwb" id="sob" style="overflow:auto"></div>';
     document.body.appendChild(so);$('#sox').onclick=()=>{if(so.dataset.vb)ov.dataset.vb=1;so.remove()};
-    khungSoan($('#sob'),so,viecId,path)};
+    const kq=[...m.querySelectorAll('.aib.m .ait')].map(e=>e.textContent.trim()).filter(t=>t.length>60&&!/^⚠/.test(t));
+    khungSoan($('#sob'),so,viecId,path,kq)};
   if(/^docx$/.test(duoiTep(ten))){const bt=document.createElement('button');bt.id='aidc';bt.style.cssText='background:#0f766e;color:#fff';bt.textContent='🔎 Đối chiếu với hồ sơ trong thư mục Drive';p.querySelector('.aiq').prepend(bt);
     bt.onclick=()=>doiChieuUI(viecId,path)}
   p.querySelectorAll('.aiq button[data-g]').forEach(x=>x.onclick=()=>{const g=GOI_Y[+x.dataset.g];if(g[2]){$('#aiq').value=g[1];$('#aiq').focus()}else gui(g[1])});
@@ -451,12 +452,18 @@ async function troLy(viecId){
   if(lv())duyet(idTM(v.thu_muc_dc)||'');else if(teps.length)goiY();
 }
 // Soạn tờ trình / quyết định theo mẫu bệnh viện: 1 màn hình, AI tự gợi ý loại + ý chính
-async function khungSoan(k,ov,viecId,path){
+async function khungSoan(k,ov,viecId,path,aiKQ){
   k.innerHTML='<div style="padding:14px"><p class="mut">🤖 AI đang đọc file và gợi ý loại văn bản…</p></div>';
   const [{data:mau},{data:vv}]=await Promise.all([sb.from('mau_van_ban').select('ma,ten,loai,mo_ta').eq('hoat_dong',true).order('thu_tu'),sb.from('viec').select('nguoi_giao,trang_thai').eq('id',viecId).single()]);
   const choKet=vv&&vv.nguoi_giao===me.id&&vv.trang_thai!=='da_dong';
-  const goiYP=goiVB({action:'goi_y',viec_id:viecId,file_path:path});
+  const KQ=Array.isArray(aiKQ)?aiKQ:[];
+  let nguon=KQ.length?KQ.length-1:-1; // -1 = chỉ dùng tệp gốc
+  const layKQ=()=>nguon>=0?KQ[nguon]:'';
+  const goiYP=goiVB({action:'goi_y',viec_id:viecId,file_path:path,ket_qua_ai:layKQ()});
   k.innerHTML=`<div class="aisoan">
+  ${KQ.length?`<b>⓪ Số liệu đưa vào văn bản</b> <span class="mut">(bạn vừa làm việc với AI trên tệp này)</span>
+  <select id="vnguon">${KQ.map((t,i)=>`<option value="${i}" ${i===KQ.length-1?'selected':''}>${i===KQ.length-1?'Kết quả AI mới nhất':'Kết quả AI lần '+(i+1)}: ${esc(t.slice(0,60).replace(/\s+/g,' '))}…</option>`).join('')}<option value="-1">Không dùng, chỉ lấy nội dung tệp gốc</option></select>
+  <div class="mut" id="vnxem" style="max-height:92px;overflow:auto;white-space:pre-wrap;border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0"></div>`:''}
   <b>① Loại văn bản</b> <span class="mut" id="vgy">(AI đang gợi ý…)</span>
   ${(mau||[]).map(m=>`<label class="vlb"><input type="radio" name="vmau" class="vck" value="${m.ma}"><span><b>${esc(m.ten)}</b><br><span class="mut">${esc(m.mo_ta||'')}</span></span></label>`).join('')}
   <b>② Ý chính</b> <span class="mut">(AI viết sẵn, bạn sửa lại cho đúng ý)</span>
@@ -465,6 +472,8 @@ async function khungSoan(k,ov,viecId,path){
   <p class="mut" id="vtt"></p><div id="vkq"></div></div>
   <div class="vfoot"><button id="vluu" class="full" disabled>💾 Lưu</button><button id="vtai" class="sec" disabled>⬇ Tải Word</button>${choKet?'<button id="vket" class="full" style="background:#15803d">✔ Kết thúc việc</button>':''}</div>`;
   const kq=$('#vkq'),DS=[];
+  if($('#vnguon')){const xem=()=>{$('#vnxem').textContent=nguon>=0?KQ[nguon].slice(0,600):'Chỉ dùng số liệu trong tệp gốc.'};xem();
+    $('#vnguon').onchange=()=>{nguon=+$('#vnguon').value;xem()}}
   goiYP.then(r=>{
     if(r.mau_ma){const x=k.querySelector(`.vck[value="${r.mau_ma}"]`);if(x)x.checked=true}
     if(r.y_chinh&&!$('#vyc').value)$('#vyc').value=r.y_chinh;
@@ -480,7 +489,7 @@ async function khungSoan(k,ov,viecId,path){
     d.querySelector('[data-x]').onclick=()=>xem(r);
     d.querySelector('[data-c]').onclick=()=>{const f=d.querySelector('[data-cf]');f.style.display=f.style.display==='none'?'block':'none'};
     d.querySelector('[data-cg]').onclick=async e=>{const t=d.querySelector('textarea').value.trim();if(!t)return toast('Ghi chỗ cần chỉnh');const b=e.target;b.disabled=true;b.textContent='Đang chỉnh…';
-      const x=await goiVB({action:'soan',viec_id:viecId,mau_ma:r.mau,file_path:path,van_ban_cu:r.id,yeu_cau:'CHỈNH SỬA văn bản đã soạn theo ý sau: '+t});
+      const x=await goiVB({action:'soan',viec_id:viecId,mau_ma:r.mau,file_path:path,van_ban_cu:r.id,ket_qua_ai:layKQ(),yeu_cau:'CHỈNH SỬA văn bản đã soạn theo ý sau: '+t});
       if(x.loi){b.disabled=false;b.textContent='Chỉnh & soạn lại';return toast(x.loi)}
       const n={id:x.id,ten:x.ten,mau:r.mau,luu:false,text:x.text};DS.splice(DS.indexOf(r),1,n);ve(n);kq.insertBefore(n.el,d);d.remove();capNhatNut();xem(n)};
     if(!d.parentNode)kq.appendChild(d)};
@@ -489,7 +498,7 @@ async function khungSoan(k,ov,viecId,path){
     if(!ma)return toast('Chọn loại văn bản ở bước ①');
     if(!$('#vyc').value.trim())return toast('Nhập ý chính ở bước ②');
     const b=$('#vsoan');b.disabled=true;$('#vtt').textContent='⏳ AI đang viết vào khung Word của bệnh viện… (khoảng 10–40 giây)';
-    const r=await goiVB({action:'soan',viec_id:viecId,mau_ma:ma,file_path:path,yeu_cau:$('#vyc').value.trim()});
+    const r=await goiVB({action:'soan',viec_id:viecId,mau_ma:ma,file_path:path,ket_qua_ai:layKQ(),yeu_cau:$('#vyc').value.trim()});
     b.disabled=false;
     if(r.loi){$('#vtt').textContent='⚠ '+r.loi;return}
     ov.dataset.vb=1;const o={id:r.id,ten:r.ten,mau:ma,luu:false,text:r.text};DS.push(o);ve(o);capNhatNut();
