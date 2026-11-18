@@ -288,12 +288,20 @@ Deno.serve(async (req) => {
     }
     const mau = await layMau(sv, m.ma);
     const nguoi = `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${kqAI ? '\n\nSỐ LIỆU CHỐT — BẮT BUỘC DÙNG (người soạn đã làm việc với AI trên tệp này và chốt kết quả dưới đây; mọi con số, danh sách, tên gọi trong văn bản phải lấy từ đây, KHÔNG lấy số cũ trong tệp gốc):\n' + kqAI : ''}${tep ? '\n\nTỆP GỐC' + (kqAI ? ' (chỉ để hiểu bối cảnh, số liệu trong đây ĐÃ CŨ, không đưa vào văn bản)' : ' (dữ liệu nguồn)') + ':\n' + tep : ''}${cu ? '\n\nVĂN BẢN ĐÃ SOẠN TRƯỚC ĐÓ (toàn văn, gồm cả phần khung đầu/cuối):\n' + cu + '\n\nĐây là yêu cầu CHỈNH SỬA: giữ nguyên phần đúng, chỉ sửa theo ý trong mục YÊU CẦU, trả về lại ĐẦY ĐỦ thân văn bản (không chỉ phần sửa).' : ''}`;
+    // Ưu tiên model mạnh (bảng dài không bị cắt); nó quá tải hay hết hạn mức thì tự tụt xuống model nhẹ
+    const dsModel = [...new Set([cfg.ai_model_manh || 'gemini-flash-latest', cfg.ai_model || 'gemini-flash-lite-latest'])];
     const soanMot = async (them: string) => {
-      const t = await goiGemini(key, cfg.ai_model_manh || cfg.ai_model || 'gemini-flash-latest', {
-        systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: nguoi + them }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 16384, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
-      });
-      return JSON.parse(t.replace(/^```json\s*|```$/g, ''));
+      let loi: unknown = null;
+      for (const mo of dsModel) {
+        try {
+          const t = await goiGemini(key, mo, {
+            systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: nguoi + them }] }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 16384, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
+          });
+          return JSON.parse(t.replace(/^```json\s*|```$/g, ''));
+        } catch (e) { loi = e; }
+      }
+      throw loi;
     };
     let kq: any; try { kq = await soanMot(''); } catch (e) { const m2 = String((e as Error).message || e); return out({ loi: /Gemini/.test(m2) ? m2 : 'Gemini trả về sai định dạng, bồ bấm soạn lại.' }, 502); }
     if (!String(kq.noi_dung || '').trim()) return out({ loi: 'Gemini không soạn được nội dung, thử bổ sung yêu cầu.' }, 502);

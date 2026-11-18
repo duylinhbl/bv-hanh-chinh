@@ -267,3 +267,8 @@ Sau khi v77 cho hiện lý do lỗi, app báo rõ: `new row violates row-level s
 - Thêm bài kiểm thử DB `kiem_thu_them()` (E1) và cho `kiem_thu_va_bao()` chạy luôn bộ này, để lần sau siết RLS mà quên người giao thì 03:30 đêm có cảnh báo.
 - Nhân tiện vá 2 bài đang đỏ của `kiem_thu()`: thu hồi quyền ghi của `anon` ở 4 bảng mới (file_chat, loai_cong_viec, mau_van_ban, van_ban_viec) và thêm 5 index cho khóa ngoại. Hiện **23/23 + 1 bài đều đạt**.
 - BÀI HỌC: thêm bảng/tính năng mới phải rà lại cả hai phía — ai ĐƯỢC GHI (policy INSERT) chứ không chỉ ai được xem; và app không bao giờ được nuốt lỗi gửi dữ liệu.
+
+## v78d – Model mạnh quá tải thì tự tụt xuống model nhẹ (18/11/2026)
+- Sau khi chuyển soạn văn bản sang model mạnh (v78), Gemini báo "đang quá tải" (503) và chặn luôn việc soạn.
+- `soan-mau` v12: thử lần lượt `ai_model_manh` → `ai_model`. Model nào quá tải/hết hạn mức thì tự chuyển, chỉ báo lỗi khi cả hai đều không được. Người dùng không còn phải ngồi chờ bấm lại.
+- Lưu ý: bản nhẹ dễ cắt bớt bảng dài; nếu rơi xuống bản nhẹ mà thiếu phụ lục thì cơ chế "soạn lại một lần" của v78 vẫn chạy.
