@@ -202,3 +202,8 @@ Cách nghĩ lấy từ ERP: mỗi LOẠI VIỆC là một quy trình có các b�
 - Bộ riêng: Mua sắm (Báo giá → Tờ trình → Quyết định → Hợp đồng → Nghiệm thu → Đề nghị thanh toán, đúng cách đặt tên thư mục trong Drive); Kiểm định thiết bị bức xạ (5 bước); Tuyển dụng (6 bước); Giấy phép (5 bước); Công văn/tờ trình chung (Soạn → Trình ký → Vào sổ văn thư → Phát hành → Lưu hồ sơ).
 - CỐ Ý để trống (việc không có quy trình cố định, ép bước chỉ thêm phiền): Chi phí - lương - BHXH, Thi đua khen thưởng, Quy trình - quy chế - cơ cấu tổ chức. Việc vặt không chọn loại cũng chạy không bước như cũ.
 - Thêm bước cho loại việc KHÔNG ảnh hưởng việc đang chạy: bước chỉ được chép vào việc lúc giao việc mới, hoặc khi người giao bấm "Áp quy trình".
+
+## v74 – Màn Việc / Giao chỉ hiện việc sắp tới hạn
+- Giao: 1 tháng → **7 ngày**, và bỏ việc đã đóng ra khỏi danh sách thẻ.
+- Cả hai màn: xếp **hạn gần nhất lên trước** (trước đây màn Giao xếp theo ngày tạo nên nhìn như lộn xộn), việc chưa có hạn xuống cuối.
+- Tối đa **6 thẻ** mỗi màn (TOI_DA_THE trong app.js). Phần còn lại đã có trong bảng "Việc trong năm" bên cạnh, nên không mất việc nào.
