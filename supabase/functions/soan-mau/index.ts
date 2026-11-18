@@ -180,12 +180,14 @@ async function xlsxText(buf: Uint8Array): Promise<string> {
   return s;
 }
 
-async function goiGemini(key: string, model: string, payload: any) {
+async function goiGemini(key: string, model: string, payload: any, hanChot = 0) {
   const t0 = Date.now(); let r!: Response;
+  const conLai = () => (hanChot ? hanChot - Date.now() : 50000);
   for (let k = 0; ; k++) {
-    try { r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(payload), signal: AbortSignal.timeout(50000) }); }
-    catch (_) { if (k >= 2 || Date.now() - t0 > 100000) throw new Error('Gemini trả lời quá lâu hoặc mất kết nối, bồ thử lại sau ít phút.'); continue; }
-    if ((r.status === 503 || r.status === 500) && k < 4 && Date.now() - t0 < 90000) { await nghi(2500 * (k + 1)); continue; }
+    if (conLai() < 8000) throw new Error('Gemini trả lời quá lâu, bồ bấm soạn lại.');
+    try { r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(payload), signal: AbortSignal.timeout(Math.min(50000, Math.max(8000, conLai()))) }); }
+    catch (_) { if (k >= 2 || Date.now() - t0 > 100000 || conLai() < 12000) throw new Error('Gemini trả lời quá lâu hoặc mất kết nối, bồ thử lại sau ít phút.'); continue; }
+    if ((r.status === 503 || r.status === 500) && k < 4 && Date.now() - t0 < 90000 && conLai() > 20000) { await nghi(2500 * (k + 1)); continue; }
     break;
   }
   const j: any = await r.json().catch(() => ({}));
@@ -276,7 +278,7 @@ Deno.serve(async (req) => {
         systemInstruction: { parts: [{ text: 'Bạn là trợ lý của Phòng Tổ chức Hành chính bệnh viện. Đọc việc được giao và dữ liệu tệp, chọn loại văn bản cần soạn phù hợp nhất trong danh sách, và viết sẵn y_chinh: 2-4 câu tóm tắt ý chính cần trình/quyết định (nội dung, số liệu chính lấy từ tệp, đối tượng, thời gian; chỗ chưa rõ ghi [ ]). Không bịa số. Chỉ trả JSON.' }] },
         contents: [{ role: 'user', parts: [{ text: `VIỆC: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nDANH SÁCH LOẠI VĂN BẢN:\n${ls}${kqAI ? '\n\nSỐ LIỆU CHỐT (người dùng đã làm việc với AI về tệp này, DÙNG CÁI NÀY):\n' + kqAI : ''}\n\nDỮ LIỆU TỆP GỐC${kqAI ? ' (chỉ tham khảo, số liệu đã cũ)' : ''}:\n${tep || '(không đọc được tệp)'}` }] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 1024, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { mau_ma: { type: 'STRING' }, y_chinh: { type: 'STRING' } }, required: ['mau_ma', 'y_chinh'] } },
-      });
+      }, Date.now() + 60000);
       let g: any = {}; try { g = JSON.parse(tx.replace(/^```json\s*|```$/g, '')); } catch (_) { /* bỏ qua */ }
       const hop = (ds || []).some((x: any) => x.ma === g.mau_ma);
       return out({ ok: true, mau_ma: hop ? g.mau_ma : '', y_chinh: String(g.y_chinh || '') });
@@ -292,26 +294,28 @@ Deno.serve(async (req) => {
     // Gemini báo RECITATION (bản thảo giống nguyên văn tài liệu nguồn) -> thử lại: bỏ TỆP GỐC, tăng temperature, bắt diễn đạt lại.
     const dsModel = [...new Set([cfg.ai_model_manh || 'gemini-flash-latest', cfg.ai_model || 'gemini-flash-lite-latest'])];
     const DIEN_LAI = '\n\nLƯU Ý: hãy TỰ DIỄN ĐẠT bằng lời văn hành chính của bạn, không chép nguyên văn đoạn dài nào từ tài liệu nguồn. Số liệu trong bảng giữ nguyên, nhưng câu chữ phải do bạn viết.';
+    const HAN_CHOT = Date.now() + 115000; // Edge Function bị cắt (lỗi 546) nếu chạy quá lâu
     const soanMot = async (them: string) => {
       const lan: { mo: string; t: number; tep: boolean; nhac: string }[] = [];
       for (const mo of dsModel) { lan.push({ mo, t: 0.3, tep: true, nhac: '' }); lan.push({ mo, t: 0.9, tep: false, nhac: DIEN_LAI }); }
       let loi: unknown = null;
       for (const l of lan) {
+        if (HAN_CHOT - Date.now() < 10000) break;
         try {
           const t = await goiGemini(key, l.mo, {
             systemInstruction: { parts: [{ text: HE_THONG }] }, contents: [{ role: 'user', parts: [{ text: dungNguoi(l.tep) + them + l.nhac }] }],
             generationConfig: { temperature: l.t, maxOutputTokens: 16384, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { ve_viec: { type: 'STRING' }, noi_dung: { type: 'STRING' } }, required: ['ve_viec', 'noi_dung'] } },
-          });
+          }, HAN_CHOT);
           return JSON.parse(t.replace(/^```json\s*|```$/g, ''));
         } catch (e) { loi = e; }
       }
-      throw loi;
+      throw loi || new Error('Gemini soạn lâu quá nên máy chủ dừng, bồ bấm soạn lại.');
     };
     let kq: any; try { kq = await soanMot(''); } catch (e) { const m2 = String((e as Error).message || e); return out({ loi: /Gemini/.test(m2) ? m2 : 'Gemini trả về sai định dạng, bồ bấm soạn lại.' }, 502); }
     if (!String(kq.noi_dung || '').trim()) return out({ loi: 'Gemini không soạn được nội dung, thử bổ sung yêu cầu.' }, 502);
     // Nhắc "Phụ lục đính kèm" mà không xuất bảng phụ lục: soạn lại MỘT lần
     const coPL = (x: string) => /^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im.test(x);
-    if (/phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung))) {
+    if (/phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung)) && HAN_CHOT - Date.now() > 25000) {
       try {
         const k2 = await soanMot('\n\nSỬA LẠI: bản vừa soạn có nhắc "Phụ lục đính kèm" nhưng THIẾU hẳn phần phụ lục. Soạn lại toàn bộ, cuối noi_dung phải có một dòng chỉ gồm chữ "PHỤ LỤC", dòng tên phụ lục, rồi BẢNG ĐẦY ĐỦ các hàng lấy từ số liệu chốt (mỗi hàng một dòng "ô 1 | ô 2 | ô 3").');
         if (String(k2?.noi_dung || '').trim() && coPL(String(k2.noi_dung))) kq = k2;

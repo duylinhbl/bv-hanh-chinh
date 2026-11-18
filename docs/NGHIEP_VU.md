@@ -281,3 +281,10 @@ Sau khi v77 cho hiện lý do lỗi, app báo rõ: `new row violates row-level s
 **2. Bấm "Tờ trình" mà nhảy xuống "Quyết định"** — gợi ý loại văn bản của AI về sau mới tới và **ghi đè lựa chọn người dùng vừa bấm**.
 - App: đánh dấu khi người dùng tự chọn; gợi ý AI tới sau chỉ điền khi người dùng **chưa** chọn. Nhãn đổi thành "(bạn đã chọn)".
 - Thêm kiểm thử: gợi ý AI trả về chậm 600ms, người dùng bấm trước → lựa chọn của người dùng phải giữ nguyên.
+
+## v80 – Lỗi 546: Edge Function chạy quá lâu bị cắt (18/11/2026)
+Màn hình báo cụt lủn "Edge Function returned a non-2xx status code". Nhật ký Supabase: **POST soan-mau → 546** (máy chủ cắt vì chạy quá thời gian cho phép).
+- Nguyên nhân: v79 cho thử tới 4 lượt, mà mỗi lượt khi Gemini báo quá tải lại còn tự thử lại trong ~90 giây → cộng dồn vượt giới hạn.
+- `soan-mau` v14: đặt **hạn chót chung 115 giây** cho cả lần soạn. Hết giờ thì dừng, trả lỗi tiếng Việt rõ ràng thay vì để máy chủ cắt ngang. `goiGemini` nhận hạn chót, tự rút ngắn thời gian chờ và bỏ qua việc thử lại khi không còn đủ giờ. Gợi ý loại văn bản cũng có hạn 60 giây.
+- App: khi máy chủ trả lỗi không kèm nội dung, hiện câu dễ hiểu theo mã lỗi (546/504 = soạn lâu quá bị cắt, 502/503 = máy chủ AI bận) thay vì câu tiếng Anh của thư viện.
+- BÀI HỌC: mọi vòng thử lại gọi API bên ngoài trong Edge Function phải có hạn chót chung, không chỉ giới hạn từng lần.

@@ -98,7 +98,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v79</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v80</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -623,7 +623,12 @@ async function xemTep(path,ten,viecId,urlSan,textDP){
 // ---- Soạn văn bản theo mẫu bệnh viện (v48) ----
 async function goiVB(body){
   const {data,error}=await sb.functions.invoke('soan-mau',{body});
-  if(error){let m=error.message;try{const j=await error.context.json();m=j.loi||m}catch(_){}return {loi:m}}
+  if(error){let m=error.message;const st=error.context&&error.context.status;
+    try{const j=await error.context.json();m=j.loi||m}catch(_){
+      if(st===546||st===504)m='AI soạn lâu quá nên máy chủ cắt ngang. Bồ bấm "✨ Soạn văn bản" lại, hoặc rút gọn ý chính cho ngắn hơn.';
+      else if(st===502||st===503)m='Máy chủ AI đang bận. Bồ bấm soạn lại sau ít phút.';
+      else if(st)m='Máy chủ báo lỗi '+st+'. Bồ bấm soạn lại, còn lỗi thì báo tui.'}
+    return {loi:m}}
   return data||{loi:'Không có phản hồi'}
 }
 async function taiVe(url,ten){
