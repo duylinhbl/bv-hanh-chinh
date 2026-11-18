@@ -196,3 +196,9 @@ Cách nghĩ lấy từ ERP: mỗi LOẠI VIỆC là một quy trình có các b�
 - Giao việc: ô "Loại việc" nay lấy từ danh mục 16 loại (thay bộ 6 loại cũ), chọn xong hiện trước các bước sẽ chạy; giao xong việc tự có bước và thư mục căn cứ.
 - Việc cũ chưa có bước: trong chi tiết việc có khối "Chạy việc này theo quy trình?" để áp quy trình của một loại việc vào.
 - Đã khai báo 6 bước cho loại "Báo cáo an toàn bức xạ hằng năm": Lấy mẫu kỳ trước → Thu thập hồ sơ căn cứ → Soạn báo cáo → Rà soát, đối chiếu → Trình ký → Nộp và lưu hồ sơ.
+
+### v73b – Khai bước cho 13/16 loại việc (chỉ là dữ liệu, không đổi mã)
+- Dùng chung bộ 6 bước kiểu báo cáo định kỳ: ATBX, ATSH, môi trường, ATVSLĐ, PCCC, KSK, tiêu chí chất lượng, báo cáo tuần/tháng/quý/năm.
+- Bộ riêng: Mua sắm (Báo giá → Tờ trình → Quyết định → Hợp đồng → Nghiệm thu → Đề nghị thanh toán, đúng cách đặt tên thư mục trong Drive); Kiểm định thiết bị bức xạ (5 bước); Tuyển dụng (6 bước); Giấy phép (5 bước); Công văn/tờ trình chung (Soạn → Trình ký → Vào sổ văn thư → Phát hành → Lưu hồ sơ).
+- CỐ Ý để trống (việc không có quy trình cố định, ép bước chỉ thêm phiền): Chi phí - lương - BHXH, Thi đua khen thưởng, Quy trình - quy chế - cơ cấu tổ chức. Việc vặt không chọn loại cũng chạy không bước như cũ.
+- Thêm bước cho loại việc KHÔNG ảnh hưởng việc đang chạy: bước chỉ được chép vào việc lúc giao việc mới, hoặc khi người giao bấm "Áp quy trình".
