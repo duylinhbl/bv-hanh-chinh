@@ -14,7 +14,7 @@ const duoiTep=n=>((n||'').split('.').pop()||'').toLowerCase();
 const kiemTep=f=>!f?null:!TEP_DUOI.includes(duoiTep(f.name))?'Chỉ nhận file Word (.doc, .docx), Excel (.xls, .xlsx) hoặc PDF':f.size>TEP_MAX?'File quá 10 MB':null;
 const bieuTuongTep=n=>/^xls/.test(duoiTep(n))?'📊':duoiTep(n)==='pdf'?'📕':/^(jpe?g|png|webp)$/.test(duoiTep(n))?'🖼':'📄';
 async function linkTep(path,ten){const r=await sb.storage.from('anh').createSignedUrl(path,3600,{download:ten||true});return r.data?.signedUrl||null}
-window.BVAPP={xoaMuc,sb,$,esc,fmt,toast,troLy,veTab(t){tab=t;ve()},get me(){return me}};
+window.BVAPP={xoaMuc,sb,$,esc,fmt,toast,troLy,chiTiet,veTab(t){tab=t;ve()},get me(){return me}};
 function toast(m){const t=$('#toast');t.textContent=m;t.className='on';setTimeout(()=>t.className='',2600)}
 const tag=s=>`<span class="tag ${s==='da_dong'?'grn':s==='cho_xac_nhan'?'amb':''}">${TT[s]||s}</span>`;
 
@@ -31,7 +31,7 @@ async function guiMot(o){
   if(o.tep){const d=duoiTep(o.tep_ten);fpath=`${o.viec_id}/${o.ma_khach}-f.${d}`;
     const {error}=await sb.storage.from('anh').upload(fpath,o.tep,{contentType:TEP_MIME[d],upsert:true});
     if(error)throw error}
-  const {error}=await sb.from('cap_nhat_hien_trang').insert({viec_id:o.viec_id,nguoi_id:me.id,trang_thai:o.trang_thai,ghi_chu:o.ghi_chu,anh_path:path,file_path:fpath,file_ten:o.tep?o.tep_ten:null,vi_do:o.vi_do,kinh_do:o.kinh_do,vi_tri_loi:o.vi_tri_loi||null,do_chinh_xac:o.do_chinh_xac||null,gio_bam:o.gio_bam,ma_khach:o.ma_khach});
+  const {error}=await sb.from('cap_nhat_hien_trang').insert({viec_id:o.viec_id,nguoi_id:me.id,trang_thai:o.trang_thai,buoc:Number.isInteger(o.buoc)?o.buoc:null,ghi_chu:o.ghi_chu,anh_path:path,file_path:fpath,file_ten:o.tep?o.tep_ten:null,vi_do:o.vi_do,kinh_do:o.kinh_do,vi_tri_loi:o.vi_tri_loi||null,do_chinh_xac:o.do_chinh_xac||null,gio_bam:o.gio_bam,ma_khach:o.ma_khach});
   if(error&&error.code!=='23505')throw error; // trùng mã = đã gửi rồi
   if(o.trang_thai){const {error:e2}=await sb.from('viec').update({trang_thai:o.trang_thai,...(o.trang_thai==='da_dong'?{dong_luc:new Date().toISOString()}:{})}).eq('id',o.viec_id);if(e2)throw e2}
 }
@@ -74,7 +74,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v72</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v73</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -88,7 +88,12 @@ function ve(){
   ({toi:dsToi,giao:dsGiao,ct:()=>window.LICHCT.ve(),lt:()=>window.LICH.ve(),tb:dsTB,moi:formViec,tk:taiKhoan})[tab]();
 }
 const qua=v=>v.han&&new Date(v.han)<new Date()&&!(['da_dong','huy'].includes(v.trang_thai));
-const the=v=>`<div class="card v ${qua(v)?'qua':v.trang_thai}" data-id="${v.id}"><h3>${esc(v.tieu_de)}</h3><div class="row">${tag(v.trang_thai)}${v.uu_tien==2?'<span class="tag red">Gấp</span>':''}${qua(v)?'<span class="tag red">Quá hạn</span>':''}${v.han?`<span class="mut">Hạn ${fmt(v.han)}</span>`:''}</div>${v.ben?`<div class="mut">${esc(v.ben)}</div>`:''}</div>`;
+// Quy trình theo bước: [{ten,goi_y,nut,xong,luc,boi,ghi,bo_qua}]
+const dsBuoc=v=>Array.isArray(v&&v.cac_buoc)&&v.cac_buoc.length?v.cac_buoc:null;
+const buocDang=B=>{const i=B.findIndex(b=>!b.xong);return i<0?B.length:i};
+const nhanBuoc=v=>{const B=dsBuoc(v);if(!B)return '';const i=buocDang(B);
+  return i>=B.length?'<span class="tag grn">Xong các bước</span>':`<span class="tag bq">Bước ${i+1}/${B.length}: ${esc(B[i].ten)}</span>`};
+const the=v=>`<div class="card v ${qua(v)?'qua':v.trang_thai}" data-id="${v.id}"><h3>${esc(v.tieu_de)}</h3><div class="row">${nhanBuoc(v)||tag(v.trang_thai)}${v.uu_tien==2?'<span class="tag red">Gấp</span>':''}${qua(v)?'<span class="tag red">Quá hạn</span>':''}${v.han?`<span class="mut">Hạn ${fmt(v.han)}</span>`:''}</div>${v.ben?`<div class="mut">${esc(v.ben)}</div>`:''}</div>`;
 async function dsToi(){
   $('#nd').innerHTML='Đang tải…';try{await dsToi2()}catch(e){$('#nd').innerHTML='<p class="mut">Lỗi: '+esc(e.message||e)+'</p>'}}
 async function dsToi2(){
@@ -129,7 +134,7 @@ async function bangNam(pv,nam){
   o.innerHTML=`<div class="card bnam"><div class="row" style="justify-content:space-between;align-items:center;gap:8px">
     <b>📋 Việc trong năm</b><select id="nnam" style="width:auto;min-height:38px;padding:6px 8px">${nams.map(y=>`<option value="${y}" ${y===n?'selected':''}>${y}</option>`).join('')}</select></div>
     <div class="mut">${ds.length} việc${mo?', '+mo+' đang mở':''}</div>
-    ${ds.length?`<table class="tb"><thead><tr><th>STT</th><th>Nội dung</th><th>Đến hạn</th><th>Tình trạng</th></tr></thead><tbody>${ds.map((v,i)=>`<tr data-id="${v.id}"><td>${i+1}</td><td>${esc(v.tieu_de)}${pv==='giao'?`<div class="mut">${esc(ten(v.nguoi_nhan))}</div>`:''}</td><td class="han${qua(v)?' qua':''}">${v.han?new Date(v.han).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}):'chưa có'}</td><td>${tag(v.trang_thai)}</td></tr>`).join('')}</tbody></table>`:'<p class="mut">Năm này chưa có việc nào.</p>'}</div>`;
+    ${ds.length?`<table class="tb"><thead><tr><th>STT</th><th>Nội dung</th><th>Đến hạn</th><th>Tình trạng</th></tr></thead><tbody>${ds.map((v,i)=>`<tr data-id="${v.id}"><td>${i+1}</td><td>${esc(v.tieu_de)}${pv==='giao'?`<div class="mut">${esc(ten(v.nguoi_nhan))}</div>`:''}</td><td class="han${qua(v)?' qua':''}">${v.han?new Date(v.han).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}):'chưa có'}</td><td>${nhanBuoc(v)||tag(v.trang_thai)}</td></tr>`).join('')}</tbody></table>`:'<p class="mut">Năm này chưa có việc nào.</p>'}</div>`;
   $('#nnam').onchange=()=>bangNam(pv,+$('#nnam').value);
   o.querySelectorAll('tr[data-id]').forEach(r=>r.onclick=()=>chiTiet(r.dataset.id));
 }
@@ -151,14 +156,19 @@ async function formViec(){
   <input id="nq" placeholder="Gõ tên để lọc…" autocomplete="off"><select id="nn"></select><div id="pcb" class="mut" style="margin-top:6px"></div></div>
   <div class="f"><label>Hạn (bắt buộc, app sẽ nhắc trước 3 ngày, 1 ngày, 1 giờ và nhắc mỗi sáng nếu quá hạn)</label><input id="han" type="datetime-local"><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap">${[["Hôm nay 17h",0],["Ngày mai",1],["3 ngày",3],["1 tuần",7],["1 tháng",30]].map(x=>`<button type="button" class="sec" data-hn="${x[1]}" style="padding:6px 10px">${x[0]}</button>`).join("")}</div></div>
   <div class="f"><label>Mức độ</label><select id="ut"><option value="1">Thường</option><option value="2">Gấp</option><option value="0">Thấp</option></select></div>
-  <div class="f"><label>Loại công việc (để lưu văn bản vào đúng thư mục Drive)</label><select id="lcv"></select></div>
+  <div class="f"><label>Loại việc (quyết định các bước phải làm và thư mục Drive tra cứu)</label><select id="lcv"></select><div class="mut" id="lcvb"></div></div>
   <div class="f r2"><label>Đính kèm file Word / Excel / PDF (không bắt buộc, tối đa 10 MB)</label><input id="tepg" type="file" accept=".doc,.docx,.xls,.xlsx,.pdf"></div>
   <div class="f r2"><button class="full" id="g">📤 Giao việc</button><p class="mut" id="loi"></p></div></div>`;
   const pcb=async()=>{const id=$('#nn').value,el=$('#pcb');if(!el)return;if(!id||id===me.id){el.textContent='';return}
     const {data}=await sb.rpc('so_may_push',{p_nguoi:id});if($('#nn').value!==id)return;
     el.innerHTML=data>0?'🔔 Người này đã bật thông báo ('+data+' máy)':'<span style="color:#b45309">⚠ Người này chưa bật thông báo trên máy, nên sẽ không có tin báo ngay. Hãy nhắc họ mở app → tab "Tôi" → bật thông báo.</span>'};
   const dien=q=>{const x=fx(q);const l=ds.filter(u=>!x||fx(u.ho_ten+' '+kt(u)).includes(x));$('#nn').innerHTML=l.map(u=>`<option value="${u.id}" ${u.id===me.id?'selected':''}>${esc(u.ho_ten)}${u.id===me.id?' (tôi)':''}${kt(u)?' · '+esc(kt(u)):''}</option>`).join('')||'<option value="">Không có ai khớp</option>';if(x&&l.length)$('#nn').value=l[0].id};
-  sb.from('loai_cong_viec').select('ma,ten').order('thu_tu').then(({data})=>{$('#lcv').innerHTML=(data||[]).map(l=>`<option value="${l.ma}" ${l.ma==='khac'?'selected':''}>${esc(l.ten)}</option>`).join('')});
+  let LV=[];
+  sb.from('loai_viec').select('id,nhom,ten,buoc,can_cu').eq('hoat_dong',true).order('thu_tu').then(({data})=>{LV=data||[];
+    const g={};LV.forEach(l=>{(g[l.nhom]=g[l.nhom]||[]).push(l)});
+    $('#lcv').innerHTML='<option value="">— Chưa xếp loại —</option>'+Object.keys(g).map(n=>`<optgroup label="${esc(n)}">${g[n].map(l=>`<option value="${l.id}">${esc(l.ten)}</option>`).join('')}</optgroup>`).join('');
+    $('#lcv').onchange=()=>{const l=LV.find(x=>x.id==$('#lcv').value),B=l&&Array.isArray(l.buoc)?l.buoc:[];
+      $('#lcvb').innerHTML=B.length?'Việc này sẽ chạy theo '+B.length+' bước: '+B.map((b,i)=>(i+1)+'. '+esc(b.ten)).join(' → '):''}});
   const hanDat=n=>{const d=new Date();d.setDate(d.getDate()+n);d.setHours(17,0,0,0);if(d<new Date())d.setDate(d.getDate()+1);const z=x=>String(x).padStart(2,'0');$('#han').value=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
   document.querySelectorAll('[data-hn]').forEach(b=>b.onclick=()=>hanDat(+b.dataset.hn));hanDat(1);
   dien('');$('#nq').oninput=()=>{dien($('#nq').value);pcb()};$('#nn').onchange=pcb;pcb();
@@ -166,7 +176,9 @@ async function formViec(){
     if(!$('#tt').value.trim())return $('#loi').textContent='Nhập tên việc';if(!$('#nn').value)return $('#loi').textContent='Chọn người nhận';if(!$('#han').value)return $('#loi').textContent='Chọn hạn hoàn thành để app nhắc đúng hẹn';
     const tep=$('#tepg').files[0]||null,lt=kiemTep(tep);if(lt)return $('#loi').textContent=lt;
     const vid=uid(),fp=tep?`${vid}/giao-${uid()}.${duoiTep(tep.name)}`:null;
-    const {error}=await sb.from('viec').insert({id:vid,file_path:fp,file_ten:tep?tep.name:null,tieu_de:$('#tt').value.trim(),mo_ta:$('#ms').value||null,nguoi_giao:me.id,nguoi_nhan:$('#nn').value,han:$('#han').value?new Date($('#han').value).toISOString():null,uu_tien:+$('#ut').value,loai_cv:$('#lcv').value||'khac'});
+    const {error}=await sb.from('viec').insert({id:vid,file_path:fp,file_ten:tep?tep.name:null,tieu_de:$('#tt').value.trim(),mo_ta:$('#ms').value||null,nguoi_giao:me.id,nguoi_nhan:$('#nn').value,han:$('#han').value?new Date($('#han').value).toISOString():null,uu_tien:+$('#ut').value,...(()=>{const l=LV.find(x=>x.id==$('#lcv').value);if(!l)return{};
+      const B=(Array.isArray(l.buoc)?l.buoc:[]).map(b=>({ten:b.ten,goi_y:b.goi_y||'',nut:b.nut||null,xong:false}));
+      return{loai_viec_id:l.id,thu_muc_dc:l.can_cu||null,cac_buoc:B.length?B:null}})()});
     if(error)return $('#loi').textContent='Không giao được: '+error.message;
     let canhTep='';
     if(tep){const {error:e3}=await sb.storage.from('anh').upload(fp,tep,{contentType:TEP_MIME[duoiTep(tep.name)],upsert:true});
@@ -227,13 +239,17 @@ async function dsLoaiViec(){
   const o=x=>`<div class="card" data-id="${x.id||''}"><label class="mut">Nhóm</label><input class="lv_n" value="${esc(x.nhom||'')}"><label class="mut">Tên loại việc</label><input class="lv_t" value="${esc(x.ten||'')}">
    <label class="mut">Thư mục Drive tham khảo (dán link, chỉ đọc)</label><input class="lv_f" value="${esc(x.thu_muc_goc||'')}">
    <label class="mut">Từ khóa giúp AI nhận ra</label><input class="lv_g" value="${esc(x.goi_y||'')}">
+   <label class="mut">Các bước phải làm — mỗi dòng một bước, dạng: <b>Tên bước | gợi ý cho người làm | nút</b> (nút để trống, hoặc ghi <b>ai</b> / <b>doi_chieu</b>). Để trống cả ô thì việc chạy kiểu cũ.</label>
+   <textarea class="lv_b" rows="6" placeholder="Lấy mẫu kỳ trước | Mở thư mục Drive, chọn báo cáo kỳ gần nhất | ai">${esc((Array.isArray(x.buoc)?x.buoc:[]).map(b=>[b.ten,b.goi_y||'',b.nut||''].join(' | ').replace(/( \| )+$/,'')).join('\n'))}</textarea>
    <label><input type="checkbox" class="lv_h" ${x.hoat_dong===false?'':'checked'}> Đang dùng</label>
    <div style="margin-top:6px"><button class="lv_s">💾 Lưu</button> ${x.id?'<button class="sec dng lv_d">Xóa</button>':''}</div></div>`;
-  k.innerHTML='<p class="mut">Mỗi loại việc gắn một thư mục Drive để AI lấy mẫu và hồ sơ căn cứ. Chỉ đọc, app không ghi vào thư mục này.</p><button class="full" id="lvm">➕ Thêm loại việc</button><div id="lvl">'+(ds||[]).map(o).join('')+'</div>';
+  k.innerHTML='<p class="mut">Mỗi loại việc gắn một thư mục Drive để AI lấy mẫu và hồ sơ căn cứ (chỉ đọc, app không ghi vào), và một bộ bước phải làm. Việc giao theo loại nào sẽ chạy đúng các bước của loại đó.</p><button class="full" id="lvm">➕ Thêm loại việc</button><div id="lvl">'+(ds||[]).map(o).join('')+'</div>';
   const gan=c=>{
     c.querySelector('.lv_s').onclick=async()=>{
       const ten=c.querySelector('.lv_t').value.trim();if(!ten)return toast('Nhập tên loại việc');
-      const row={nhom:c.querySelector('.lv_n').value.trim()||'Khác',ten,thu_muc_goc:c.querySelector('.lv_f').value.trim()||null,goi_y:c.querySelector('.lv_g').value.trim()||null,hoat_dong:c.querySelector('.lv_h').checked};
+      const row={nhom:c.querySelector('.lv_n').value.trim()||'Khác',ten,thu_muc_goc:c.querySelector('.lv_f').value.trim()||null,goi_y:c.querySelector('.lv_g').value.trim()||null,hoat_dong:c.querySelector('.lv_h').checked,
+        buoc:c.querySelector('.lv_b').value.split('\n').map(d=>d.trim()).filter(Boolean).map(d=>{const p=d.split('|').map(y=>y.trim());
+          return{ten:p[0],goi_y:p[1]||'',nut:['ai','doi_chieu'].includes(p[2])?p[2]:null}}).filter(b=>b.ten)};
       const id=c.dataset.id;
       const {data,error}=id?await sb.from('loai_viec').update(row).eq('id',id).select().single():await sb.from('loai_viec').insert({...row,thu_tu:200}).select().single();
       if(error)return toast('Không lưu được: '+error.message);
@@ -611,21 +627,34 @@ async function chiTiet(id){
     if(c.file_path)furls[c.id]=await linkTep(c.file_path,c.file_ten)}
   const vurl=v.file_path?await linkTep(v.file_path,v.file_ten):null;
   const laNhan=v.nguoi_nhan===me.id, laGiao=v.nguoi_giao===me.id||me.vai_tro==='tchc'||me.vai_tro==='bgd';
-  const opts=[];if(laNhan){opts.push(['dang_lam','Đang làm'],['cho_xac_nhan','Báo hoàn thành (chờ xác nhận)'])}
-  if(laGiao&&v.nguoi_giao===me.id)opts.push(['da_dong','Xác nhận đóng việc']);
+  const B=dsBuoc(v),iB=B?buocDang(B):-1,duocLam=(laNhan||v.nguoi_giao===me.id)&&v.trang_thai!=='da_dong';
+  const opts=[];if(laNhan&&!B){opts.push(['dang_lam','Đang làm'],['cho_xac_nhan','Báo hoàn thành (chờ xác nhận)'])}
+  if(laGiao&&v.nguoi_giao===me.id&&!B)opts.push(['da_dong','Xác nhận đóng việc']);
+  const thanhBuoc=!B?'':`<div class="card bsteps">${B.map((b,i)=>`<div class="bs ${b.xong?(b.bo_qua?'bqua':'xong'):i===iB?'dang':''}" data-bs="${i}"><i>${b.xong?(b.bo_qua?'⤼':'✓'):i+1}</i><span>${esc(b.ten)}</span>${b.luc?`<small>${fmt(b.luc)}${b.boi?' · '+esc(ten(b.boi)):''}</small>`:''}${b.ghi?`<small>${esc(b.ghi)}</small>`:''}</div>`).join('')}</div>`;
+  const cardBuoc=!B?'':(iB>=B.length
+    ?`<div class="card" style="border-left:4px solid #15803d"><b>✓ Đã xong cả ${B.length} bước.</b> <span class="mut">${v.trang_thai==='da_dong'?'Việc đã đóng.':'Đang chờ người giao xác nhận đóng việc.'}</span></div>`
+    :`<div class="card bnow"><div class="mut">Bước ${iB+1}/${B.length}</div><h3>${esc(B[iB].ten)}</h3>${B[iB].goi_y?`<p class="mut">${esc(B[iB].goi_y)}</p>`:''}
+      ${duocLam?`${B[iB].nut==='ai'?'<button class="full" id="bai">✨ Làm bước này cùng AI</button>':B[iB].nut==='doi_chieu'?'<button class="full" id="bdc">🔎 Đối chiếu báo cáo với hồ sơ</button>':''}
+      <label>Ghi lại kết quả bước này (không bắt buộc)</label><textarea id="bgc" rows="2"></textarea>
+      <label>📎 Hồ sơ của bước này</label><input id="bdk" type="file" accept="image/*,.doc,.docx,.xls,.xlsx,.pdf">
+      <button class="full" id="bxong">✔ Xong bước này${iB+1<B.length?', sang bước '+(iB+2):', báo hoàn thành'}</button>
+      <button class="sec" id="bbo" style="width:100%;margin-top:6px">⤼ Bỏ qua bước này</button>`:'<p class="mut">Chỉ người nhận hoặc người giao việc mới ghi được bước.</p>'}</div>`);
   $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button>
   <div class="card" style="margin-top:10px"><h3>${esc(v.tieu_de)}</h3>${tag(v.trang_thai)}<p>${esc(v.mo_ta||'')}</p>
   <div class="mut">Giao: ${esc(ten(v.nguoi_giao))} → ${esc(ten(v.nguoi_nhan))}${v.han?'<br>Hạn '+fmt(v.han):'<br><b style="color:#b45309">⚠ Chưa có hạn nên app không nhắc được</b>'}${(laNhan||v.nguoi_giao===me.id)&&v.trang_thai!=='da_dong'?` · <a href="#" id="dhan">⏰ ${v.han?'Đổi':'Đặt'} hạn</a><div id="hanbox" style="display:none;margin-top:6px"><input id="han2" type="datetime-local"> <button class="sec" id="luuhan">Lưu hạn</button></div>`:''}</div>${v.file_path?`<p><a href="${vurl||'#'}" download>${bieuTuongTep(v.file_ten)} ${esc(v.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(v.file_path)}" data-xt="${esc(v.file_ten||'')}">👁 Xem</a></p>`:''}</div>
-  ${(laNhan||opts.length)?`<div class="card"><label>Cập nhật hiện trạng</label><select id="st"><option value="">Giữ nguyên trạng thái</option>${opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select>
+  ${thanhBuoc}${cardBuoc}
+  ${!B&&duocLam?`<div class="card" id="apq"><b>Chạy việc này theo quy trình?</b><div class="mut">Chọn loại việc để app bày sẵn các bước phải làm, làm tới đâu tích tới đó.</div><select id="apl"><option value="">Đang tải…</option></select><button class="sec" id="apb" style="width:auto;margin-top:6px">⚙ Áp quy trình</button></div>`:''}
+  ${(laNhan||opts.length)&&!B?`<div class="card"><label>Cập nhật hiện trạng</label><select id="st"><option value="">Giữ nguyên trạng thái</option>${opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select>
   <label>Ghi chú</label><textarea id="gc"></textarea><label>📎 Ảnh hoặc file Word / Excel / PDF (chụp ảnh tại chỗ hoặc chọn file, tối đa 10 MB)</label><input id="dk" type="file" accept="image/*,.doc,.docx,.xls,.xlsx,.pdf">
   <button class="full" id="gui">📷 Gửi cập nhật</button><p class="mut">Vị trí GPS chỉ lấy tại lúc bấm Gửi.</p></div>`:''}
+  ${B&&duocLam?`<div class="card"><label>Ghi chú thêm / gửi hồ sơ ngoài các bước</label><textarea id="gc" rows="2"></textarea><input id="dk" type="file" accept="image/*,.doc,.docx,.xls,.xlsx,.pdf"><button class="sec full" id="gui">📷 Gửi cập nhật</button></div>`:''}
   <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   if(me.la_quan_tri||v.nguoi_giao===me.id){
     const nk=(cn||[]).filter(c=>c.nguoi_id!==me.id).length;
     $('#nd').insertAdjacentHTML('beforeend',`<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa việc này${me.la_quan_tri&&v.nguoi_giao!==me.id?' (quản trị)':''}</button>`);
     $('#xoa').onclick=()=>xoaMuc('viec',id,'Xóa vĩnh viễn việc này cùng lịch sử cập nhật?'+(nk?'\n\n⚠ Việc này đã có '+nk+' cập nhật của người khác, xóa là mất luôn.':''),ve)}
   $('#lui').onclick=ve;
-  if(v.trang_thai!=='da_dong'&&(laNhan||v.nguoi_giao===me.id)){
+  if(v.trang_thai!=='da_dong'&&(laNhan||v.nguoi_giao===me.id)&&!B){
     $('#nd').querySelector('.card').insertAdjacentHTML('afterend','<button class="full" id="tlmo" style="margin:0 0 10px;padding:14px;font-size:1.05em">✨ Làm việc này cùng AI<br><span style="font-weight:400;font-size:.8em">đọc văn bản · gợi ý loại việc · soạn báo cáo từ mẫu năm trước</span></button>');
     $('#tlmo').onclick=()=>troLy(id)}
   if(v.trang_thai==='cho_xac_nhan'&&v.nguoi_giao===me.id){
@@ -635,6 +664,31 @@ async function chiTiet(id){
     $('#xnd').onclick=()=>chot('da_dong','Đã xem và xác nhận hoàn thành');
     $('#xnl').onclick=()=>{const g=prompt('Cần làm lại điểm nào? (ghi ngắn để người nhận biết)');if(g===null)return;chot('dang_lam',g.trim()||'Chưa đạt, làm lại')};
   }
+  if($('#apq'))sb.from('loai_viec').select('id,nhom,ten,buoc,can_cu').eq('hoat_dong',true).order('thu_tu').then(({data})=>{
+    const L=(data||[]).filter(l=>Array.isArray(l.buoc)&&l.buoc.length);if(!$('#apl'))return;
+    if(!L.length){$('#apq').innerHTML='<div class="mut">Chưa loại việc nào khai báo các bước. Vào Tôi → Danh mục loại việc để khai báo.</div>';return}
+    $('#apl').innerHTML=L.map(l=>`<option value="${l.id}" ${l.id===v.loai_viec_id?'selected':''}>${esc(l.nhom)} · ${esc(l.ten)} (${l.buoc.length} bước)</option>`).join('');
+    $('#apb').onclick=async()=>{const l=L.find(x=>x.id==$('#apl').value);if(!l)return;
+      const {error}=await sb.from('viec').update({loai_viec_id:l.id,thu_muc_dc:v.thu_muc_dc||l.can_cu||null,
+        cac_buoc:l.buoc.map(x=>({ten:x.ten,goi_y:x.goi_y||'',nut:x.nut||null,xong:false}))}).eq('id',id);
+      if(error)return toast('Không áp được: '+error.message);toast('Đã áp quy trình '+l.ten);chiTiet(id)}});
+  if($('#bai'))$('#bai').onclick=()=>troLy(id);
+  if($('#bdc'))$('#bdc').onclick=()=>{const t=(cn||[]).find(c=>c.file_path&&/\.docx$/i.test(c.file_ten||''))||(v.file_path&&/\.docx$/i.test(v.file_ten||'')?v:null);
+    if(!t)return toast('Chưa có báo cáo Word nào trong việc này để đối chiếu');doiChieuUI(id,t.file_path)};
+  const ghiBuoc=async bo=>{
+    const bt=$('#bxong'),bb=$('#bbo');[bt,bb].forEach(x=>x&&(x.disabled=true));
+    const ghi=($('#bgc').value||'').trim();
+    if(bo&&!ghi){toast('Bỏ qua bước thì ghi lý do vào ô ghi chú');[bt,bb].forEach(x=>x&&(x.disabled=false));return}
+    const M=B.map(x=>({...x}));M[iB]={...M[iB],xong:true,bo_qua:!!bo,luc:new Date().toISOString(),boi:me.id,ghi:ghi||null};
+    const xongHet=M.every(x=>x.xong),tt=xongHet&&v.trang_thai!=='da_dong'?'cho_xac_nhan':null;
+    const {error}=await sb.from('viec').update({cac_buoc:M}).eq('id',id);
+    if(error){[bt,bb].forEach(x=>x&&(x.disabled=false));return toast('Không lưu được: '+error.message)}
+    const f=$('#bdk').files[0],laAnh=f&&(/^image\//.test(f.type)||/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+    await qAdd({ma_khach:uid(),viec_id:id,trang_thai:tt,buoc:iB,ghi_chu:(bo?'⤼ Bỏ qua bước ':'✓ Xong bước ')+(iB+1)+'. '+M[iB].ten+(ghi?' — '+ghi:''),
+      anh:laAnh?await nen(f):null,tep:f&&!laAnh?f:null,tep_ten:f&&!laAnh?f.name:null,gio_bam:new Date().toISOString(),vi_tri_loi:'Không lấy vị trí khi ghi bước'});
+    await day();toast(xongHet?'Xong cả quy trình, đã báo hoàn thành':'Đã ghi bước '+(iB+1));chiTiet(id)};
+  if($('#bxong'))$('#bxong').onclick=()=>ghiBuoc(false);
+  if($('#bbo'))$('#bbo').onclick=()=>ghiBuoc(true);
   document.querySelectorAll('[data-xp]').forEach(a=>a.onclick=e=>{e.preventDefault();xemTep(a.dataset.xp,a.dataset.xt,id)});
   if($('#gui'))$('#gui').onclick=()=>guiCapNhat(id);
   if($('#dhan')){$('#dhan').onclick=e=>{e.preventDefault();$('#hanbox').style.display='block';const d=new Date(v.han||Date.now()+864e5),z=x=>String(x).padStart(2,'0');$('#han2').value=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};

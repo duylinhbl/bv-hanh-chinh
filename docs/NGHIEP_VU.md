@@ -186,3 +186,13 @@ Quy trình chuẩn của nhân viên, 4 bước trên một màn hình (máy tí
 - Nhập phiếu chi: danh sách khoản chi bên trái (2 cột khi màn rộng, 12 tháng hiện đủ một hàng), khung thả hồ sơ + số tiền + nút Cộng ghim bên phải (không còn thanh đè ở đáy).
 - Kế hoạch chi phí: 2–3 cột. Giao việc: biểu mẫu 2 cột. Tin, Tôi, Trực: thẻ xếp lưới.
 - Kỹ thuật: lớp CSS `@media (min-width:1000px)` ở cuối style.css và trong kh.js; khung bọc `.luoi`, `.hai`, `.nh-wrap`, `.fgiao`, `.khl`.
+
+## v73 – Quy trình theo bước cho từng loại việc (đợt 1, thử với báo cáo ATBX)
+Cách nghĩ lấy từ ERP: mỗi LOẠI VIỆC là một quy trình có các bước cố định, việc chạy từ bước đầu đến bước cuối rồi mới đóng. Thay cho 4 trạng thái dùng chung cho mọi loại việc.
+- `loai_viec.buoc` (jsonb): mẫu các bước `[{ten,goi_y,nut}]`, nút = `ai` (mở trợ lý AI) hoặc `doi_chieu` hoặc để trống. Sửa trong Tôi → Danh mục loại việc, mỗi dòng một bước: `Tên bước | gợi ý | nút`.
+- `viec.cac_buoc` (jsonb): bản sao các bước của việc đó, mỗi bước thêm `xong, luc, boi, ghi, bo_qua`. Việc không có bước thì chạy y như cũ.
+- `cap_nhat_hien_trang.buoc` (int): dòng thời gian biết thuộc bước nào.
+- Màn chi tiết việc: thanh bước ở trên (xong = xanh, đang làm = viền đậm), khối "Bước n/N" nêu việc cần làm + nút AI của bước + ô ghi kết quả + đính kèm hồ sơ + nút "✔ Xong bước này". Bỏ qua bước phải ghi lý do. Xong bước cuối thì tự báo hoàn thành, người giao xác nhận đóng việc như cũ. Việc có bước thì bỏ ô chọn trạng thái và nút AI to kiểu cũ.
+- Giao việc: ô "Loại việc" nay lấy từ danh mục 16 loại (thay bộ 6 loại cũ), chọn xong hiện trước các bước sẽ chạy; giao xong việc tự có bước và thư mục căn cứ.
+- Việc cũ chưa có bước: trong chi tiết việc có khối "Chạy việc này theo quy trình?" để áp quy trình của một loại việc vào.
+- Đã khai báo 6 bước cho loại "Báo cáo an toàn bức xạ hằng năm": Lấy mẫu kỳ trước → Thu thập hồ sơ căn cứ → Soạn báo cáo → Rà soát, đối chiếu → Trình ký → Nộp và lưu hồ sơ.
