@@ -27,14 +27,18 @@ function vbMauLay(b) {
 }
 // action 'luu_van_ban': {ten_file, b64, mime, loai_ten, folder_id, viec_ten} -> {url, thu_muc}
 function luuVanBan(b) {
-  let cha;
-  if (b.folder_id) { try { cha = DriveApp.getFolderById(b.folder_id); } catch (e) { cha = null; } }
-  if (!cha) {
-  cha = vbCon(vbGoc(), String(b.loai_ten || 'Khác').replace(/[\\\/:*?"<>|]/g, ' ')); }
-  const th = vbCon(cha, String(b.viec_ten || 'Việc').replace(/[\\\/:*?"<>|]/g, ' ').slice(0, 60));
-  const blob = Utilities.newBlob(Utilities.base64Decode(b.b64), b.mime, b.ten_file);
-  const f = th.createFile(blob);
-  return { ok: true, url: f.getUrl(), thu_muc: th.getName() };
+  try {
+    let cha = null;
+    if (b.folder_id) { try { cha = DriveApp.getFolderById(b.folder_id); cha.getName(); } catch (e) { cha = null; } }
+    if (!cha) cha = vbCon(vbGoc(), String(b.loai_ten || 'Khác').replace(/[\\\/:*?"<>|]/g, ' '));
+    const th = vbCon(cha, String(b.viec_ten || 'Việc').replace(/[\\\/:*?"<>|]/g, ' ').slice(0, 60));
+    const blob = Utilities.newBlob(Utilities.base64Decode(b.b64), b.mime, b.ten_file);
+    const f = th.createFile(blob);
+    return { ok: true, url: f.getUrl(), thu_muc: th.getName() };
+  } catch (e) {
+    // Lỗi Drive của Google có thể ra tiếng nước ngoài -> đổi thành câu tiếng Việt cho dễ hiểu
+    return { ok: false, loi: 'Tài khoản chạy Apps Script không ghi được vào Drive (' + String(e).slice(0, 120) + '). Kiểm tra: đã dán bản VanBan.gs mới nhất và Triển khai > Phiên bản MỚI chưa?' };
+  }
 }
 // Thêm 2 dòng này vào hàm doPost hiện có, ngay sau dòng kiểm tra b.token:
 //   if (b.action === 'vb_mau_lay') return out(vbMauLay(b));

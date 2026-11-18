@@ -319,3 +319,11 @@ Thực tế: hội thoại chốt tới 2 phụ lục (PHỤ LỤC 1 – tuyến
 - Trả về `phu_lucs` (danh sách); app đưa tất cả vào danh sách văn bản để xem/tải/lưu Drive từng file. `phu_luc` vẫn còn cho tương thích.
 - Mô tả gửi Gemini nêu rõ "ĐÃ CHỐT n PHỤ LỤC: … – hệ thống tự dựng file riêng, đừng chép bảng".
 - Kiểm thử: 5 bài mới (tách đủ 2 phụ lục, đúng tiêu đề từng cái, giữ dòng Đính kèm, đúng cột/số liệu) + sửa bài app thành 3 văn bản.
+
+## v84 – Lưu Drive báo lỗi tiếng Hàn: Apps Script đang chạy mã CŨ (18/11/2026)
+Ba file Word đã ra đủ (tờ trình + 2 phụ lục), nhưng bấm 💾 Lưu thì báo *"Chưa đưa được vào Drive: Exception: 입력한 ID에 해당하는 항목이 없습니다…"* (tiếng Hàn = "không có mục nào ứng với ID đã nhập" — do ngôn ngữ của tài khoản Google chạy script).
+- Nguyên nhân: `loai_cong_viec.drive_folder_id` của cả 6 loại đều TRỐNG nên script dùng thư mục gốc theo ID cố định `VB_GOC`; tài khoản chạy script không mở được ID đó. Bản VanBan.gs trong repo đã có hàm `vbGoc()` tự tạo thư mục thay thế từ v60, nhưng **bản đang triển khai trên Apps Script vẫn là mã cũ** (chưa dán lại / chưa Triển khai phiên bản mới).
+- `apps-script/VanBan.gs`: bọc toàn bộ `luuVanBan` trong try/catch, trả lỗi **bằng tiếng Việt** kèm gợi ý "đã dán bản mới và Triển khai phiên bản MỚI chưa?"; kiểm tra thật sự mở được `folder_id` (gọi `getName()`).
+- App: hàm `dichLoi()` đổi các lỗi Drive khó hiểu (tiếng Hàn/tiếng Anh) thành câu hướng dẫn tiếng Việt.
+- Thêm `apps-script/DAN_VAO_APPS_SCRIPT.md`: hướng dẫn 5 bước dán VanBan.gs + DoiChieu.gs và **Triển khai > Phiên bản MỚI** (bỏ bước này là vẫn chạy mã cũ).
+- Ghi nhớ: lỗi Apps Script trả ra tiếng nước ngoài là theo ngôn ngữ tài khoản Google, không phải lỗi của app.
