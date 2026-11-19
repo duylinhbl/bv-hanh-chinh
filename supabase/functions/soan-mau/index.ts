@@ -270,7 +270,7 @@ async function goiGemini(key: string, model: string, payload: any, hanChot = 0) 
   const conLai = () => (hanChot ? hanChot - Date.now() : 50000);
   for (let k = 0; ; k++) {
     if (conLai() < 8000) throw new Error('Gemini trả lời quá lâu, bồ bấm soạn lại.');
-    try { r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(payload), signal: AbortSignal.timeout(Math.min(50000, Math.max(8000, conLai()))) }); }
+    try { r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(payload), signal: AbortSignal.timeout(Math.min(35000, Math.max(8000, conLai()))) }); }
     catch (_) { if (k >= 2 || Date.now() - t0 > 100000 || conLai() < 12000) throw new Error('Gemini trả lời quá lâu hoặc mất kết nối, bồ thử lại sau ít phút.'); continue; }
     if ((r.status === 503 || r.status === 500) && k < 4 && Date.now() - t0 < 90000 && conLai() > 20000) { await nghi(2500 * (k + 1)); continue; }
     break;
@@ -289,6 +289,7 @@ async function goiGemini(key: string, model: string, payload: any, hanChot = 0) 
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: H });
+  const T0 = Date.now(); // Supabase cắt hàm (lỗi 546) khi chạy quá lâu -> mọi việc phải xong trước mốc này
   const url = Deno.env.get('SUPABASE_URL')!;
   const uc = createClient(url, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: req.headers.get('Authorization') || '' } }, auth: { persistSession: false } });
   const sv = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
@@ -371,7 +372,7 @@ Deno.serve(async (req) => {
         systemInstruction: { parts: [{ text: 'Bạn là trợ lý của Phòng Tổ chức Hành chính bệnh viện. Đọc việc được giao và dữ liệu tệp, chọn loại văn bản cần soạn phù hợp nhất trong danh sách, và viết sẵn y_chinh: 2-4 câu tóm tắt ý chính cần trình/quyết định (nội dung, số liệu chính lấy từ tệp, đối tượng, thời gian; chỗ chưa rõ ghi [ ]). Không bịa số. Chỉ trả JSON.' }] },
         contents: [{ role: 'user', parts: [{ text: `VIỆC: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nDANH SÁCH LOẠI VĂN BẢN:\n${ls}${kqAI ? '\n\nSỐ LIỆU CHỐT (người dùng đã làm việc với AI về tệp này, DÙNG CÁI NÀY):\n' + kqAI : ''}\n\nDỮ LIỆU TỆP GỐC${kqAI ? ' (chỉ tham khảo, số liệu đã cũ)' : ''}:\n${tep.slice(0, 12000) || '(không đọc được tệp)'}` }] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 1024, responseMimeType: 'application/json', responseSchema: { type: 'OBJECT', properties: { mau_ma: { type: 'STRING' }, y_chinh: { type: 'STRING' } }, required: ['mau_ma', 'y_chinh'] } },
-      }, Date.now() + 60000);
+      }, T0 + 50000);
       let g: any = {}; try { g = JSON.parse(tx.replace(/^```json\s*|```$/g, '')); } catch (_) { /* bỏ qua */ }
       const hop = (ds || []).some((x: any) => x.ma === g.mau_ma);
       return out({ ok: true, mau_ma: hop ? g.mau_ma : '', y_chinh: String(g.y_chinh || '') });
@@ -385,10 +386,12 @@ Deno.serve(async (req) => {
     const dungNguoi = (kemTep: boolean) => `LOẠI VĂN BẢN: ${m.ten}\nVIỆC ĐƯỢC GIAO: ${v.tieu_de}${v.mo_ta ? '\nMô tả: ' + v.mo_ta : ''}\n\nYÊU CẦU CỦA NGƯỜI SOẠN:\n${yc || '(không có, soạn theo việc được giao)'}\n\nMẪU THAM KHẢO CỦA BỆNH VIỆN (chỉ học văn phong, bố cục, căn cứ; không chép nguyên số liệu cũ):\n${m.mau_text || ''}${kqAI ? '\n\nSỐ LIỆU CHỐT — BẮT BUỘC DÙNG (người soạn đã làm việc với AI trên tệp này và chốt kết quả dưới đây; mọi con số, danh sách, tên gọi trong văn bản phải lấy từ đây, KHÔNG lấy số cũ trong tệp gốc):\n' + kqGui : ''}${tep && kemTep && !dsPL.length ? '\n\nTỆP GỐC' + (kqAI ? ' (chỉ để hiểu bối cảnh, số liệu trong đây ĐÃ CŨ, không đưa vào văn bản)' : ' (dữ liệu nguồn)') + ':\n' + tep : ''}${cu ? '\n\nVĂN BẢN ĐÃ SOẠN TRƯỚC ĐÓ (toàn văn, gồm cả phần khung đầu/cuối):\n' + cu + '\n\nĐây là yêu cầu CHỈNH SỬA: giữ nguyên phần đúng, chỉ sửa theo ý trong mục YÊU CẦU, trả về lại ĐẦY ĐỦ thân văn bản (không chỉ phần sửa).' : ''}`;
     // Ưu tiên model mạnh (bảng dài không bị cắt). Quá tải / hết hạn mức -> tụt xuống model nhẹ.
     // Gemini báo RECITATION (bản thảo giống nguyên văn tài liệu nguồn) -> thử lại: bỏ TỆP GỐC, tăng temperature, bắt diễn đạt lại.
-    const dsModel = [...new Set([cfg.ai_model_manh || 'gemini-flash-latest', cfg.ai_model || 'gemini-flash-lite-latest'])];
+    const mManh = cfg.ai_model_manh || 'gemini-flash-latest', mNhe = cfg.ai_model || 'gemini-flash-lite-latest';
+    // Bảng đã do máy chủ dựng thì AI chỉ viết phần chữ ngắn -> dùng model nhẹ trước cho nhanh
+    const dsModel = [...new Set(dsPL.length ? [mNhe, mManh] : [mManh, mNhe])];
     const THO = '\n\nTrả lời dạng VĂN BẢN THUẦN (không JSON): dòng đầu ghi "VE_VIEC: <trích yếu ngắn>", từ dòng thứ hai trở đi là thân văn bản, mỗi đoạn một dòng.';
     const DIEN_LAI = '\n\nLƯU Ý: hãy TỰ DIỄN ĐẠT bằng lời văn hành chính của bạn, không chép nguyên văn đoạn dài nào từ tài liệu nguồn. Số liệu trong bảng giữ nguyên, nhưng câu chữ phải do bạn viết.';
-    const HAN_CHOT = Date.now() + 115000; // Edge Function bị cắt (lỗi 546) nếu chạy quá lâu
+    const HAN_CHOT = T0 + 70000; // hết giờ thì dựng theo mẫu, KHÔNG để máy chủ cắt ngang (546)
     const soanMot = async (them: string) => {
       const lan: { mo: string; t: number; tep: boolean; nhac: string; tho?: boolean }[] = [];
       for (const mo of dsModel) { lan.push({ mo, t: 0.3, tep: true, nhac: '' }); lan.push({ mo, t: 0.9, tep: false, nhac: DIEN_LAI }); }
@@ -417,11 +420,11 @@ Deno.serve(async (req) => {
     if (!kq || !String(kq.noi_dung || '').trim()) {
       if (!yc.trim()) return out({ loi: (canhBao || 'Gemini không soạn được') + ' — bồ gõ Ý chính rồi bấm soạn lại để hệ thống tự dựng theo mẫu.' }, 502);
       kq = soanTheoMau(m.loai, v.tieu_de, yc, dsPL.length > 0);
-      canhBao = 'AI đang bị chặn (' + canhBao + '). Bản này do hệ thống tự dựng theo mẫu bệnh viện từ Ý chính của bồ — đọc kỹ lại câu chữ, phần căn cứ và số liệu trước khi trình.';
+      canhBao = 'AI không soạn được (' + canhBao + '). Bản này do hệ thống tự dựng theo mẫu bệnh viện từ Ý chính của bồ — đọc kỹ lại câu chữ, phần căn cứ và số liệu trước khi trình.';
     } else canhBao = '';
     // Nhắc "Phụ lục đính kèm" mà không xuất bảng phụ lục: soạn lại MỘT lần
     const coPL = (x: string) => /^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im.test(x);
-    if (!dsPL.length && /phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung)) && HAN_CHOT - Date.now() > 25000) {
+    if (!dsPL.length && /phụ lục/i.test(String(kq.noi_dung)) && !coPL(String(kq.noi_dung)) && HAN_CHOT - Date.now() > 30000) {
       try {
         const k2 = await soanMot('\n\nSỬA LẠI: bản vừa soạn có nhắc "Phụ lục đính kèm" nhưng THIẾU hẳn phần phụ lục. Soạn lại toàn bộ, cuối noi_dung phải có một dòng chỉ gồm chữ "PHỤ LỤC", dòng tên phụ lục, rồi BẢNG ĐẦY ĐỦ các hàng lấy từ số liệu chốt (mỗi hàng một dòng "ô 1 | ô 2 | ô 3").');
         if (String(k2?.noi_dung || '').trim() && coPL(String(k2.noi_dung))) kq = k2;

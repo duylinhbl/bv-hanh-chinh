@@ -335,3 +335,11 @@ Ba file Word đã ra đủ (tờ trình + 2 phụ lục), nhưng bấm 💾 Lưu
 - Dùng ở 2 chỗ: bản dựng theo mẫu (`soanTheoMau`) và bản do AI soạn (khi AI trả trích yếu trùng tên việc). Prompt cũng nhắc rõ ve_viec là trích yếu.
 - Kết quả: "V/v phê duyệt danh mục 33 vị trí thường xuyên chuyển viện và công tác", tên file "Tờ trình - phê duyệt danh mục 33 vị trí…".
 - Kiểm thử: 3 bài mới trong `tests/bang_phu_luc.test.js` (21 bài).
+
+## v88 – Lại lỗi 546: hạ hạn chót xuống 70 giây, ưu tiên model nhẹ (19/11/2026)
+Sáng chạy được, chiều lại "Edge Function returned a non-2xx status code". Nhật ký: **POST soan-mau → 546** sau ~104 giây.
+- Nguyên nhân: hạn chót 115 giây (v80) vẫn **cao hơn mức Supabase chịu**, và nó được tính từ lúc vào đoạn soạn chứ không phải từ đầu hàm — cộng thêm thời gian đọc tệp/khung mẫu là vượt.
+- Sửa: mốc `T0` đặt ngay đầu hàm; **hạn chót = T0 + 70 giây** cho cả lần soạn (gợi ý loại văn bản: T0 + 50 giây). Hết giờ thì dựng theo mẫu và trả về, không để máy chủ cắt ngang.
+- Mỗi lần gọi Gemini chờ tối đa 35 giây (trước 50).
+- Khi máy chủ đã tự dựng phụ lục thì AI chỉ viết phần chữ ngắn → **dùng model nhẹ trước, model mạnh sau** (nhanh hơn hẳn, không còn lý do cần model mạnh vì bảng không đi qua AI nữa).
+- BÀI HỌC: hạn chót của Edge Function phải tính từ đầu request và đặt dưới ngưỡng cắt của nền tảng (~100 giây) một khoảng an toàn.
