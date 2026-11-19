@@ -327,3 +327,11 @@ Ba file Word đã ra đủ (tờ trình + 2 phụ lục), nhưng bấm 💾 Lưu
 - App: hàm `dichLoi()` đổi các lỗi Drive khó hiểu (tiếng Hàn/tiếng Anh) thành câu hướng dẫn tiếng Việt.
 - Thêm `apps-script/DAN_VAO_APPS_SCRIPT.md`: hướng dẫn 5 bước dán VanBan.gs + DoiChieu.gs và **Triển khai > Phiên bản MỚI** (bỏ bước này là vẫn chạy mã cũ).
 - Ghi nhớ: lỗi Apps Script trả ra tiếng nước ngoài là theo ngôn ngữ tài khoản Google, không phải lỗi của app.
+
+## v86 – Trích yếu lấy từ Ý chính, không lấy lời nhắc việc (19/11/2026)
+- Cầu nối Drive đã thông sau khi dán lại Apps Script: 3 file (tờ trình + 2 phụ lục) đều có link Drive lúc 10:12 ngày 19/11.
+- Lỗi còn lại: tên file và dòng "V/v" lấy nguyên **tên việc lúc giao** ("ghi lại tất cả các vị trí thường xuyên chuyển viện và ctac") — đó là lời nhắc việc, không phải trích yếu văn bản.
+- Thêm hàm `trichYeu(yc, tieuDe)`: lấy mệnh đề từ động từ (phê duyệt / ban hành / chấp thuận / thành lập / hỗ trợ / đề nghị / thanh toán / mua sắm / sửa chữa…) trong **dòng đầu của Ý chính**, bỏ "Trình Ban Giám đốc…", bỏ tên bệnh viện, cắt phần phụ ("kèm theo…", "cho các…", "để…", "từ ngày…"), tối đa 110 ký tự. Không có Ý chính thì mới dùng tên việc (bỏ chữ "Về việc").
+- Dùng ở 2 chỗ: bản dựng theo mẫu (`soanTheoMau`) và bản do AI soạn (khi AI trả trích yếu trùng tên việc). Prompt cũng nhắc rõ ve_viec là trích yếu.
+- Kết quả: "V/v phê duyệt danh mục 33 vị trí thường xuyên chuyển viện và công tác", tên file "Tờ trình - phê duyệt danh mục 33 vị trí…".
+- Kiểm thử: 3 bài mới trong `tests/bang_phu_luc.test.js` (21 bài).

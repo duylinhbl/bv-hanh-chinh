@@ -57,7 +57,9 @@ kiem(ds[1].rows[0][4] === 'Số chuyến' && ds[1].rows[1][3] === '800', 'phụ 
 const i2 = src.indexOf('function soanTheoMau');
 const j2 = src.indexOf('\n}', src.indexOf('return { ve_viec: veViec', i2)) + 2;
 const ts2 = src.slice(i2, j2).replace(/: \{ ve_viec: string; noi_dung: string \}/g, '').replace(/: string\[\]/g, '').replace(/: string/g, '').replace(/: boolean/g, '');
-const soanTheoMau = new Function(ts2 + '; return soanTheoMau;')();
+const iT = src.indexOf('function trichYeu');
+const tsT = src.slice(iT, src.indexOf('\n}', iT) + 2).replace(/: string/g, '');
+const soanTheoMau = new Function(tsT + '\n' + ts2 + '; return soanTheoMau;')();
 
 const tt = soanTheoMau('to_trinh', 'Ban hành định mức tuyến đường chuyển viện', 'Trình phê duyệt danh mục 33 vị trí.\nĐịnh mức mới = km thực tế + 20%.', true);
 kiem(/^Kính gửi: Giám đốc Bệnh viện/.test(tt.noi_dung), 'tờ trình mở đầu bằng Kính gửi');
@@ -69,5 +71,14 @@ kiem(!/Kinh phí/i.test(tt.noi_dung), 'việc không chi tiền thì không tự
 const qd = soanTheoMau('quyet_dinh', 'Phê duyệt định mức tuyến đường', 'Phê duyệt danh mục 33 vị trí và định mức mới.', true);
 kiem(qd.noi_dung.includes('QUYẾT ĐỊNH:') && qd.noi_dung.includes('Điều 1:') && qd.noi_dung.includes('Điều 3:'), 'quyết định đủ QUYẾT ĐỊNH: và các Điều');
 kiem(!/Kính gửi/.test(qd.noi_dung), 'quyết định không có dòng Kính gửi');
+
+// ---- trích yếu lấy từ Ý chính, không lấy lời nhắc việc ----
+const i3 = src.indexOf('function trichYeu');
+const j3 = src.indexOf('\n}', i3) + 2;
+const trichYeu = new Function(src.slice(i3, j3).replace(/: string/g, '') + '; return trichYeu;')();
+const ty = trichYeu('Trình Ban Giám đốc Bệnh viện Đa khoa Cao su Dầu Tiếng phê duyệt danh mục 33 vị trí thường xuyên chuyển viện và công tác kèm theo số km thực tế và định mức mới cho các xe ô tô trực thuộc Bệnh viện.\nĐịnh mức mới = km thực tế + 20%.', 'ghi lại tất cả các vị trí thường xuyên chuyển viện và ctac');
+kiem(ty === 'phê duyệt danh mục 33 vị trí thường xuyên chuyển viện và công tác', 'trích yếu bắt đầu từ động từ phê duyệt, bỏ phần "Trình Ban Giám đốc..." (được: ' + ty + ')');
+kiem(!/bệnh viện đa khoa cao su dầu tiếng/i.test(ty) && ty.length <= 110, 'bỏ tên bệnh viện và không quá dài');
+kiem(trichYeu('', 'Về việc Ban hành định mức tuyến đường') === 'ban hành định mức tuyến đường', 'không có Ý chính thì dùng tên việc, bỏ chữ "Về việc"');
 
 ket('bang_phu_luc');

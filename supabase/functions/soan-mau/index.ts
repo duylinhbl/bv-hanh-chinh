@@ -28,6 +28,7 @@ Quy tắc:
 - CĂN CỨ phải nêu RÕ văn bản: số, ngày tháng năm, cơ quan ban hành, trích yếu. Căn cứ Điều lệ bệnh viện ghi nguyên văn: "Căn cứ Quyết định số 73/QĐ-HĐTV-CSDT ngày 05 tháng 5 năm 2017 của Hội đồng thành viên Công ty TNHH MTV Cao su Dầu Tiếng về việc ban hành Điều lệ tổ chức và hoạt động của Bệnh viện đa khoa Cao su Dầu Tiếng;". Cấm viết căn cứ chung chung kiểu "Căn cứ Điều lệ tổ chức và hoạt động của Bệnh viện đã được phê duyệt". Chưa biết số/ngày thì để [ ], không bỏ trống cũng không bịa.
 - PHỤ LỤC: khi người soạn yêu cầu tách phụ lục, hoặc bảng dài quá 10 hàng, thì KHÔNG để bảng trong thân văn bản. Thân văn bản chỉ dẫn chiếu "(chi tiết theo Phụ lục đính kèm)". Đặt phụ lục ở CUỐI, bắt đầu bằng một dòng chỉ có chữ "PHỤ LỤC", dòng kế là tên phụ lục, rồi dòng "(Đính kèm Tờ trình số [ ] ngày [ ] tháng [ ] năm [ ] của Bệnh viện Đa khoa Cao su Dầu Tiếng)", rồi mới đến bảng. Hệ thống sẽ tự tách phần từ chữ "PHỤ LỤC" trở đi thành MỘT FILE WORD RIÊNG. Đã nhắc "Phụ lục đính kèm" trong thân văn bản thì BẮT BUỘC phải có phần PHỤ LỤC ở cuối với BẢNG ĐỦ CỘT ĐỦ HÀNG; tuyệt đối không nhắc phụ lục rồi bỏ trống. RIÊNG trường hợp lời nhắc nói rõ hệ thống đã có sẵn bảng và tự đưa vào Phụ lục thì bạn KHÔNG viết bảng và KHÔNG viết phần PHỤ LỤC, chỉ dẫn chiếu trong thân văn bản; khi đó trả thêm trường ten_phu_luc là tên danh mục viết hoa (VD: "DANH MỤC ĐỊNH MỨC TUYẾN ĐƯỜNG CHUYỂN VIỆN VÀ CÔNG TÁC").
 - Nội dung chính (Điều 1 / phần đề nghị) phải nói ĐÚNG đối tượng của việc được giao và ý của người soạn (VD: phê duyệt định mức thì viết định mức, không đổi thành kế hoạch hay việc khác). Chỉ dùng căn cứ liên quan trực tiếp, không chép căn cứ của việc khác. Theo cấu trúc chuẩn trong mẫu tham khảo.
+- ve_viec là TRÍCH YẾU của văn bản (viết sau chữ "V/v"), VD "phê duyệt định mức tuyến đường chuyển viện và công tác". Không chép lại tên việc được giao nếu tên đó là lời nhắc việc ("ghi lại tất cả các vị trí...").
 Trả về JSON: {"ve_viec": "trích yếu ngắn, viết thường, không có chữ 'Về việc', không dấu chấm cuối", "noi_dung": "thân văn bản"}.`;
 
 async function appsScript(sv: any, payload: Record<string, unknown>) {
@@ -201,12 +202,28 @@ function phuLucTuKQ(src: string): { tieu: string[]; rows: string[][] }[] {
   return ra;
 }
 
+// Trích yếu ("V/v ...") rút từ Ý chính người dùng gõ: lấy mệnh đề sau động từ trình/duyệt.
+// Tên việc lúc giao thường là lời nhắc việc ("ghi lại tất cả các vị trí..."), không dùng làm trích yếu được.
+function trichYeu(yc: string, tieuDe: string): string {
+  const d1 = String(yc || '').replace(/\r/g, '').split('\n').map((x) => x.trim()).filter(Boolean)[0] || '';
+  const m = d1.match(/(?:ph\u00ea duy\u1ec7t|ban h\u00e0nh|ch\u1ea5p thu\u1eadn|cho ph\u00e9p|th\u00e0nh l\u1eadp|h\u1ed7 tr\u1ee3|c\u1eed|\u0111\u1ec1 ngh\u1ecb|thanh to\u00e1n|mua s\u1eafm|s\u1eeda ch\u1eefa)\s+.{8,}/i);
+  let t = (m ? m[0] : d1).replace(/\s+/g, ' ').trim();
+  t = t.replace(/\s*c\u1ee7a B\u1ec7nh vi\u1ec7n \u0110a khoa Cao su D\u1ea7u Ti\u1ebfng/gi, '').replace(/\s*tr\u1ef1c thu\u1ed9c B\u1ec7nh vi\u1ec7n.*$/i, '');
+  t = t.split(/(?<=[a-z\u00e0-\u1ef9\d])\.\s/)[0].replace(/\.$/, '').trim();
+  // c\u1eaft ph\u1ea7n ph\u1ee5 cho g\u1ecdn, mi\u1ec5n c\u00f2n \u0111\u1ee7 \u00fd
+  const cat = t.replace(/\s+(k\u00e8m theo|cho c\u00e1c|\u0111\u1ec3 |t\u1eeb ng\u00e0y|\u00e1p d\u1ee5ng|l\u00e0m c\u01a1 s\u1edf)\b.*$/i, '').trim();
+  if (cat.length >= 25) t = cat;
+  if (t.length > 110) { const c = t.slice(0, 110); t = c.slice(0, Math.max(c.lastIndexOf(' '), 60)); }
+  const td = String(tieuDe || '').replace(/^v\u1ec1 vi\u1ec7c\s*/i, '').replace(/\.$/, '').trim();
+  return (t.length >= 12 ? t : td).toLowerCase();
+}
+
 // Dựng thân văn bản THEO MẪU, không cần AI. Dùng khi Gemini từ chối (RECITATION) hoặc quá tải:
 // cấu trúc là cố định, nội dung riêng lấy từ "Ý chính" người dùng đã gõ.
 function soanTheoMau(loai: string, tieuDe: string, yc: string, coBang: boolean): { ve_viec: string; noi_dung: string } {
   const CC73 = 'Căn cứ Quyết định số 73/QĐ-HĐTV-CSDT ngày 05 tháng 5 năm 2017 của Hội đồng thành viên Công ty TNHH MTV Cao su Dầu Tiếng về việc ban hành Điều lệ tổ chức và hoạt động của Bệnh viện đa khoa Cao su Dầu Tiếng;';
   const y = String(yc || '').replace(/\r/g, '').split('\n').map((x) => x.trim().replace(/^[-–•]\s*/, '')).filter(Boolean);
-  const veViec = String(tieuDe || '').replace(/^về việc\s*/i, '').replace(/\.$/, '').trim().toLowerCase();
+  const veViec = trichYeu(yc, tieuDe);
   const dan = coBang ? 'Chi tiết theo Phụ lục đính kèm văn bản này.' : '';
   const d: string[] = [];
   if (loai === 'to_trinh') {
@@ -413,7 +430,8 @@ Deno.serve(async (req) => {
 
     const hn = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).formatToParts(new Date());
     const g = (t: string) => hn.find((p) => p.type === t)!.value;
-    const vViec = String(kq.ve_viec || v.tieu_de).replace(/^về việc\s*/i, '').trim();
+    let vViec = String(kq.ve_viec || '').replace(/^về việc\s*/i, '').trim();
+    if (!vViec || vViec.toLowerCase() === String(v.tieu_de || '').trim().toLowerCase()) vViec = trichYeu(yc, v.tieu_de);
     let than = String(kq.noi_dung), pl = '';
     const iPL = than.search(/^[\s]*PH[\u1ee4U] L[\u1ee4U]C\b/im);
     if (iPL > 0) { const sau = than.slice(iPL).trim(); if (sau.length > 40) { than = than.slice(0, iPL).trimEnd(); pl = sau; } }
