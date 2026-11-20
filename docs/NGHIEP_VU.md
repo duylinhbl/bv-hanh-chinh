@@ -345,3 +345,8 @@ Sáng chạy được, chiều lại "Edge Function returned a non-2xx status co
 - Mỗi lần gọi Gemini chờ tối đa 35 giây (trước 50).
 - Khi máy chủ đã tự dựng phụ lục thì AI chỉ viết phần chữ ngắn → **dùng model nhẹ trước, model mạnh sau** (nhanh hơn hẳn, không còn lý do cần model mạnh vì bảng không đi qua AI nữa).
 - BÀI HỌC: hạn chót của Edge Function phải tính từ đầu request và đặt dưới ngưỡng cắt của nền tảng (~100 giây) một khoảng an toàn.
+
+## v90 – Màn Giao ẩn việc nhân viên tự giao (20/11/2026)
+- Anh Linh: "nhân viên tự giao thì tui quản lý không cần phải thấy đống việc đó". Trước đây màn **Giao** lấy mọi việc trong phạm vi quyền, nên 18/22 việc trong DB là việc tự giao (`viec.tu_giao=true`, nguoi_giao = nguoi_nhan) đều hiện ra, lấn hết việc do anh giao.
+- Nay cả thẻ việc 7 ngày lẫn bảng "Việc trong năm" của màn Giao **bỏ việc tự giao của người khác** (giữ việc tự giao của chính mình vì nó đã nằm ở màn Việc). Dưới danh sách có dòng "Đã ẩn N việc nhân viên tự giao cho mình · Hiện ra" để bật xem khi cần giám sát; bật/tắt bằng biến `hienTuGiao` trong app.js (`locTuGiao`, `nutTuGiao`).
+- Màn **Việc** (của tôi) không đổi. Việc tự giao vẫn được nhắc hạn, vẫn vào thống kê của người làm; chỉ là không bày ra trước mắt người quản lý.
