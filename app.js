@@ -98,7 +98,7 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v89</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v90</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button><button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -135,12 +135,18 @@ async function dsGiao(){
   $('#nd').innerHTML='Đang tải…';
   const {data,error}=await sb.from('viec').select('*').neq('trang_thai','huy').not('trang_thai','eq','da_dong').order('han',{nullsFirst:false}).limit(300);
   if(error)return $('#nd').textContent=error.message;
-  const {sap,xa}=locGan(data,7);
+  const con=locTuGiao(data),an=data.length-con.length;
+  const {sap,xa}=locGan(con,7);
   $('#nd').innerHTML=`<div class="hai"><div>`
     +(sap.map(v=>the({...v,ben:'Người nhận: '+ten(v.nguoi_nhan)})).join('')||'<p class="mut">Không có việc nào tới hạn trong 7 ngày.</p>')
-    +ghiLoc('7 ngày tới',xa)+`</div><div id="bnam"><p class="mut">Đang tải danh sách năm…</p></div></div>`;
-  gan();bangNam('giao');
+    +ghiLoc('7 ngày tới',xa)+nutTuGiao(an)+`</div><div id="bnam"><p class="mut">Đang tải danh sách năm…</p></div></div>`;
+  gan();ganNutTuGiao();bangNam('giao');
 }
+// Việc nhân viên TỰ GIAO cho mình: trưởng phòng không cần thấy trong màn Giao, nhưng vẫn bật xem được khi cần
+let hienTuGiao=false;
+const locTuGiao=d=>hienTuGiao?d:(d||[]).filter(v=>!(v.tu_giao&&v.nguoi_giao!==me.id));
+const nutTuGiao=an=>!an&&!hienTuGiao?'':`<p class="mut" style="margin-top:8px">${hienTuGiao?'Đang hiện cả việc nhân viên tự giao.':'Đã ẩn <b>'+an+'</b> việc nhân viên tự giao cho mình.'} <a href="#" id="tgtoggle">${hienTuGiao?'Ẩn lại':'Hiện ra'}</a></p>`;
+const ganNutTuGiao=()=>{const a=$('#tgtoggle');if(a)a.onclick=e=>{e.preventDefault();hienTuGiao=!hienTuGiao;dsGiao()}};
 const NGAY=864e5,TOI_DA_THE=6;
 // Chỉ hiện việc gần tới hạn, xếp hạn gần nhất lên trước, nhiều quá thì cắt bớt — phần còn lại xem ở bảng cả năm
 const locGan=(data,ngay)=>{
@@ -156,8 +162,9 @@ async function bangNam(pv,nam){
   const o=$('#bnam');if(!o)return;
   let q=sb.from('viec').select('*').neq('trang_thai','huy').order('han',{nullsFirst:false}).limit(500);
   if(pv==='toi')q=q.eq('nguoi_nhan',me.id);
-  const {data,error}=await q;
+  let {data,error}=await q;
   if(error)return o.innerHTML='<p class="mut">Lỗi: '+esc(error.message)+'</p>';
+  if(pv==='giao')data=locTuGiao(data);
   const namCua=v=>new Date(v.han||v.tao_luc).getFullYear();
   const nams=[...new Set((data||[]).map(namCua))].sort((x,y)=>y-x),n=nam||new Date().getFullYear();
   if(!nams.includes(n)){nams.push(n);nams.sort((x,y)=>y-x)}
