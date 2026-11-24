@@ -4,6 +4,7 @@ let chromium; try { ({ chromium } = require('playwright')); } catch (e) { consol
 const path = require('path'), root = path.join(__dirname, '..');
 
 const LV = [
+  { id: 1, ten: 'Bảo trợ xã hội', don_vi: 'Cục Bảo trợ xã hội', can_cu: 'QĐ 408/QĐ-BTXH', thu_tu: 1 }, // chưa nạp dữ liệu -> phải bị ẩn
   { id: 7, ten: 'Khám, chữa bệnh', don_vi: 'Cục Quản lý Khám, chữa bệnh', can_cu: 'QĐ 2628/QĐ-BYT', thu_tu: 7 },
   { id: 8, ten: 'Dược, mỹ phẩm', don_vi: 'Cục Quản lý Dược', can_cu: 'CV 1430/QLD-VP', thu_tu: 8 }];
 const DL = [
@@ -57,7 +58,8 @@ window.BVAPP={sb:{from:q},$:s=>document.querySelector(s),esc:s=>String(s??'').re
 
   // Tầng 1: danh sách lĩnh vực có số lượng trường
   await p.waitForSelector('[data-lv]');
-  kiem((await p.$$('[data-lv]')).length === 2, 'hiện đủ các lĩnh vực');
+  kiem((await p.$$('[data-lv]')).length === 2, 'chỉ hiện lĩnh vực đã nạp dữ liệu, ẩn lĩnh vực rỗng');
+  kiem(await p.$('[data-lv="1"]') === null && (await p.$$('#tclv option')).length === 0, 'lĩnh vực chưa nạp không hiện ở thẻ');
   kiem(/2 trường/.test(await p.textContent('[data-lv="7"]')), 'đếm đúng số trường của lĩnh vực');
 
   // Bấm lĩnh vực là nhảy sang Tìm, lọc sẵn theo lĩnh vực đó

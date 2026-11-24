@@ -5,14 +5,16 @@ const A=()=>window.BVAPP,$=s=>document.querySelector(s);
 const esc=s=>A().esc(s);
 const kd=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().replace(/\s+/g,' ').trim();
 const GH=80;                      // tối đa 80 dòng mỗi lần tra, tránh tải nặng trên điện thoại
-let LV=[], st={man:'lv', q:'', lv:null, cde:false}, CHON=null;
+let LV=[], DEM=null, st={man:'lv', q:'', lv:null, cde:false}, CHON=null;
 
+// Chỉ hiện lĩnh vực ĐÃ NẠP dữ liệu. Bệnh viện chỉ dùng 4/8 lĩnh vực; 4 lĩnh vực còn lại
+// vẫn giữ trong danh mục để sau này cần thì nạp thêm, nhưng không bày ra cho người dùng.
 async function napLV(){ if(LV.length)return LV;
-  const {data}=await A().sb.from('tu_dien_linh_vuc').select('*').order('thu_tu');
-  LV=data||[]; return LV }
-async function demLV(){
+  const [{data:lv},d]=await Promise.all([A().sb.from('tu_dien_linh_vuc').select('*').order('thu_tu'), demLV()]);
+  LV=(lv||[]).filter(x=>d[x.id]); return LV }
+async function demLV(){ if(DEM)return DEM;
   const {data}=await A().sb.from('tu_dien_dl').select('lv');
-  const d={}; (data||[]).forEach(r=>d[r.lv]=(d[r.lv]||0)+1); return d }
+  const d={}; (data||[]).forEach(r=>d[r.lv]=(d[r.lv]||0)+1); DEM=d; return d }
 async function napChon(){ if(CHON)return CHON;
   const {data}=await A().sb.from('tu_dien_chon').select('dl_id,ghi_chu').eq('nguoi_id',A().me.id);
   CHON=new Map((data||[]).map(r=>[r.dl_id,r.ghi_chu||''])); return CHON }
@@ -20,7 +22,7 @@ async function napChon(){ if(CHON)return CHON;
 async function ve(){
   const n=$('#nd'); n.innerHTML='Đang tải…';
   try{ await Promise.all([napLV(),napChon()]); }catch(e){ return n.innerHTML='<p class="mut">Lỗi: '+esc(e.message||e)+'</p>' }
-  if(!LV.length)return n.innerHTML='<p class="mut">Chưa có dữ liệu từ điển.</p>';
+  if(!LV.length)return n.innerHTML='<p class="mut">Chưa nạp dữ liệu từ điển.</p>';
   n.innerHTML=`<div class="hero"><div class="hi"><b>🔎 Tra cứu từ điển dữ liệu y tế</b>
     <span class="mut">Quyết định 3600/QĐ-BYT ngày 20/11/2026 · chuẩn tên, định nghĩa, kiểu, độ dài của các trường dữ liệu khi bệnh viện kết nối, chia sẻ dữ liệu (HIS/LIS/EMR, báo cáo, liên thông)</span></div></div>
   <div class="row tcnav" style="gap:6px;margin-bottom:10px">
