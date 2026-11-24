@@ -231,3 +231,8 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
 .bs.dang{opacity:1;border-color:var(--pri);border-width:2px;box-shadow:0 2px 8px rgba(0,80,36,.12)}.bs.dang i{background:var(--pri);color:#fff}
 .bnow{border-left:4px solid var(--pri)}.bnow h3{margin:2px 0 4px}
 @media (min-width:1000px){.bs{flex:1 1 0}}
+
+/* Tra cứu: nút phân tầng (Lĩnh vực / Tìm trường / Bộ của BV) */
+.tcnav button{flex:1;min-width:0;font-size:13px;padding:9px 6px}
+.tcnav button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+nav button span{white-space:nowrap}
