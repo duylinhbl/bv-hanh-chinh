@@ -3,6 +3,10 @@ const { kiem, ket } = require('./lib');
 let chromium; try { ({ chromium } = require('playwright')); } catch (e) { console.log('- bỏ qua ds_viec: chưa cài playwright'); process.exit(0); }
 const path = require('path'), root = path.join(__dirname, '..');
 const ngay = d => new Date(Date.now() + d * 864e5).toISOString();
+// Việc "hạn xa" phải rơi vào NĂM NAY, nếu không bảng năm (lọc theo năm chọn) sẽ thiếu nó
+// và bài kiểm thử sẽ đỏ oan mỗi khi chạy gần cuối năm.
+const cuoiNam = new Date(new Date().getFullYear(), 11, 31, 12).getTime();
+const xa = n => new Date(Math.min(Date.now() + n * 864e5, cuoiNam)).toISOString();
 (async () => {
   const b = await chromium.launch(), p = await b.newPage({ viewport: { width: 400, height: 800 } });
   const errs = []; p.on('pageerror', e => { if (!/ServiceWorker|sw\.js/i.test(e.message)) errs.push(e.message); });
@@ -14,7 +18,7 @@ const ngay = d => new Date(Date.now() + d * 864e5).toISOString();
       {id:'a',tieu_de:'Quá hạn rồi',han:${JSON.stringify(ngay(-2))},trang_thai:'dang_lam',nguoi_nhan:'u1',nguoi_giao:'u2'},
       {id:'b',tieu_de:'Hạn ngày mai',han:${JSON.stringify(ngay(1))},trang_thai:'moi',nguoi_nhan:'u1',nguoi_giao:'u2'},
       {id:'c',tieu_de:'Hạn 10 ngày nữa',han:${JSON.stringify(ngay(10))},trang_thai:'moi',nguoi_nhan:'u1',nguoi_giao:'u2'},
-      {id:'d',tieu_de:'Hạn 40 ngày nữa',han:${JSON.stringify(ngay(40))},trang_thai:'moi',nguoi_nhan:'u1',nguoi_giao:'u2'},
+      {id:'d',tieu_de:'Hạn 40 ngày nữa',han:${JSON.stringify(xa(40))},trang_thai:'moi',nguoi_nhan:'u1',nguoi_giao:'u2'},
       {id:'f',tieu_de:'Việc đã xong',han:${JSON.stringify(ngay(-20))},trang_thai:'da_dong',nguoi_nhan:'u1',nguoi_giao:'u2'},
       {id:'e',tieu_de:'Việc chưa có hạn',han:null,tao_luc:${JSON.stringify(ngay(-1))},trang_thai:'moi',nguoi_nhan:'u1',nguoi_giao:'u2'}];
     const T={viec:V,nguoi_dung:[{id:'u1',ho_ten:'Nhân Viên',auth_id:'a',vai_tro:'nv'},{id:'u2',ho_ten:'Sếp'}],danh_ba:[],khoa_phong:[]};
