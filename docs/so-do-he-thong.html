@@ -1,0 +1,202 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Bản đồ dữ liệu BV Hành chính</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Lớp xếp chồng từ thiết bị xuống kho dữ liệu rồi ra ngoài — đọc từ trên xuống, mỗi lớp một băng */
+:root{
+  --bg:#f3f6f3; --mat:#ffffff; --chu:#17241c; --mo:#5d6f63; --vien:#dbe5dd;
+  --xanh:#055c2b; --xanh2:#00843a; --dong:#b8892b; --do:#b4231f; --cam:#b45309;
+  --font-d:"Be Vietnam Pro",system-ui,sans-serif; --font-b:Inter,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1511; --mat:#15201a; --chu:#e6efe8; --mo:#9ab0a2; --vien:#27362d;
+  --xanh:#4ea86f; --xanh2:#6cc98c; --dong:#e0b45c; --do:#f08a84; --cam:#e2a44a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1511; --mat:#15201a; --chu:#e6efe8; --mo:#9ab0a2; --vien:#27362d;
+  --xanh:#4ea86f; --xanh2:#6cc98c; --dong:#e0b45c; --do:#f08a84; --cam:#e2a44a;
+  color-scheme:dark}
+body{background:var(--bg);color:var(--chu);font:16px/1.6 var(--font-b);margin:0}
+.w{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+h1,h2,h3{font-family:var(--font-d);text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,5vw,38px);font-weight:700;letter-spacing:-.02em}
+h2{font-size:clamp(20px,3.4vw,26px);font-weight:700;margin-top:48px}
+h3{font-size:17px;font-weight:600;margin-top:26px}
+p{margin:10px 0}
+.hero{background:linear-gradient(135deg,var(--xanh),var(--xanh2));color:#fff;margin-top:calc(-1 * env(safe-area-inset-top,0px));padding-top:calc(env(safe-area-inset-top,0px) + 34px);padding-bottom:30px}
+.hero h1{color:#fff}
+.hero .w>p{color:#e8f5ec;max-width:62ch}
+.eyebrow{font-family:var(--font-d);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#bfe3cb;margin:0 0 6px}
+.so{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.so div{background:rgba(255,255,255,.14);border-radius:10px;padding:9px 13px;min-width:0}
+.so b{display:block;font-family:var(--font-d);font-size:20px;font-variant-numeric:tabular-nums}
+.so span{font-size:12px;color:#d6edde}
+.lop{background:var(--mat);border:1px solid var(--vien);border-radius:12px;padding:14px;margin:10px 0}
+.lop>h3{margin:0 0 4px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--mo)}
+.hop{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.hop span{border:1px solid var(--vien);border-radius:8px;padding:6px 10px;font-size:13.5px;background:var(--bg);min-width:0}
+.hop span b{font-weight:600}
+.mui{text-align:center;color:var(--mo);font-size:18px;line-height:1;margin:-2px 0}
+.buoc{counter-reset:b;list-style:none;padding:0;margin:14px 0}
+.buoc li{counter-increment:b;position:relative;padding:10px 0 10px 42px;border-top:1px solid var(--vien)}
+.buoc li:first-child{border-top:0}
+.buoc li::before{content:counter(b);position:absolute;left:0;top:11px;width:26px;height:26px;border-radius:50%;background:var(--xanh);color:#fff;font-family:var(--font-d);font-size:13px;display:grid;place-items:center}
+.buoc b{font-weight:600}
+.buoc .ghi{display:block;color:var(--mo);font-size:14px}
+.cuon{overflow-x:auto;margin:14px 0;border:1px solid var(--vien);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--mat)}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--vien);vertical-align:top}
+th{font-family:var(--font-d);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--mo);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.loi{background:var(--mat);border:1px solid var(--vien);border-left:4px solid var(--vien);border-radius:10px;padding:14px;margin:12px 0}
+.loi.n{border-left-color:var(--do)} .loi.v{border-left-color:var(--cam)} .loi.t{border-left-color:var(--xanh2)}
+.loi h3{margin:0 0 6px;font-size:16.5px}
+.loi p{margin:6px 0;font-size:15px}
+.loi .nhan{font-family:var(--font-d);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;color:#fff;background:var(--mo);margin-right:8px;white-space:nowrap}
+.loi.n .nhan{background:var(--do)} .loi.v .nhan{background:var(--cam)} .loi.t .nhan{background:var(--xanh2)}
+.sua{color:var(--xanh);font-weight:600}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--bg);border:1px solid var(--vien);border-radius:5px;padding:1px 5px}
+.ct{color:var(--mo);font-size:14px}
+footer{margin:56px 0 40px;padding-top:18px;border-top:1px solid var(--vien);color:var(--mo);font-size:13.5px}
+</style>
+
+<div class="hero"><div class="w">
+  <p class="eyebrow">App BV Hành chính · rà soát ngày 25/11/2026</p>
+  <h1>Dữ liệu đi đâu, ghi ở đâu, kết thúc chỗ nào</h1>
+  <p>Bản đồ dựng từ chính cơ sở dữ liệu đang chạy, không vẽ theo trí nhớ: 38 bảng, 8 edge function, 9 lịch chạy tự động và các cầu nối ra Google.</p>
+  <div class="so">
+    <div><b>38</b><span>bảng, bật RLS toàn bộ</span></div>
+    <div><b>8</b><span>edge function</span></div>
+    <div><b>9</b><span>lịch chạy tự động</span></div>
+    <div><b>97</b><span>người đang hoạt động</span></div>
+    <div><b>3</b><span>người đã bật thông báo</span></div>
+  </div>
+</div></div>
+
+<div class="w">
+
+<h2>1. Hệ thống xếp thành 5 lớp</h2>
+<p>Mỗi lớp chỉ nói chuyện với lớp ngay dưới nó. Không lớp nào nhảy cóc — đó là lý do hệ thống còn dễ sửa.</p>
+
+<div class="lop"><h3>Lớp 1 · Người dùng</h3>
+  <div class="hop"><span>Điện thoại (PWA, thêm vào màn hình chính)</span><span>Máy tính (bố cục 2 cột)</span><span>Không mạng → <b>hàng đợi IndexedDB</b></span></div></div>
+<p class="mui">↓</p>
+<div class="lop"><h3>Lớp 2 · App — chỉ là màn hình, không giữ chân lý</h3>
+  <div class="hop"><span><b>app.js</b> việc, thông báo, tài khoản</span><span><b>lich.js</b> lịch công tác</span><span><b>ct.js</b> lịch trực</span><span><b>kh.js</b> chi phí</span><span><b>tc.js</b> tra cứu (đang tắt)</span><span><b>sw.js</b> cache + thông báo đẩy</span></div></div>
+<p class="mui">↓</p>
+<div class="lop"><h3>Lớp 3 · Supabase — nơi giữ chân lý</h3>
+  <div class="hop"><span>Auth (<code>sđt@bv.local</code>)</span><span>Postgres + <b>RLS</b> chặn ở máy chủ</span><span>44 hàm (<code>nd_hien_tai</code>, <code>phat_thong_bao</code>…)</span><span>8 trigger (nhật ký, đẩy tin, chặn sai trạng thái)</span><span>Storage <code>anh</code> · <code>sao-luu</code></span><span>pg_cron 9 việc định kỳ</span></div></div>
+<p class="mui">↓</p>
+<div class="lop"><h3>Lớp 4 · Cầu nối Apps Script (tài khoản tchcbvdkcsdt)</h3>
+  <div class="hop"><span><b>VanBan.gs</b> lưu Drive</span><span><b>BaoCaoTuan.gs</b> lấy mẫu, gửi thư</span><span><b>Sheet script</b> cộng tiền, khóa chống ghi đè</span><span><b>DoiChieu.gs</b> đọc hồ sơ Drive</span></div></div>
+<p class="mui">↓</p>
+<div class="lop"><h3>Lớp 5 · Ngoài hệ thống</h3>
+  <div class="hop"><span>Google Drive (văn bản, hồ sơ)</span><span>Google Sheet (gốc số liệu chi phí)</span><span>Gmail → VP Công ty</span><span>Gemini (AI đọc tệp, soạn thảo)</span><span>Web Push (Apple/Google)</span></div></div>
+
+<h2>2. Dữ liệu được GHI thế nào</h2>
+<p>Có bốn luồng ghi. Ba luồng đầu người dùng bấm, luồng cuối máy tự chạy.</p>
+
+<h3>A. Giao việc và cập nhật hiện trạng — luồng xương sống</h3>
+<ol class="buoc">
+  <li><b>Người giao bấm Giao việc</b><span class="ghi">app ghi thẳng 1 dòng vào <code>viec</code>. Tệp đính kèm lên Storage trước, hỏng thì gỡ lại tên tệp khỏi dòng việc chứ không để dòng trỏ vào tệp không tồn tại.</span></li>
+  <li><b>Trigger <code>push_viec</code> bắn thông báo</b><span class="ghi">giao cho chính mình thì không bắn — cố ý.</span></li>
+  <li><b>Người nhận cập nhật hiện trạng</b><span class="ghi">ảnh chụp tại chỗ + GPS chỉ lấy lúc bấm Gửi. Mọi thứ vào <b>hàng đợi IndexedDB trước</b>, chưa đụng máy chủ.</span></li>
+  <li><b>Hàng đợi đẩy lên, từng món một</b><span class="ghi">ảnh → Storage, tệp → Storage, rồi <code>insert cap_nhat_hien_trang</code>, rồi <code>update viec.trang_thai</code>. Món nào hỏng 3 lần thì đánh dấu và <b>nhảy qua</b>, không chặn món sau.</span></li>
+  <li><b>Người giao xác nhận đóng việc</b><span class="ghi">cũng ghi một dòng <code>cap_nhat_hien_trang</code> (trạng thái <code>da_dong</code>) + cập nhật <code>viec</code>. Trigger <code>viec_chuyen_tt</code> chặn nhân viên tự đóng việc của người khác.</span></li>
+</ol>
+<p class="ct">Điểm đáng giá: <code>ma_khach</code> là khóa duy nhất, và mã lỗi trùng <code>23505</code> được bỏ qua thay vì ném lỗi. Nghĩa là gửi lại không bao giờ nhân đôi cập nhật, mà vẫn chạy tiếp bước đổi trạng thái việc. Đây là chỗ hay bị sai nhất trong app offline, chỗ này làm đúng.</p>
+
+<h3>B. Thông báo</h3>
+<p>Người phát gọi hàm <code>phat_thong_bao</code> → máy chủ ghi 1 dòng <code>thong_bao</code> và <b>bung ra</b> nhiều dòng <code>thong_bao_nguoi_nhan</code> theo phạm vi (toàn viện hoặc theo khoa) → trigger <code>push_thong_bao</code> đẩy tin. Người nhận bấm "Đã đọc, đã hiểu" thì ghi <code>da_doc_luc</code> vào chính dòng của mình. Người phát xem được ai đã đọc qua hàm <code>tinh_hinh_doc</code>.</p>
+
+<h3>C. Chi phí — nguồn chân lý nằm NGOÀI hệ thống</h3>
+<p>Đây là luồng ngược đời nhất và cũng là luồng làm đúng nhất: Google Sheet của kế toán mới là bản gốc, cơ sở dữ liệu chỉ là bản chép để xem nhanh.</p>
+<ol class="buoc">
+  <li><b>Thảo thả phiếu đề nghị thanh toán</b><span class="ghi">app đọc chữ trang 1 ngay trên máy (hoặc nhờ OCR nếu là bản scan), AI gợi ý hạng mục và số tiền — chỉ là gợi ý, người nhập tự gõ lại.</span></li>
+  <li><b>Bấm Cộng</b><span class="ghi">edge <code>kh-ghi</code> → Apps Script → <b>cộng thêm "+số" vào công thức</b> của ô tháng, không bao giờ ghi đè. Có khóa chống hai người ghi cùng lúc và mã phiếu chống bấm hai lần.</span></li>
+  <li><b>Hồ sơ vào thư mục khoản chi</b><span class="ghi">chuyển từ <code>_tam</code> sang thư mục đúng hạng mục, ghi chú ô Sheet lưu ngày, số tiền, tên tệp, link.</span></li>
+  <li><b>15 phút một lần, <code>kh-dong-bo</code> đọc ngược Sheet về <code>kh_dong</code></b><span class="ghi">chạy 6h–20h giờ Việt Nam. Sếp xem số trên app là xem bản chép, không phải bản gốc.</span></li>
+</ol>
+
+<h3>D. Máy tự ghi — 9 lịch chạy</h3>
+<div class="cuon"><table>
+<tr><th>Giờ Việt Nam</th><th>Việc</th><th>Ghi vào đâu</th></tr>
+<tr><td>mỗi 5 phút</td><td><code>nhac_lich_ct</code> nhắc lịch công tác</td><td><code>nhac_da_gui</code> + đẩy tin</td></tr>
+<tr><td>mỗi 10 phút</td><td><code>nhac_viec</code> nhắc hạn việc</td><td><code>nhac_da_gui</code> + đẩy tin</td></tr>
+<tr><td>mỗi 15 phút, 6h–20h</td><td><code>kh-dong-bo</code> đọc lại Sheet</td><td><code>kh_dong</code>, <code>kh_bo_log</code></td></tr>
+<tr><td>06:30 và 17:00</td><td><code>nhac_truc</code></td><td><code>nhac_da_gui</code> + đẩy tin</td></tr>
+<tr><td>03:00</td><td><code>sao-luu</code></td><td>bucket <code>sao-luu</code></td></tr>
+<tr><td>03:30</td><td><code>kiem_thu_va_bao</code> tự kiểm tra</td><td><code>kiem_thu_log</code></td></tr>
+<tr><td>15:00 thứ 5 (+15:30 thử lại)</td><td><code>bao-cao-tuan</code></td><td><code>bc_tuan_log</code> + gửi thư</td></tr>
+</table></div>
+<p class="ct">Đã đối chiếu: cả 9 lịch viết theo giờ UTC nhưng quy ra giờ Việt Nam đều đúng ý. Không có cái nào lệch múi giờ.</p>
+
+<h2>3. Dữ liệu KẾT THÚC ở đâu</h2>
+<p>Câu hỏi quan trọng hơn câu hỏi ghi vào đâu. Có bốn kiểu kết thúc, và một kiểu <b>không bao giờ kết thúc</b>.</p>
+
+<div class="cuon"><table>
+<tr><th>Dữ liệu</th><th>Kết thúc bằng</th><th>Sau đó</th><th>Có trong sao lưu?</th></tr>
+<tr><td>Việc</td><td><code>trang_thai = da_dong</code> + <code>dong_luc</code></td><td>Biến khỏi màn hình, vẫn nằm trong bảng việc cả năm. Chỉ người tạo mới xóa được.</td><td>Có</td></tr>
+<tr><td>Cập nhật hiện trạng</td><td>Không kết thúc — chỉ thêm, không sửa, không xóa</td><td>Xóa theo việc (cascade)</td><td>Có</td></tr>
+<tr><td>Ảnh, tệp đính kèm</td><td>Không có điểm kết thúc</td><td><b>Xóa việc không xóa tệp</b> — tệp nằm lại trong Storage</td><td><b>Không</b></td></tr>
+<tr><td>Thông báo</td><td>Người nhận bấm đã đọc</td><td>Dòng ở lại vĩnh viễn, không dọn</td><td>Có</td></tr>
+<tr><td>Báo cáo tuần</td><td><b>Rời hệ thống</b>: Gmail → VP Công ty</td><td>Chỉ còn một dòng ghi trong <code>bc_tuan_log</code></td><td><b>Không</b></td></tr>
+<tr><td>Văn bản soạn từ AI</td><td><b>Rời hệ thống</b>: Google Drive của tài khoản phụ</td><td>App chỉ giữ link <code>drive_url</code></td><td><b>Không</b> (bảng <code>van_ban_viec</code> không nằm trong sao lưu)</td></tr>
+<tr><td>Số tiền đã cộng</td><td><b>Rời hệ thống</b>: vào công thức ô Sheet</td><td>Hoàn tác được nếu ô chưa bị sửa tay sau đó</td><td>Có (bản chép)</td></tr>
+<tr><td>Nội dung gửi AI</td><td><b>Rời hệ thống</b>: sang Google Gemini</td><td>Gói miễn phí — Google có thể dùng để cải thiện sản phẩm</td><td>Lịch sử chat <b>không</b> trong sao lưu</td></tr>
+<tr><td>Nhật ký (6 bảng)</td><td>Không có hạn lưu</td><td>Tăng mãi</td><td>Một phần</td></tr>
+</table></div>
+
+<h2>4. Chỗ đang sai</h2>
+
+<div class="loi n"><h3><span class="nhan">Nặng</span>Sao lưu đêm bỏ sót 9 trong 38 bảng</h3>
+<p>Danh sách bảng viết cứng trong <code>sao-luu/index.ts</code> từ hồi có 23 bảng. Mỗi lần thêm bảng mới là quên cập nhật, và không có gì cảnh báo.</p>
+<p>Trong 9 bảng bị bỏ, <b>5 bảng do người nhập tay và không tái tạo được</b>: <code>loai_viec</code> (16 loại việc kèm quy trình từng bước), <code>van_ban_viec</code> (sổ văn bản đã soạn của từng việc), <code>mau_van_ban</code>, <code>loai_cong_viec</code>, <code>tu_dien_chon</code>. Mất là nhập lại từ đầu.</p>
+<p class="sua">Sửa: cho hàm sao lưu tự liệt kê bảng từ hệ thống thay vì viết tay, chỉ loại trừ <code>bi_mat</code>. Thêm một bài kiểm thử đêm: "sao lưu có phủ hết bảng không".</p></div>
+
+<div class="loi n"><h3><span class="nhan">Nặng</span>Ảnh và tệp đính kèm không được sao lưu</h3>
+<p>48 tệp trong bucket <code>anh</code>. Bản sao lưu JSON chỉ chứa <i>đường dẫn</i> tới tệp, không chứa nội dung. Phục hồi xong thì việc còn nguyên nhưng ảnh hiện trường, file Word, file Excel đính kèm đều mất.</p>
+<p class="sua">Sửa: sao lưu tệp theo tuần (nén theo tháng), hoặc ít nhất tệp của việc chưa đóng.</p></div>
+
+<div class="loi n"><h3><span class="nhan">Nặng</span>Bản sao lưu nằm chung nhà với bản gốc</h3>
+<p>Bucket <code>sao-luu</code> (14 bản) nằm trong <b>chính dự án Supabase</b> chứa dữ liệu gốc. Mất dự án, khóa tài khoản, hay xóa nhầm là mất cả hai cùng lúc. Sao lưu chỉ có giá trị khi nó ở chỗ khác.</p>
+<p class="sua">Sửa: mỗi tuần đẩy một bản ra Google Drive qua cầu nối Apps Script đã có sẵn.</p></div>
+
+<div class="loi n"><h3><span class="nhan">Nặng</span>3 trên 97 người đã bật thông báo</h3>
+<p>Đây không phải lỗi kỹ thuật mà là lỗ hổng lớn nhất của cả thiết kế. Toàn bộ hệ thống dựa trên giả định "giao việc xong thì người ta biết ngay". 94 người chỉ biết khi tự mở app. Nhắc hạn việc, nhắc trực, thông báo khẩn — tất cả đang chạy vào khoảng không.</p>
+<p class="sua">Sửa: đây là việc triển khai, không phải việc code. Cần một buổi hướng dẫn từng khoa cài vào màn hình chính và bật thông báo, rồi dùng màn "Ai chưa bật thông báo" có sẵn để theo dõi.</p></div>
+
+<div class="loi v"><h3><span class="nhan">Vừa</span>Xóa việc không dọn tệp</h3>
+<p>Các bảng con xóa theo việc, nhưng tệp trên Storage ở lại. Đã có 1 tệp mồ côi. Số nhỏ, nhưng không ai dọn thì chỉ tăng.</p>
+<p class="sua">Sửa: xóa việc thì xóa luôn thư mục tệp của nó; thêm một lượt dọn tệp mồ côi hằng tuần.</p></div>
+
+<div class="loi v"><h3><span class="nhan">Vừa</span>Nhật ký không có hạn lưu</h3>
+<p><code>kh_bo_log</code> 687 dòng, <code>push_log</code> 415, <code>nhat_ky</code> 397, <code>kiem_thu_log</code> 291, <code>nhac_da_gui</code> 117, cộng <code>loi_app</code>. Chỉ thêm, không bao giờ bớt.</p>
+<p class="sua">Sửa: một lệnh dọn hằng tháng, giữ nhật ký thao tác 12 tháng, nhật ký kỹ thuật 90 ngày.</p></div>
+
+<div class="loi v"><h3><span class="nhan">Vừa</span>Văn bản bệnh viện đang đứng tên một tài khoản Gmail cá nhân</h3>
+<p>Mọi văn bản soạn từ app lưu vào Drive của <code>tchcbvdkcsdt@gmail.com</code>, chia sẻ lại cho bồ. Nghĩa là <b>chủ sở hữu thật</b> của hồ sơ bệnh viện là một tài khoản Gmail. Mất tài khoản đó, hoặc người giữ nó nghỉ việc, là mất quyền sở hữu toàn bộ.</p>
+<p class="sua">Sửa: đặt tài khoản khôi phục và người quản trị dự phòng ngay; về lâu dài chuyển sang Drive của tổ chức.</p></div>
+
+<div class="loi v"><h3><span class="nhan">Vừa</span>Quản trị không xem được tình trạng hệ thống trong app</h3>
+<p><code>bc_tuan_log</code> và <code>kiem_thu_log</code> bật RLS nhưng không có quy tắc xem nào, nên app không đọc được. Muốn biết báo cáo tuần đã gửi chưa, bài kiểm thử đêm có đỏ không, phải mở Supabase.</p>
+<p class="sua">Sửa: mở quyền xem cho quản trị và thêm một màn "Sức khỏe hệ thống" trong tab Tôi.</p></div>
+
+<div class="loi t"><h3><span class="nhan">Làm đúng</span>Bốn chỗ đừng sửa</h3>
+<p><b>Hàng đợi chống ghi trùng.</b> Khóa duy nhất <code>ma_khach</code> cộng với việc bỏ qua lỗi trùng khiến gửi lại an toàn tuyệt đối.</p>
+<p><b>Nhật ký hiện trạng chỉ thêm.</b> Bảng <code>cap_nhat_hien_trang</code> chỉ có quy tắc thêm và xem, không có sửa và xóa. Đã ghi là không ai sửa được.</p>
+<p><b>Bảng nhạy cảm không có cửa.</b> <code>bi_mat</code>, <code>push_dang_ky</code>, <code>nhac_da_gui</code>, <code>dc_ho_so</code> bật RLS và cố ý không có quy tắc nào, chỉ hàm máy chủ chạm được.</p>
+<p><b>Chặn ở máy chủ chứ không ẩn nút.</b> Quyền xóa, quyền đóng việc, phạm vi xem đều cưỡng chế bằng RLS và trigger. Ẩn nút chỉ là trang trí.</p></div>
+
+<h2>5. Nên làm theo thứ tự này</h2>
+<ol class="buoc">
+  <li><b>Vá sao lưu</b><span class="ghi">tự liệt kê bảng + kiểm thử phủ bảng. Nửa buổi, chặn được rủi ro lớn nhất.</span></li>
+  <li><b>Đẩy một bản sao ra Drive mỗi tuần</b><span class="ghi">dùng cầu nối Apps Script đã có.</span></li>
+  <li><b>Bật thông báo cho 94 người còn lại</b><span class="ghi">không code, nhưng đây mới là thứ quyết định app sống hay chết.</span></li>
+  <li><b>Dọn tệp mồ côi và đặt hạn lưu nhật ký</b></li>
+  <li><b>Màn Sức khỏe hệ thống trong tab Tôi</b><span class="ghi">để bồ tự thấy đêm qua có gì đỏ, không phải hỏi.</span></li>
+</ol>
+
+<footer>Dựng từ dữ liệu thật của dự án Supabase <code>fndqxqwgnvrkuzogashv</code> lúc 25/11/2026: danh sách bảng, quy tắc RLS, trigger, hàm, lịch pg_cron, edge function, Storage và mã nguồn trong repo <code>duylinhbl/bv-hanh-chinh</code> bản v93.</footer>
+
+</div>
