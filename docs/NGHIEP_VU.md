@@ -414,4 +414,17 @@ Chuông không reo lại vì trigger `push_thong_bao` chỉ chạy trên INSERT 
 
 Nhân tiện sửa luôn tiêu đề sinh ra: cắt theo TỪ (`regexp_replace(left(…,64),'\s+\S*$','')`) thay vì cắt cứng 140 ký tự, và bỏ giờ khỏi tiêu đề vì thân thông báo đã có. Dạng mới: `Thay đổi lịch 23/11: Họp kiểm điểm, đánh giá, xếp loại chất lượng năm 2026 đối với…`
 
-**Còn tồn:** 3 thông báo trùng của ngày 23/11 và cặp 26/11 vẫn nằm đó (dữ liệu cũ, chưa xóa — chờ anh Linh quyết).
+**SỬA LẠI NGAY SAU ĐÓ (bỏ cửa sổ 10 phút).** Anh Linh bác cách làm theo thời gian: *"thông báo thiếu người, bạn mở ra sửa, thêm người khác vào thì bạn thông báo đến người đó thôi, chứ sao thông báo lại cả nhóm người được? Nội dung thay đổi thì cũng thông báo luôn, không cần phải đẻ thêm 1 thông báo khác."*
+
+Quy tắc đúng — **một lịch = một thông báo, vĩnh viễn**, không giới hạn thời gian. Phân biệt hai loại thay đổi:
+
+| Sửa gì | Thông báo | Ai nhận chuông | Đã đọc |
+|---|---|---|---|
+| **Thêm/bớt người** (nội dung y nguyên) | vẫn một, tiêu đề và thứ tự trong danh sách **không đổi** | chỉ người **mới được thêm** | người cũ **giữ nguyên** đã đọc, không bị làm phiền |
+| **Đổi nội dung** (ngày, giờ, nội dung, địa điểm, hủy) | vẫn một, tiêu đề thành "Thay đổi lịch …", nổi lên đầu | **cả nhóm**, trên chính thông báo cũ | **xóa hết** đã đọc, phải xác nhận lại bản chốt |
+
+Cách làm: biến `doi_nd` tách riêng với thay đổi thành phần; `them` = người mới (insert dòng người-nhận → trigger tự đẩy chuông cho riêng họ), `con` = người đã có từ trước (chỉ khi `doi_nd` mới gọi thẳng `gui_push(con, …)` với url và tag của **đúng thông báo cũ**, nên điện thoại gộp chung một dòng chứ không đẻ thêm). Người bị bỏ khỏi thành phần thì xóa dòng người-nhận.
+
+**Đã kiểm thử thật trên cơ sở dữ liệu** (tạo lịch → thêm người → đổi giờ, rồi quay lui toàn bộ bằng `raise exception` trong `do $$`): tạo ra 1 thông báo/2 người nhận; thêm người → vẫn 1 thông báo, 3 người nhận, 2 người cũ giữ nguyên đã đọc, tiêu đề và thứ tự không đổi; đổi giờ → vẫn 1 thông báo, 0 người còn đã đọc, tiêu đề thành "Thay đổi lịch 02/12: …". Không để lại dữ liệu thử.
+
+**Còn tồn:** 3 thông báo trùng của ngày 23/11 và cặp 26/11 vẫn nằm đó (dữ liệu cũ sinh ra trước khi sửa — chờ anh Linh quyết xóa hay giữ).
