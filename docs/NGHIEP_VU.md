@@ -432,3 +432,20 @@ Cách làm: biến `doi_nd` tách riêng với thay đổi thành phần; `them`
 Đồng thời **gắn `lich_id` cho 7 thông báo cũ** còn lại, vì cột này mới thêm nên các bản cũ đều rỗng — không gắn thì lần sửa lịch tới vẫn đẻ ra thông báo mới. Cách gắn: khớp `lich_cong_tac.ngay` + `noi_dung` với dòng 1 và dòng 2 của `thong_bao.noi_dung`.
 
 **Cặp 10/11 "Tập huấn Online Bệnh án điện tử":** hai bản có số người nhận khác hẳn — bản 11:00 gửi **93 người**, bản 13:30 chỉ **4 người**. Tui dừng lại hỏi thay vì xóa theo quy tắc "giữ bản mới nhất"; anh Linh trả lời **bản 93 người là gửi nhầm**, xóa bản đó, giữ bản 4 người. Còn **11 thông báo**. Bài học: trước khi dọn "bản trùng", phải so **số người nhận** chứ không chỉ so tiêu đề — số người lệch nghĩa là hai bản không tương đương, phải hỏi người dùng.
+
+## v97 – Tra cứu tờ hướng dẫn sử dụng thuốc (25/11/2026)
+Anh Linh đưa mã QR "TỜ HƯỚNG DẪN SỬ DỤNG THUỐC" của khoa Dược. Giải mã QR (OpenCV) ra `https://qr-codes.io/8ij0kR` — QR động của dịch vụ TQRCG, trỏ tới một thư mục Google Drive: **"Tờ hướng dẫn sử dụng thuốc"**, id `1ok-iLla79elP7cHpolXZLwExYbL4gNNp`, chủ sở hữu `truongxuanbachkddhydtphcm@gmail.com`, chia sẻ dạng "ai có đường liên kết". Cấu trúc: 26 thư mục chữ cái A–Z, mỗi tệp một PDF tên dạng `Tên biệt dược (Hoạt chất hàm lượng).pdf`, nặng 0,5–6,5 MB, cập nhật khoảng 9/2025.
+
+**Quyết định của anh Linh:** bộ này do dược phát triển, anh sẽ xin đủ bộ PDF theo đúng định dạng đó về Drive của mình; app chỉ việc kết nối và làm bộ tra cứu.
+
+**Cách làm — app giữ DANH MỤC, không chép nội dung.** Chỉ lưu tên tệp và id Drive; bác sĩ bấm xem là mở thẳng tệp gốc. Nhờ vậy khoa Dược sửa tệp nào thì app thấy ngay tệp đó, không bao giờ có hai phiên bản lệch nhau — đây là rủi ro nguy hiểm nhất của loại dữ liệu này.
+
+- **Bảng `thuoc`**: khóa chính `drive_id`; `ten`, `hoat_chat`, `ham_luong`, `ten_tep`, `chu_cai`, `byte`, `sua_luc`, `kd` (không dấu để tìm), `bv_dung` (khoa Dược/BGĐ đánh dấu thuốc BV đang dùng), `ghi_chu`. Ai đăng nhập cũng xem; chỉ quản trị và BGĐ sửa được cờ `bv_dung`.
+- **`apps-script/ThuocKho.gs`** route `thuoc_quet`: quét đệ quy thư mục kho, trả về id/tên/chữ cái/kích thước/ngày sửa của mọi PDF (trần 4.000 tệp). Cần chia sẻ thư mục kho cho tài khoản chạy script quyền Người xem.
+- **Edge `thuoc-dong-bo`**: gọi Apps Script, tách tên tệp thành biệt dược + hoạt chất + hàm lượng, upsert theo `drive_id` (nên **giữ nguyên** cờ `bv_dung` khoa Dược đã đánh), và gỡ khỏi danh mục những tệp không còn trong kho. Cấu hình `bi_mat.thuoc_thu_muc` = id thư mục kho.
+- **`thuoc.js`** (menu 💊 Thuốc trên thanh điều hướng): gõ tên biệt dược hoặc hoạt chất, không dấu cũng ra; lọc "chỉ thuốc bệnh viện đang dùng"; mỗi kết quả có nút mở tờ hướng dẫn. Quản trị có nút "Làm mới danh mục từ Drive".
+- Menu Tra cứu trước đây (từ điển dữ liệu QĐ 3600) **gỡ khỏi thanh điều hướng** nhưng mã và dữ liệu còn nguyên — nội dung đó thuộc mảng y tế–CNTT, không phải thứ bác sĩ tra hằng ngày.
+- Kiểm thử `tests/tra_thuoc.test.js` (11 mục): tách đúng thuốc phối hợp (`Augmentin (Amoxicilin/Acid clavulanic 500mg/125mg)`), thuốc đông y không ngoặc, hàm lượng nằm trong tên (`Kidmin 200ml`), số thập phân dấu phẩy, đơn vị IU/ml.
+- `apps-script/ChepKho.gs`: script chép cả kho về Drive (đếm trước bằng `demKho()`, chép có nối tiếp khi quá 6 phút, không chép lại tệp đã có), tự ghi `NGUON.txt` nêu nguồn, ngày chép và cảnh báo phải đối chiếu danh mục thuốc BV đang trúng thầu.
+
+**CÒN LẠI TRƯỚC KHI MỞ CHO BÁC SĨ:** (1) có đủ bộ PDF trong Drive của BV; (2) chia sẻ thư mục cho tài khoản chạy script; (3) đặt `bi_mat.thuoc_thu_muc`; (4) bấm Làm mới danh mục; (5) **khoa Dược đối chiếu danh mục thuốc trúng thầu và đánh dấu `bv_dung`** — cùng hoạt chất khác nhà sản xuất thì tờ hướng dẫn khác nhau về tá dược, cách trình bày liều và chống chỉ định.
