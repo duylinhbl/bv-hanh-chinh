@@ -369,3 +369,22 @@ Sáng chạy được, chiều lại "Edge Function returned a non-2xx status co
 - Anh Linh rà lại: từ điển dữ liệu QĐ 3600/QĐ-BYT là tài liệu mảng **y tế – CNTT** (chuẩn trường dữ liệu để liên thông HIS/LIS/EMR), không phải thứ bác sĩ, điều dưỡng tra hằng ngày. Anh sẽ làm một phần tra cứu RIÊNG cho bác sĩ và điều dưỡng (nội dung chuyên môn lâm sàng).
 - Tắt bằng hằng số `TRA_CUU=false` ở đầu app.js: nút trên thanh điều hướng không hiện, ai đang đứng ở tab đó thì tự về màn Việc. **Không xóa gì**: tc.js, 3 bảng `tu_dien_*`, 932 trường dữ liệu và `data/tu_dien/*.json` vẫn còn nguyên; đổi thành `true` là hiện lại ngay.
 - Bài học: hỏi rõ "ai sẽ dùng cái này" trước khi đưa một mảng dữ liệu vào app dùng chung — đúng dữ liệu nhưng sai người dùng thì vẫn là rác trên màn hình.
+
+## v94 – Vá sao lưu, dọn rác, màn Sức khỏe hệ thống (25/11/2026)
+Làm theo kết quả rà soát ngày 25/11 (xem `docs/so-do-he-thong.html`).
+
+**1. Sao lưu không còn sót bảng.** Hàm `ds_bang_sao_luu()` liệt kê bảng thẳng từ `pg_class` (trừ `bi_mat` và `sao_luu_log`), edge `sao-luu` v6 gọi hàm này thay cho danh sách viết cứng — thêm bảng mới là tự có trong sao lưu, không phải nhớ sửa. Danh sách cũ giữ lại làm dự phòng nếu RPC lỗi. Kết quả chạy thật: **37/37 bảng, 4.349 dòng**.
+
+**2. Sao lưu kèm nội dung tệp.** Trước chỉ lưu đường dẫn. Nay nhúng base64 toàn bộ bucket `anh` vào bản sao lưu (bỏ qua tệp > 3 MB, trần 40 MB/bản, phần bỏ qua ghi rõ trong `tep_bo_qua`). Chạy thật: **47 tệp, 3,2 MB**.
+
+**3. Dọn tệp mồ côi.** `sao-luu` so thư mục trong bucket với danh sách việc; thư mục của việc đã xóa thì xóa luôn (lần đầu dọn được 1 tệp). Ngoài ra app xóa tệp ngay khi xóa việc (`xoaTepCuaViec` trong app.js) — hai lớp, lớp trong app là chính, lượt quét đêm nhặt nốt.
+
+**4. Hạn lưu nhật ký.** Hàm `don_nhat_ky()`, cron `don-nhat-ky` 03:40 mỗi đêm: `nhat_ky` giữ 12 tháng; `push_log`, `kh_bo_log`, `loi_app` giữ 90 ngày; `nhac_da_gui` 120 ngày. (`kiem_thu_log` vốn đã tự xóa sau 60 ngày trong `kiem_thu_va_bao`.)
+
+**5. Bảng `sao_luu_log` + 3 bài kiểm thử đêm.** Mỗi lần sao lưu ghi một dòng (số bảng, số dòng, số tệp, dung lượng, lỗi). `kiem_thu_sl()` thêm vào bộ kiểm thử 03:30: **S1** sao lưu có chạy trong 36 giờ qua, **S2** phủ hết bảng, **S3** kèm đủ tệp. Sót là đêm đó có push cảnh báo cho quản trị. Đây là chốt chặn để lỗi "quên thêm bảng vào sao lưu" không lặp lại.
+
+**6. Bản sao ngoài Supabase.** Edge `sao-luu-drive` lấy bản mới nhất trong bucket đẩy sang Drive qua Apps Script (`apps-script/SaoLuu.gs`, route `sl_luu`, thư mục "Sao lưu app BV Hành chính", giữ 12 bản, chia sẻ cho duylinhbl@gmail.com). Cron `sao-luu-drive` 03:20 sáng thứ Hai (sau bản đêm 03:00). **Chỉ chạy được sau khi anh Linh dán SaoLuu.gs và Triển khai phiên bản MỚI.**
+
+**7. Màn "Sức khỏe hệ thống"** trong tab Tôi, chỉ quản trị: sao lưu gần nhất, kết quả kiểm thử đêm (và tên bài đỏ), báo cáo tuần gửi VP Công ty gần nhất. Mở quyền xem `bc_tuan_log` cho quản trị (`bct_xem`); `sao_luu_log` có `sl_xem`.
+
+**Còn lại của đợt rà soát:** vận động 94 người bật thông báo (đã có deck hướng dẫn để anh Linh đứng nói), và chuyển quyền sở hữu Drive văn bản khỏi tài khoản Gmail cá nhân tchcbvdkcsdt.

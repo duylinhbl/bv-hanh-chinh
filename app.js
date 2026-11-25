@@ -102,7 +102,7 @@ function khung(){
   // Tra cứu từ điển dữ liệu y tế (QĐ 3600/QĐ-BYT): TẮT từ 24/11/2026 — nội dung thuộc mảng
   // y tế - CNTT, không phải thứ bác sĩ/điều dưỡng tra hằng ngày. Dữ liệu và mã (tc.js, bảng
   // tu_dien_*) vẫn giữ nguyên; đổi TRA_CUU=true là menu hiện lại ngay.
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v93</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v94</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button>${TRA_CUU?`<button data-t="tc"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg><span>Tra cứu</span></button>`:''}<button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -188,7 +188,14 @@ async function xoaMuc(loai,id,hoi,sau){if(!confirm(hoi))return;
   const {data,error}=await sb.from(loai).delete().eq('id',id).select('id');
   if(error)return toast('Lỗi: '+error.message);
   if(!data||!data.length)return toast('Không xóa được: mục này không phải do bạn tạo');
+  if(loai==='viec')await xoaTepCuaViec(id);   // các bảng con xóa theo việc, tệp trên Storage phải tự dọn
   toast('Đã xóa');sau()}
+// Dọn thư mục tệp của một việc đã xóa; lỗi thì bỏ qua, lượt quét mồ côi hằng đêm sẽ nhặt nốt
+async function xoaTepCuaViec(id){try{
+  const {data}=await sb.storage.from('anh').list(String(id),{limit:1000});
+  const ds=(data||[]).map(f=>id+'/'+f.name);
+  if(ds.length)await sb.storage.from('anh').remove(ds);
+}catch(e){}}
 async function formViec(){
   const {data:nd}=await sb.from('nguoi_dung').select('id,ho_ten,chuc_vu,khoa_phong(ten)').eq('hoat_dong',true).order('ho_ten');
   const ds=(nd||[]).filter(u=>me.vai_tro!=='nhan_vien'||u.id===me.id);
@@ -879,17 +886,45 @@ function diDen(u){
 }
 if('serviceWorker'in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.dongbo&&me)dongBoPush(true);if(e.data&&e.data.di&&me)diDen(e.data.di)});
 let TC=false;
+// Sức khỏe hệ thống (chỉ quản trị): đêm qua sao lưu, kiểm thử và báo cáo tuần ra sao
+async function suckhoe(){
+  const el=$('#skht'); if(!el)return;
+  const gio=t=>t?new Date(t).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'chưa có';
+  const [sl,kt,bc]=await Promise.all([
+    sb.from('sao_luu_log').select('luc,so_bang,so_dong,so_tep,byte,ok,loi').order('luc',{ascending:false}).limit(1),
+    sb.from('kiem_thu_log').select('dot,luc,ten,dat').order('luc',{ascending:false}).limit(60),
+    sb.from('bc_tuan_log').select('tu,luc,ok,dry,so_viec,loi').eq('dry',false).order('luc',{ascending:false}).limit(1)]);
+  if(!$('#skht'))return;
+  if(sl.error&&kt.error&&bc.error)return el.innerHTML='<h3>Sức khỏe hệ thống</h3><div class="mut">Không xem được: '+esc(sl.error.message)+'</div>';
+  const dong=(ten,dat,ct)=>`<div class="row" style="justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--vien)">
+    <span>${dat?'✅':'⚠️'} ${esc(ten)}</span><span class="mut" style="text-align:right">${esc(ct)}</span></div>`;
+  let h='<h3>Sức khỏe hệ thống</h3>';
+  const s0=(sl.data||[])[0];
+  h+=dong('Sao lưu', !!(s0&&s0.ok&&Date.now()-new Date(s0.luc)<36*3600e3),
+     s0?`${gio(s0.luc)} · ${s0.so_bang} bảng, ${s0.so_dong} dòng, ${s0.so_tep} tệp`+(s0.ok?'':' · LỖI'):'chưa có lần nào');
+  const kd=(kt.data||[]), dot=kd.length?kd[0].dot:null, bai=kd.filter(x=>x.dot===dot), hong=bai.filter(x=>!x.dat);
+  h+=dong('Kiểm thử đêm', bai.length>0&&hong.length===0,
+     bai.length?`${gio(bai[0].luc)} · ${bai.length-hong.length}/${bai.length} đạt`:'chưa chạy');
+  if(hong.length)h+=`<div class="mut" style="padding:4px 0 8px">Lỗi: ${hong.slice(0,4).map(x=>esc(x.ten)).join('; ')}</div>`;
+  const b0=(bc.data||[])[0];
+  h+=dong('Báo cáo tuần gửi VP Công ty', !!(b0&&b0.ok),
+     b0?`${gio(b0.luc)} · tuần ${b0.tu.slice(8,10)}/${b0.tu.slice(5,7)} · ${b0.so_viec} việc`+(b0.ok?'':' · LỖI'):'chưa gửi lần nào');
+  el.innerHTML=h;
+}
+
 async function taiKhoan(){
   TC=!!(await sb.rpc('xem_tai_chinh')).data;
   const st=await pushTrangThai();
   $('#nd').innerHTML=`<div class="luoi"><div class="card"><h3>${esc(me.ho_ten)}</h3><div class="mut">${esc(me.chuc_vu||'')}<br>${esc(me.so_dien_thoai)}</div></div>
   <div class="card"><h3>Thông báo trên máy này</h3><div class="mut">${{bat:'Đang bật',tat:'Chưa bật',chan:'Đang bị chặn',ios:'Cần thêm app vào Màn hình chính',khong:'Máy không hỗ trợ'}[st]}</div>${st==='tat'?'<button class="full" id="bp">🔔 Bật thông báo</button>':st==='bat'?'<button class="sec full" id="tp">🔕 Tắt thông báo trên máy này</button>':''}</div>
   ${(me.vai_tro==='tchc'||me.vai_tro==='bgd'||me.la_quan_tri)?'<div class="card" id="cpb"><h3>Ai chưa bật thông báo</h3><div class="mut">Đang tải…</div></div>':''}
+  ${me.la_quan_tri?'<div class="card" id="skht"><h3>Sức khỏe hệ thống</h3><div class="mut">Đang tải…</div></div>':''}
   <div class="card tkn"><h3 class="chimay">Chức năng</h3>${TC?'<button class="full" id="kh">📊 Kế hoạch – sử dụng chi phí</button>':''}
   ${(me.vai_tro==='tchc'||me.vai_tro==='bgd'||me.la_quan_tri)?'<button class="sec full" id="lvds">📂 Danh mục loại việc</button>':''}
   <button class="sec full" id="ra">🚪 Đăng xuất</button></div></div>`;
   if($('#bp'))$('#bp').onclick=async()=>{try{await batPush();toast('Đã bật thông báo');taiKhoan()}catch(e){toast(e.message||'Không bật được')}};
   if($('#tp'))$('#tp').onclick=async()=>{await tatPush();toast('Đã tắt');taiKhoan()};
+  if($('#skht'))suckhoe();
   if($('#cpb'))sb.rpc('ds_chua_bat_push').then(({data,error})=>{const el=$('#cpb');if(!el)return;if(error)return el.innerHTML='<h3>Ai chưa bật thông báo</h3><div class="mut">Không xem được</div>';
     const dn=(data||[]).filter(x=>x.da_dang_nhap),ch=(data||[]).filter(x=>!x.da_dang_nhap);
     el.innerHTML='<h3>Ai chưa bật thông báo</h3><div class="mut">'+(dn.length?'<b>Đã đăng nhập nhưng chưa bật ('+dn.length+'):</b><br>'+dn.map(x=>esc(x.ho_ten)+(x.khoa?' · '+esc(x.khoa):'')).join('<br>')+'<br><br>':'')+'<b>Chưa đăng nhập lần nào:</b> '+ch.length+' người</div>'});
