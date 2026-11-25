@@ -236,3 +236,21 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
 .tcnav button{flex:1;min-width:0;font-size:13px;padding:9px 6px}
 .tcnav button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 nav button span{white-space:nowrap}
+
+/* ─── Chi tiết thông báo: tách mục cho dễ đọc, bớt chữ dồn cục ─── */
+.tb-ct h3{line-height:1.35;overflow-wrap:anywhere}
+.tb-than{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.tb-chinh{margin:0;font-size:1.05rem;line-height:1.5;white-space:pre-wrap}
+.dl{display:flex;gap:12px;align-items:baseline;padding-top:10px;border-top:1px solid var(--vien)}
+.dl-n{flex:0 0 108px;font-size:.82rem;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+.dl>span:last-child{flex:1;min-width:0;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--nen2,#eef3ee);border:1px solid var(--vien);border-radius:999px;padding:3px 10px;font-size:.88rem;white-space:nowrap}
+.chip.an{display:none}
+.chip.them{color:var(--pri);border-style:dashed;text-decoration:none;cursor:pointer}
+.xacnhan{margin-top:14px;padding:11px 22px;font-size:1rem;width:auto}
+@media(max-width:560px){
+  .dl{flex-direction:column;gap:4px}
+  .dl-n{flex:none}
+  .xacnhan{width:100%}
+}

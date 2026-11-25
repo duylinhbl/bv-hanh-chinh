@@ -102,7 +102,7 @@ function khung(){
   // Tra cứu từ điển dữ liệu y tế (QĐ 3600/QĐ-BYT): TẮT từ 24/11/2026 — nội dung thuộc mảng
   // y tế - CNTT, không phải thứ bác sĩ/điều dưỡng tra hằng ngày. Dữ liệu và mã (tc.js, bảng
   // tu_dien_*) vẫn giữ nguyên; đổi TRA_CUU=true là menu hiện lại ngay.
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v94</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v96</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button>${TRA_CUU?`<button data-t="tc"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg><span>Tra cứu</span></button>`:''}<button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
@@ -803,16 +803,55 @@ async function dsTB(){
     const doc={};(rc||[]).forEach(r=>doc[r.thong_bao_id]=r.da_doc_luc);
     $('#nd').innerHTML=(PHAT?'<button class="full" id="pt">📢 Phát thông báo</button><div style="height:10px"></div>':'')+
       '<div class="luoi">'+((tbs||[]).map(t=>{const chua=(t.id in doc)&&!doc[t.id];
-        return `<div class="card" data-tb="${t.id}" style="${chua?'border-color:var(--pri);border-width:2px':''}"><h3>${t.khan?'🔴 ':''}${esc(t.tieu_de)}</h3><div class="mut">${esc(ten(t.nguoi_phat))} · ${fmt(t.tao_luc)} ${chua?'<span class="tag red">Chưa đọc</span>':''}</div></div>`}).join('')||'<p class="mut">Chưa có thông báo.</p>')+'</div>';
+        return `<div class="card" data-tb="${t.id}" style="${chua?'border-color:var(--pri);border-width:2px':''}"><h3>${t.khan?'🔴 ':''}${esc(tieuGon(t.tieu_de,t.noi_dung))}</h3><div class="mut">${esc(ten(t.nguoi_phat))} · ${fmt(t.tao_luc)} ${chua?'<span class="tag red">Chưa đọc</span>':''}</div></div>`}).join('')||'<p class="mut">Chưa có thông báo.</p>')+'</div>';
     document.querySelectorAll('[data-tb]').forEach(c=>c.onclick=()=>chiTietTB(c.dataset.tb));
     if($('#pt'))$('#pt').onclick=formTB;
   }catch(e){$('#nd').innerHTML='<p class="mut">Lỗi: '+esc(e.message||e)+'</p>'}
 }
+// Nội dung thông báo vốn là văn bản nhiều dòng do máy ghép (ngày giờ, nội dung, địa điểm, thành phần).
+// Tách ra thành từng mục có nhãn cho dễ đọc; thành phần đông thì gom thành thẻ tên, quá 6 người thì thu lại.
+// Tiêu đề thông báo lịch do máy ghép, bản cũ cắt cứng 140 ký tự nên đứt ngang chữ.
+// Dựng lại tiêu đề gọn, cắt theo TỪ, lấy nội dung đầy đủ từ thân thông báo nếu tiêu đề bị cụt.
+const catTu=(s,n)=>{s=String(s||'').trim();if(s.length<=n)return s;const c=s.slice(0,n).replace(/\s+\S*$/,'');return (c||s.slice(0,n))+'…'};
+function tieuGon(tt,nd){
+  const m=String(tt||'').match(/^(Lịch mới|Thay đổi lịch|HỦY lịch)\s*:?\s*(\d{1,2}\/\d{1,2})?\s*(\d{1,2}:\d{2})?\s*(.*)$/);
+  if(!m)return catTu(tt,110);
+  let p=(m[4]||'').replace(/…$/,'');
+  const than=String(nd||'').split('\n')[1]||'';
+  if(than&&p&&than.slice(0,16)===p.slice(0,16))p=than;      // tiêu đề cụt thì lấy bản đầy đủ ở thân
+  return m[1]+(m[2]?' '+m[2]:'')+': '+catTu(p||than,64);
+}
+const NHAN_TB=/^(Địa điểm|Thành phần|Thời gian|Chủ trì|Chuẩn bị|Ghi chú|Lưu ý)\s*[:：]\s*(.+)$/i;
+function veNoiDungTB(s){
+  const dong=String(s||'').replace(/\r/g,'').split('\n').map(x=>x.trim()).filter(Boolean);
+  if(!dong.length)return '';
+  const muc=[]; const than=[];
+  dong.forEach((l,i)=>{
+    const m=l.match(NHAN_TB);
+    if(m)return muc.push([m[1],m[2]]);
+    if(i===0&&/^\d{1,2}\/\d{1,2}(\/\d{2,4})?/.test(l))return muc.unshift(['Thời gian',l]);
+    than.push(l);
+  });
+  const the=v=>v.split(/\s*,\s*/).filter(Boolean);
+  let h='<div class="tb-than">';
+  if(than.length)h+=`<p class="tb-chinh">${esc(than.join(' '))}</p>`;
+  muc.forEach(([n,v])=>{
+    if(/^thành phần$/i.test(n)){
+      const ds=the(v);
+      h+=`<div class="dl"><span class="dl-n">${esc(n)} (${ds.length})</span><span class="chips">`
+        +ds.map((x,i)=>`<span class="chip${i>=6?' an':''}">${esc(x)}</span>`).join('')
+        +(ds.length>6?`<a href="#" id="themtp" class="chip them">+${ds.length-6} người</a>`:'')+'</span></div>';
+    } else h+=`<div class="dl"><span class="dl-n">${esc(n)}</span><span>${esc(v)}</span></div>`;
+  });
+  return h+'</div>';
+}
+
 async function chiTietTB(id){
   const {data:t}=await sb.from('thong_bao').select('*').eq('id',id).single();
   const {data:r}=await sb.from('thong_bao_nguoi_nhan').select('da_doc_luc').eq('thong_bao_id',id).eq('nguoi_id',me.id).maybeSingle();
-  $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card" style="margin-top:10px"><h3>${t.khan?'🔴 ':''}${esc(t.tieu_de)}</h3><div class="mut">${esc(ten(t.nguoi_phat))} · ${fmt(t.tao_luc)}</div><p style="white-space:pre-wrap">${esc(t.noi_dung)}</p>
-  ${r&&!r.da_doc_luc?'<button class="full" id="doc">✅ Đã đọc, đã hiểu</button>':r?`<div class="mut">Bạn đã đọc lúc ${fmt(r.da_doc_luc)}</div>`:''}</div><div id="th"></div>`;
+  $('#nd').innerHTML=`<button class="sec" id="lui">← Quay lại</button><div class="card tb-ct" style="margin-top:10px"><h3>${t.khan?'🔴 ':''}${esc(tieuGon(t.tieu_de,t.noi_dung))}</h3><div class="mut">${esc(ten(t.nguoi_phat))} · ${fmt(t.tao_luc)}</div>${veNoiDungTB(t.noi_dung)}
+  ${r&&!r.da_doc_luc?'<button id="doc" class="xacnhan">✅ Đã đọc, đã hiểu</button>':r?`<div class="mut">✅ Bạn đã đọc lúc ${fmt(r.da_doc_luc)}</div>`:''}</div><div id="th"></div>`;
+  const mt=$('#themtp'); if(mt)mt.onclick=e=>{e.preventDefault();mt.parentElement.querySelectorAll('.an').forEach(x=>x.classList.remove('an'));mt.remove()};
   if(me.la_quan_tri||t.nguoi_phat===me.id){$('#nd').insertAdjacentHTML('beforeend',`<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa thông báo này${me.la_quan_tri&&t.nguoi_phat!==me.id?' (quản trị)':''}</button>`);$('#xoa').onclick=()=>xoaMuc('thong_bao',id,'Xóa vĩnh viễn thông báo này, người nhận sẽ không còn thấy?',dsTB)}
   $('#lui').onclick=dsTB;
   if($('#doc'))$('#doc').onclick=async()=>{const {error}=await sb.from('thong_bao_nguoi_nhan').update({da_doc_luc:new Date().toISOString()}).eq('thong_bao_id',id).eq('nguoi_id',me.id);if(error)return toast('Lỗi: '+error.message);toast('Đã xác nhận');demTB();chiTietTB(id)};

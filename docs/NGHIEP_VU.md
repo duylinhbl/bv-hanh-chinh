@@ -388,3 +388,15 @@ Làm theo kết quả rà soát ngày 25/11 (xem `docs/so-do-he-thong.html`).
 **7. Màn "Sức khỏe hệ thống"** trong tab Tôi, chỉ quản trị: sao lưu gần nhất, kết quả kiểm thử đêm (và tên bài đỏ), báo cáo tuần gửi VP Công ty gần nhất. Mở quyền xem `bc_tuan_log` cho quản trị (`bct_xem`); `sao_luu_log` có `sl_xem`.
 
 **Còn lại của đợt rà soát:** vận động 94 người bật thông báo (đã có deck hướng dẫn để anh Linh đứng nói), và chuyển quyền sở hữu Drive văn bản khỏi tài khoản Gmail cá nhân tchcbvdkcsdt.
+
+## v96 – Thông báo lịch: hết cắt ngang chữ, nội dung tách mục (25/11/2026)
+Anh Linh gửi ảnh một thông báo thật: tiêu đề nhồi cả nội dung rồi đứt giữa chữ ("…Theo Thô"), xuống dưới lặp lại y hệt, 14 tên thành phần dồn một dòng, nút xác nhận chiếm hết bề ngang.
+
+**Gốc lỗi:** hàm `luu_lich_cong_tac` ghép tiêu đề bằng `left(tt||ngày||giờ||nội_dung, 140)` — cắt cứng theo ký tự nên đứt ngang từ; còn `noi_dung` của thông báo đã chứa đủ ngày giờ + nội dung + địa điểm + thành phần nên nhìn như lặp hai lần.
+
+**Sửa phía app (đã xong, v96):**
+- `tieuGon(tieu_de, noi_dung)`: dựng lại tiêu đề dạng `Thay đổi lịch 23/11: <nội dung cắt theo TỪ, 64 ký tự>…`. Tiêu đề cũ bị cụt thì lấy bản đầy đủ ở dòng 2 của thân thông báo — nên **10 thông báo cũ cũng hiển thị đẹp lại mà không phải sửa dữ liệu**. Dùng ở cả danh sách lẫn chi tiết.
+- `veNoiDungTB(noi_dung)`: tách thân thông báo thành các mục có nhãn (Thời gian / Địa điểm / Thành phần / Chủ trì / Ghi chú…, biến `NHAN_TB`). Dòng đầu dạng ngày tháng tự thành "Thời gian". Thành phần đổi thành **thẻ tên**, hiện 6 người đầu, còn lại thu sau nút "+N người".
+- CSS mới trong style.css: `.tb-than`, `.dl`, `.chip`, `.xacnhan`. Nút "Đã đọc, đã hiểu" không còn kéo hết bề ngang trên máy tính (điện thoại vẫn full cho dễ bấm).
+
+**Chưa xong — cần anh Linh bấm xác nhận:** sửa `luu_lich_cong_tac` để tiêu đề sinh ra đã gọn sẵn (cắt theo từ, bỏ giờ khỏi tiêu đề). Lệnh đã soạn; công cụ Supabase hỏi xác nhận vì hàm có `delete`/`insert`, chưa ai bấm. App đã che được lỗi này nên không gấp, nhưng nên làm cho sạch gốc.
