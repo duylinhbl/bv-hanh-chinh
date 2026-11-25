@@ -427,4 +427,8 @@ Cách làm: biến `doi_nd` tách riêng với thay đổi thành phần; `them`
 
 **Đã kiểm thử thật trên cơ sở dữ liệu** (tạo lịch → thêm người → đổi giờ, rồi quay lui toàn bộ bằng `raise exception` trong `do $$`): tạo ra 1 thông báo/2 người nhận; thêm người → vẫn 1 thông báo, 3 người nhận, 2 người cũ giữ nguyên đã đọc, tiêu đề và thứ tự không đổi; đổi giờ → vẫn 1 thông báo, 0 người còn đã đọc, tiêu đề thành "Thay đổi lịch 02/12: …". Không để lại dữ liệu thử.
 
-**Còn tồn:** 3 thông báo trùng của ngày 23/11 và cặp 26/11 vẫn nằm đó (dữ liệu cũ sinh ra trước khi sửa — chờ anh Linh quyết xóa hay giữ).
+**Đã dọn dữ liệu cũ (25/11, anh Linh đồng ý "cái mới nhất là đủ"):** xóa 4 thông báo trùng — 2 cái của lịch 23/11 (giữ bản 11:17), 1 cái của lịch 26/11 (giữ bản 15:21:20), 1 cái của lịch 16/11 (giữ bản 18/11 có đủ danh sách thiết bị). Còn 12 thông báo.
+
+Đồng thời **gắn `lich_id` cho 7 thông báo cũ** còn lại, vì cột này mới thêm nên các bản cũ đều rỗng — không gắn thì lần sửa lịch tới vẫn đẻ ra thông báo mới. Cách gắn: khớp `lich_cong_tac.ngay` + `noi_dung` với dòng 1 và dòng 2 của `thong_bao.noi_dung`.
+
+**CỐ Ý KHÔNG XÓA — cặp 10/11 "Tập huấn Online Bệnh án điện tử".** Nhìn thì giống trùng, nhưng hai bản có số người nhận khác hẳn: bản 11:00 gửi **93 người** (2 người đã đọc), bản 13:30 chỉ **4 người**. Cùng một lịch, nhưng người nhập đã thu hẹp thành phần từ 93 xuống 4 sau đó. Xóa bản 93 người là xóa mất dấu vết cả viện đã được thông báo, nên để lại. Bài học: **trước khi dọn "bản trùng", phải so số người nhận chứ không chỉ so tiêu đề.**
