@@ -400,3 +400,18 @@ Anh Linh gửi ảnh một thông báo thật: tiêu đề nhồi cả nội dun
 - CSS mới trong style.css: `.tb-than`, `.dl`, `.chip`, `.xacnhan`. Nút "Đã đọc, đã hiểu" không còn kéo hết bề ngang trên máy tính (điện thoại vẫn full cho dễ bấm).
 
 **Chưa xong — cần anh Linh bấm xác nhận:** sửa `luu_lich_cong_tac` để tiêu đề sinh ra đã gọn sẵn (cắt theo từ, bỏ giờ khỏi tiêu đề). Lệnh đã soạn; công cụ Supabase hỏi xác nhận vì hàm có `delete`/`insert`, chưa ai bấm. App đã che được lỗi này nên không gấp, nhưng nên làm cho sạch gốc.
+
+## v96b – Gộp thông báo khi sửa lịch liên tiếp (25/11/2026)
+Anh Linh thấy 3 thông báo gần như giống hệt nhau cho cùng một cuộc họp 23/11. Tra `thong_bao` thì rõ: chị Thảo lưu lịch đó **3 lần trong 93 giây** (11:15:55 tạo với nội dung "Căn cứ Thông báo số 588…", 11:16:51 sửa thành "Họp kiểm điểm…", 11:17:28 sửa tiếp) — mỗi lần lưu có thay đổi là `luu_lich_cong_tac` bắn một thông báo mới. Cặp lịch 26/11 cũng vậy, lưu 2 lần cách nhau 14 giây.
+
+**Không phải lỗi trùng lặp mà là thiếu khoảng lặng.** Người nhập lịch hay lưu xong mới soi lại chính tả, thêm tên, sửa giờ; sửa 3 lần là cả viện bị nhắn 3 lần.
+
+**Sửa:** thêm cột `thong_bao.lich_id` (+ index `tb_lich`). Trong `luu_lich_cong_tac`, trước khi phát thông báo thì tìm thông báo của chính lịch đó phát chưa quá **10 phút**:
+- Có → **cập nhật** thông báo đó (tiêu đề, nội dung, `tao_luc`), bỏ người không còn trong thành phần, và đặt lại `da_doc_luc` của ai đã đọc bản cũ để họ xác nhận bản chốt.
+- Không có → tạo mới như cũ.
+
+Chuông không reo lại vì trigger `push_thong_bao` chỉ chạy trên INSERT của `thong_bao_nguoi_nhan` — chỉ người **mới** được thêm vào thành phần mới sinh dòng mới nên chỉ họ nhận chuông. Đây là lý do cách gộp này an toàn; nếu sau này ai đó đổi trigger thành INSERT+UPDATE thì phải xem lại chỗ này.
+
+Nhân tiện sửa luôn tiêu đề sinh ra: cắt theo TỪ (`regexp_replace(left(…,64),'\s+\S*$','')`) thay vì cắt cứng 140 ký tự, và bỏ giờ khỏi tiêu đề vì thân thông báo đã có. Dạng mới: `Thay đổi lịch 23/11: Họp kiểm điểm, đánh giá, xếp loại chất lượng năm 2026 đối với…`
+
+**Còn tồn:** 3 thông báo trùng của ngày 23/11 và cặp 26/11 vẫn nằm đó (dữ liệu cũ, chưa xóa — chờ anh Linh quyết).
