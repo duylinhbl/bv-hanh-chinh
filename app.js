@@ -71,7 +71,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)day()});
 // ---- đăng nhập ----
 const email=p=>p.replace(/\D/g,'')+'@bv.local';
 function manHinhDangNhap(){
-  app.innerHTML=`<div class="login"><img class="lg" src="logo.png" alt=""><h1>Bệnh viện Đa khoa Cao su Dầu Tiếng</h1><div class="mut">Quản lý hành chính</div>
+  app.innerHTML=`<div class="login"><img class="lg" src="logo.png" alt="" width="36" height="36"><h1>Bệnh viện Đa khoa Cao su Dầu Tiếng</h1><div class="mut">Quản lý hành chính</div>
   <label for="sdt">Số điện thoại</label><input id="sdt" name="sdt" inputmode="tel" autocomplete="username" spellcheck="false" enterkeyhint="next" placeholder="vd: 0909…">
   <label for="mk">Mật khẩu</label><input id="mk" name="mk" type="password" autocomplete="current-password" enterkeyhint="go">
   <button class="full" id="vao">🔑 Đăng nhập</button><p class="mut" id="loi" role="alert"></p></div>`;
@@ -102,6 +102,24 @@ function manHinhDoiMK(){
 // ---- khung chính ----
 // Nút đang xử lý thì GIỮ NGUYÊN nhãn và thêm vòng xoay (aria-busy), không đổi chữ:
 // đổi chữ làm người dùng mất chỗ bám và nút nhảy kích thước.
+// Nhiều thẻ trong app là <div> bấm được (thẻ việc, thẻ thông báo, dòng bảng).
+// Chuột thì bấm được, nhưng bàn phím thì không tới được. Mỗi lần màn hình vẽ lại,
+// gắn role=button + tabindex cho chúng và cho Enter/Space hoạt động như một cú bấm.
+const BAM='[data-id],[data-tb],[data-ex],[data-lv],.tb tbody tr';
+function nutHoa(goc){
+  (goc||document).querySelectorAll(BAM).forEach(el=>{
+    if(el.hasAttribute('role')||el.tagName==='BUTTON'||el.tagName==='A')return;
+    el.setAttribute('role','button'); el.setAttribute('tabindex','0');
+  });
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  const el=e.target.closest&&e.target.closest(BAM);
+  if(!el||el.tagName==='BUTTON'||el.tagName==='A'||el.tagName==='INPUT'||el.tagName==='TEXTAREA')return;
+  e.preventDefault(); el.click();
+});
+new MutationObserver(()=>nutHoa()).observe(document.documentElement,{childList:true,subtree:true});
+
 function ban(b,on=true){ if(!b)return b; b.disabled=!!on; if(on)b.setAttribute('aria-busy','true'); else b.removeAttribute('aria-busy'); return b }
 
 function khung(){
@@ -110,7 +128,7 @@ function khung(){
   // đúng thứ bác sĩ và điều dưỡng cần hằng ngày.
   // Tra cứu từ điển dữ liệu y tế (tc.js, bảng tu_dien_*) vẫn còn nguyên nhưng KHÔNG gắn vào menu:
   // nội dung đó thuộc mảng y tế - CNTT. Muốn mở lại thì trỏ 'tc' sang window.TRACUU.ve.
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v99</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt="" width="36" height="36"><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v100</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button>${TRA_CUU?`<button data-t="tc"><svg viewBox="0 0 24 24"><path d="M10.5 3.5h3a4 4 0 014 4v9a4 4 0 01-4 4h-3a4 4 0 01-4-4v-9a4 4 0 014-4z"/><path d="M6.5 12h11"/></svg><span>Thuốc</span></button>`:''}<button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>doiTab(b.dataset.t));
@@ -643,7 +661,7 @@ async function xemTep(path,ten,viecId,urlSan,textDP){
   try{
     const url=urlSan||await linkTep(path,ten);if(!url)throw new Error('Không lấy được đường dẫn file');ov.querySelector('#vwtai').href=url;
     const d=duoiTep(ten);
-    if(d==='pdf'||/^(jpe?g|png|webp)$/.test(d)){const u2=urlSan||(await sb.storage.from('anh').createSignedUrl(path,3600)).data?.signedUrl;ov.querySelector('#vwtai').href=urlSan||await linkTep(path,ten)||u2;b.style.padding='0';b.innerHTML=d==='pdf'?`<iframe src="${u2}" style="width:100%;height:100%;border:0"></iframe>`:`<img src="${u2}" style="max-width:100%">`;return}
+    if(d==='pdf'||/^(jpe?g|png|webp)$/.test(d)){const u2=urlSan||(await sb.storage.from('anh').createSignedUrl(path,3600)).data?.signedUrl;ov.querySelector('#vwtai').href=urlSan||await linkTep(path,ten)||u2;b.style.padding='0';b.innerHTML=d==='pdf'?`<iframe src="${u2}" style="width:100%;height:100%;border:0"></iframe>`:`<img src="${u2}" alt="Ảnh đính kèm" loading="lazy" decoding="async" style="max-width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--soft);border-radius:8px">`;return}
     const hen=(pr,ms,tb)=>Promise.race([pr,new Promise((_,no)=>setTimeout(()=>no(new Error(tb||'Mở file quá lâu')),ms))]);
     if(textDP){
       const bn='<div class="vwdoc" style="white-space:pre-wrap;font-family:\'Times New Roman\',serif;font-size:17px;line-height:1.5">'+esc(textDP)+'</div><p class="mut" style="padding:8px">Đây là bản xem nhanh nội dung. File Word tải về có đủ quốc hiệu, bảng, chữ ký đúng mẫu bệnh viện.</p>';
@@ -742,7 +760,7 @@ async function chiTiet(id){
   <label>Ghi chú</label><textarea id="gc"></textarea><label>📎 Ảnh hoặc file Word / Excel / PDF (chụp ảnh tại chỗ hoặc chọn file, tối đa 10 MB)</label><input id="dk" type="file" accept="image/*,.doc,.docx,.xls,.xlsx,.pdf">
   <button class="full" id="gui">📷 Gửi cập nhật</button><p class="mut">Vị trí GPS chỉ lấy tại lúc bấm Gửi.</p></div>`:''}
   ${B&&duocLam?`<div class="card"><label>Ghi chú thêm / gửi hồ sơ ngoài các bước</label><textarea id="gc" rows="2"></textarea><input id="dk" type="file" accept="image/*,.doc,.docx,.xls,.xlsx,.pdf"><button class="sec full" id="gui">📷 Gửi cập nhật</button></div>`:''}
-  <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
+  <div class="timeline">${(cn||[]).map(c=>`<div class="it"><b>${esc(ten(c.nguoi_id))}</b> <span class="mut">${fmt(c.gio_bam)}</span> ${c.trang_thai?tag(c.trang_thai):''}<div>${esc(c.ghi_chu||'')}</div>${urls[c.id]?`<img src="${urls[c.id]}" alt="Ảnh hiện trường" loading="lazy" decoding="async">`:''}${c.file_path?`<div><a href="${furls[c.id]||'#'}" download>${bieuTuongTep(c.file_ten)} ${esc(c.file_ten||'Tệp đính kèm')}</a> · <a href="#" data-xp="${esc(c.file_path)}" data-xt="${esc(c.file_ten||'')}">👁 Xem</a></div>`:''}${c.co_vi_tri?bando(c):`<div class="mut" style="color:#b45309">⚠ Không có vị trí${c.vi_tri_loi?': '+esc(c.vi_tri_loi):''}</div>`}</div>`).join('')||'<p class="mut">Chưa có cập nhật.</p>'}</div>`;
   if(me.la_quan_tri||v.nguoi_giao===me.id){
     const nk=(cn||[]).filter(c=>c.nguoi_id!==me.id).length;
     $('#nd').insertAdjacentHTML('beforeend',`<button class="full dng" id="xoa" style="margin-top:10px">🗑 Xóa việc này${me.la_quan_tri&&v.nguoi_giao!==me.id?' (quản trị)':''}</button>`);

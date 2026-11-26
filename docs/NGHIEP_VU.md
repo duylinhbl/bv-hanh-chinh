@@ -473,4 +473,13 @@ Anh Linh yêu cầu áp [Web Interface Guidelines](https://vercel.com/design/gui
 
 **Kiểm thử `tests/giao_dien_chuan.test.js` (27 mục)** canh các quy tắc này, trong đó có bài quét toàn bộ mã tìm nút đổi nhãn khi chạy. Sửa làm hỏng một quy tắc là bài đỏ ngay, không phải phát hiện bằng mắt.
 
+**Đợt rà thứ hai (v100), chạy skill `kiem-tra-giao-dien-marketing` của bệnh viện:**
+- **Thẻ bấm được không dùng được bằng bàn phím** — thẻ việc, thẻ thông báo, thẻ lịch, dòng bảng đều là `<div>` có onclick: chuột bấm được, bàn phím thì không tới. Vì màn hình do nhiều mô-đun tự vẽ lại nên không gắn thuộc tính từng chỗ được; đặt một `MutationObserver` ở app.js tự gắn `role="button"` + `tabindex="0"` cho mọi phần tử khớp `[data-id],[data-tb],[data-ex],[data-lv],.tb tbody tr` sau mỗi lần vẽ, cộng một trình nghe `keydown` ở cấp tài liệu để Enter và Space hoạt động như cú bấm chuột.
+- `touch-action: manipulation` cho nút, liên kết và thẻ bấm được — bỏ độ trễ 300ms khi chạm trên điện thoại.
+- `text-wrap: balance` cho tiêu đề.
+- Ảnh đính kèm và ảnh hiện trường: thêm `alt`, `loading="lazy"`, `decoding="async"`; ảnh đính kèm có `aspect-ratio` để không nhảy bố cục lúc tải; logo khai báo `width`/`height`.
+- Ngày và số đã dùng `Intl`/`toLocaleString` sẵn, không hard-code — đạt.
+
+Kiểm thử nâng lên **34 mục**.
+
 **Chưa làm:** virtualize danh sách dài (hiện chưa màn nào quá dài), preload/subset phông (app dùng phông hệ thống nên không cần), APCA cho tương phản (đang dựa mắt và bảng màu sẵn có).

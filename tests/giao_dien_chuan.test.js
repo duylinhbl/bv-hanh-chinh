@@ -59,4 +59,18 @@ kiem(/id="toast" role="status"/.test(html), 'toast có role=status (aria-live)')
 // ---- Nút chỉ có biểu tượng phải có nhãn ----
 kiem(/id="tcdong" aria-label="Đóng chi tiết"/.test(doc('tc.js')), 'nút đóng chỉ có dấu ✕ vẫn có aria-label');
 
+// ---- Thẻ bấm được phải dùng được bằng bàn phím ----
+kiem(/function nutHoa\(goc\)/.test(app) && /setAttribute\('role','button'\)/.test(app),
+  'thẻ <div> bấm được tự được gắn role=button và tabindex');
+kiem(/if\(e\.key!=='Enter'&&e\.key!==' '\)return;/.test(app), 'Enter và Space bấm được thẻ như chuột');
+
+// ---- Cảm ứng và chữ ----
+kiem(/touch-action:manipulation/.test(css), 'touch-action:manipulation để bỏ độ trễ 300ms khi chạm');
+kiem(/text-wrap:balance/.test(css), 'tiêu đề cân dòng');
+
+// ---- Ảnh ----
+kiem(!/<img(?![^>]*alt=)[^>]*>/.test(app) && !/<img(?![^>]*alt=)[^>]*>/.test(doc('kh.js')), 'mọi thẻ ảnh đều có alt');
+kiem(/loading="lazy"/.test(app), 'ảnh đính kèm tải trễ');
+kiem(/class="lg" src="logo.png" alt="" width="36" height="36"/.test(app), 'logo khai báo kích thước, không gây nhảy bố cục');
+
 ket('giao_dien_chuan');

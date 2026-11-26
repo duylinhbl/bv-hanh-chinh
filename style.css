@@ -4,7 +4,8 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased}
-h1,h2,h3{letter-spacing:-.01em}
+h1,h2,h3{letter-spacing:-.01em;text-wrap:balance}
+.card h3,.hero .hi b{text-wrap:balance}
 :focus-visible{outline:3px solid var(--pri);outline-offset:2px}
 
 /* Thanh đầu: phẳng, một màu */
@@ -32,7 +33,7 @@ main{padding:16px;max-width:680px;margin:0 auto}
 
 /* Thẻ việc */
 .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:14px 16px;margin:0 0 10px;box-shadow:var(--sh)}
-.card[data-id],.card[data-tb],.card[data-ex]{cursor:pointer;transition:border-color .12s,background .12s}
+.card[data-id],.card[data-tb],.card[data-ex],.card[data-lv]{cursor:pointer;touch-action:manipulation;transition:border-color .12s,background .12s}
 .card[data-id]:hover,.card[data-tb]:hover,.card[data-ex]:hover{border-color:var(--pri)}
 .card[data-id]:active,.card[data-tb]:active,.card[data-ex]:active{background:var(--soft)}
 .card h3{margin:0 0 6px;font-size:16px;font-weight:600;line-height:1.35;color:var(--tx)}
@@ -56,7 +57,7 @@ textarea{min-height:92px;resize:vertical}
 input::placeholder,textarea::placeholder{color:var(--mut);opacity:.8}
 
 /* Nút */
-button{font:inherit;border:0;border-radius:10px;padding:12px 16px;background:var(--pri);color:#fff;font-weight:600;cursor:pointer;transition:background .12s,transform .06s}
+button{font:inherit;border:0;touch-action:manipulation;border-radius:10px;padding:12px 16px;background:var(--pri);color:#fff;font-weight:600;cursor:pointer;transition:background .12s,transform .06s}
 button:hover{background:var(--pri2)}button:active{transform:scale(.98)}
 button.sec{background:var(--card);color:var(--pri2);border:1px solid var(--pri)}
 button.sec:hover{background:var(--soft)}
@@ -290,3 +291,7 @@ nav{overscroll-behavior:contain}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
   button[aria-busy="true"]::after{animation:none;border-right-color:currentColor;opacity:.5}
 }
+
+/* Thẻ bấm được phải tới được bằng bàn phím (app.js tự gắn role/tabindex sau mỗi lần vẽ) */
+[role="button"][tabindex]:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
+a,.tb tbody tr{touch-action:manipulation}

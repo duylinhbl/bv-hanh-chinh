@@ -101,7 +101,7 @@ async function nhap(){
   const xemTruoc=async(x,file)=>{const box=document.getElementById('fp'+x.id);if(!box)return;
     const ten=file.name,laAnh=/^image\//.test(file.type)||/\.(jpe?g|png|webp|heic|gif)$/i.test(ten),laPdf=file.type==='application/pdf'||/\.pdf$/i.test(ten);
     x.url=URL.createObjectURL(file);
-    if(laAnh){box.innerHTML=`<img src="${x.url}" style="width:100%;display:block" alt="">`;return}
+    if(laAnh){box.innerHTML=`<img src="${x.url}" style="width:100%;display:block" alt="" loading="lazy" decoding="async">`;return}
     if(laPdf){try{await taiPdfJs();const pdf=await window.pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,w=Math.max(300,box.clientWidth-4);box.innerHTML='';
         for(let i=1;i<=Math.min(pdf.numPages,8);i++){const pg=await pdf.getPage(i),v0=pg.getViewport({scale:1}),dpr=Math.min(2,window.devicePixelRatio||1),vp=pg.getViewport({scale:w/v0.width*dpr}),c=document.createElement('canvas');
           c.width=Math.round(vp.width);c.height=Math.round(vp.height);c.style.cssText='width:100%;display:block;border-bottom:1px solid #dde7e0';box.appendChild(c);
