@@ -655,3 +655,67 @@ Trước đây 12.239 mã chỉ dùng để *chọn* khi gắn cho thuốc, chư
    upsert theo mã), đổi luôn dòng `tra_cuu_nguon.icd10`.
 2. Phác đồ điều trị của bệnh viện (phòng KHTH).
 3. Quy trình + danh mục kỹ thuật của bệnh viện (phòng KHTH).
+
+---
+
+## v105 — Thay danh mục ICD-10 sang TT 06/2026 (26/11/2026)
+
+**Bộ 2021 đã hết hiệu lực gần 5 tháng.** Thông tư 06/2026/TT-BYT ký 02/4/2026, **hiệu lực
+01/7/2026**. Điều 6 quy định: văn bản cũ nào quy định mã khác thì áp dụng mã theo thông tư này.
+
+### Bóc dữ liệu từ PDF 1.271 trang
+Bộ Y tế chỉ phát hành phụ lục dạng PDF, không có bản Excel chính thức (đã tìm).
+Bóc bằng pdfplumber, bảng 29 cột.
+
+Lần chạy đầu **bị kernel giết ở trang ~550 vì hết bộ nhớ** — pdfplumber giữ cache mọi trang đã mở.
+Sửa: ghi thẳng ra tệp theo dòng (JSONL) và mở lại PDF sau mỗi 100 trang. Chạy lại hết 1.271 trang.
+
+Kết quả: **15.845 dòng, không trùng một mã nào, không thiếu tên, đủ 22 chương I–XXII**, chỉ
+**2 dòng rác**: một dòng đánh số cột (bị lọt vì cột STT là số), và mã `U13/9` do PDF ghi dấu `/`
+thay dấu `.` (chính tên bệnh ghi rõ U13.9 nên chuẩn hoá lại). → **15.844 mã** vào CSDL.
+
+920 mã có đuôi `†` hoặc `*` **không phải lỗi** — đó là ký hiệu chuẩn của ICD-10 (dagger = bệnh
+nguyên, asterisk = biểu hiện). Giữ nguyên.
+
+### Sáu cờ quy tắc — thứ đáng giá nhất của bộ mới
+Cột 24–29 của phụ lục, nay hiện thẳng trên thẻ tra cứu:
+
+| Cờ | Số mã | Ý nghĩa |
+|---|---|---|
+| `k_chinh` | 2.427 | **KHÔNG được** dùng làm bệnh chính |
+| `k_dung` | 2.119 | **KHÔNG dùng** — đã có mã 4–5 ký tự cụ thể hơn |
+| `k_kkhich` | 221 | Không khuyến khích làm bệnh chính |
+| `tu_vong` | 12 | Chỉ dùng mã hoá nguyên nhân tử vong |
+| `nu` / `nam` | 933 / 144 | Chỉ hoặc chủ yếu ở nữ / nam |
+
+Thêm bộ lọc **"Chỉ mã dùng được làm bệnh chính"** (loại cả `k_chinh` lẫn `k_dung`).
+
+### 223 mã cũ đã huỷ — cảnh báo trong app, không làm file Excel để đấy
+So bộ 2021 (12.151 mã gốc) với bộ 2026 (15.844 mã): **223 mã bị huỷ, 3.915 mã mới**.
+
+> *Lỗi tôi đã mắc và sửa*: lần đối chiếu đầu báo 925 mã huỷ vì tôi chỉ cắt đuôi `†`/`*` ở bộ mới
+> mà quên cắt ở bộ cũ. Con số đúng là 223.
+
+Trong 223 mã huỷ có những mã **bệnh viện dùng hằng ngày**: `A90`/`A91` sốt xuất huyết Dengue,
+`I84.x` trĩ (toàn bộ), `K35.0/.1/.9` viêm ruột thừa, `K58.0/.9` ruột kích thích,
+`N18.0`/`N18.8` suy thận, `U06.x`/`U07.x` mã cấp cứu.
+
+Vì vậy không xuất file Excel rồi để đấy, mà **đưa cảnh báo vào đúng lúc bác sĩ cần**: gõ mã cũ
+(vd `A90`) thì app hiện thẻ đỏ *"mã này đã huỷ theo TT 06/2026, phải chọn mã khác thay thế, dùng
+tiếp là bị xuất toán"* — thay vì im lặng trả "không tìm thấy" để họ tưởng gõ sai rồi gõ lại.
+Bảng `icd10_huy`.
+
+### Bảng
+- `icd10_2026` — danh mục hiện hành, 19 cột theo đúng phụ lục.
+- `icd10_huy` — 223 mã đã huỷ, để cảnh báo.
+- `icd10` (2021) — **giữ nguyên chưa xoá**, dùng để đối chiếu. Xoá khi KHTH rà xong.
+- `tra_cuu_nguon.icd10` đã trỏ sang căn cứ mới.
+
+### Kiểm thử
+`tra_cuu_menu` **27 mục** (viết lại cho bộ 2026: cờ quy tắc, cảnh báo mã huỷ, bộ lọc bệnh chính).
+Tổng **253 mục**, tất cả đạt.
+
+### Còn lại
+- Bảng tạm `nap_tam` (4 dòng) chưa xoá được vì xác nhận bị huỷ — cần xoá khi tiện. Đã bật RLS và
+  chặn `anon` nên không hở bảo mật.
+- Phác đồ điều trị và Quy trình + danh mục kỹ thuật: vẫn chờ phòng KHTH.

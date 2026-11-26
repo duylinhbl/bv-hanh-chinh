@@ -16,7 +16,7 @@ const kd=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
 const GH=60;
 
 let nguon=null;            // {ma_dm: {ban, cap_nhat, so_dong}}
-let st={q:'',mt:false};    // trạng thái màn ICD
+let st={q:'',bc:false};    // trạng thái màn ICD
 
 const NHANH=[
   {ma:'icd10', ten:'ICD-10', mo:'Mã bệnh chuẩn — tra theo mã hoặc tên bệnh, gõ không dấu cũng ra',
@@ -72,37 +72,70 @@ async function veIcd(){
     <label for="iq">Mã bệnh hoặc tên bệnh <small class="mut">(gõ không dấu cũng ra)</small>
       <input id="iq" placeholder="vd: K59.1, tieu chay, tang huyet ap" value="${esc(st.q)}"></label>
     <label style="display:flex;align-items:center;gap:8px">
-      <input type="checkbox" id="imt" ${st.mt?'checked':''}> Chỉ bệnh mãn tính</label>
+      <input type="checkbox" id="ibc" ${st.bc?'checked':''}> Chỉ mã dùng được làm bệnh chính</label>
     <button class="full" id="igo">Tra cứu</button>
     <p class="mut" style="margin-top:8px">Danh mục có <b>${esc(so(g.so_dong))}</b> mã.
       Nguồn: ${esc(g.ban||'chưa ghi nguồn')}.</p>
   </div><div id="ikq"></div>`;
   $('#tcve').onclick=()=>ve();
-  const go=()=>{st.q=$('#iq').value;st.mt=$('#imt').checked;chayIcd()};
+  const go=()=>{st.q=$('#iq').value;st.bc=$('#ibc').checked;chayIcd()};
   $('#igo').onclick=go; $('#iq').onkeydown=e=>{if(e.key==='Enter')go()};
   if(st.q)chayIcd();
 }
 
 async function chayIcd(){
   const o=$('#ikq'); if(!o)return; o.innerHTML='<p class="mut">Đang tra…</p>';
-  let q=A().sb.from('icd10').select('ma,ten,nhom,man_tinh,khong_bh,ten_khac').order('ma').limit(GH);
-  const k=kd(st.q); if(k)q=q.ilike('kd','%'+k+'%');
-  if(st.mt)q=q.eq('man_tinh',true);
-  const {data,error}=await q; if(!$('#ikq'))return;
+  const k=kd(st.q);
+
+  // Tra song song: danh mục đang hiệu lực + danh sách mã ĐÃ HUỶ.
+  // Bác sĩ quen tay gõ mã cũ (A90 sốt xuất huyết, K35 viêm ruột thừa, I84 trĩ…) thì phải
+  // báo ngay là mã đã huỷ, chứ im lặng trả "không tìm thấy" là họ tưởng gõ sai rồi gõ lại.
+  let q=A().sb.from('icd10_2026')
+    .select('ma,ten,ten_en,ten_nhom3,ten_chuong,huong_dan,k_chinh,k_kkhich,k_dung,tu_vong,nu,nam')
+    .order('ma').limit(GH);
+  if(k)q=q.ilike('kd','%'+k+'%');
+  if(st.bc)q=q.eq('k_chinh',false).eq('k_dung',false);
+
+  let h=A().sb.from('icd10_huy').select('ma,ten,nhom').order('ma').limit(20);
+  if(k)h=h.or(`ma.ilike.%${k.toUpperCase()}%,ten.ilike.%${st.q.trim()}%`);
+
+  const [{data,error},{data:huy}]=await Promise.all([q,h]);
+  if(!$('#ikq'))return;
   if(error)return o.innerHTML='<p class="mut">Lỗi: '+esc(error.message)+'</p>';
-  if(!data.length)return o.innerHTML='<p class="mut">Không có mã nào khớp. Thử gõ tên bệnh thay vì mã, hoặc ngược lại.</p>';
-  o.innerHTML=`<p class="mut">${data.length>=GH?'Hiện '+GH+' mã đầu, gõ thêm cho gọn.':data.length+' mã.'}</p>`
+
+  const canhBao=(huy||[]).length?`<div class="card" style="border-left:4px solid var(--red)">
+    <h3 style="margin:0;color:var(--red)">⚠ ${(huy||[]).length} mã dưới đây ĐÃ HUỶ</h3>
+    <p class="mut" style="margin:6px 0">Theo Thông tư 06/2026/TT-BYT (hiệu lực 01/7/2026).
+      Phải chọn mã khác trong danh mục hiện hành thay thế, dùng tiếp là bị xuất toán.</p>
+    ${(huy||[]).map(x=>`<div class="mut">• <b>${esc(x.ma)}</b> — ${esc(x.ten||'')}</div>`).join('')}
+  </div>`:'';
+
+  if(!data.length)return o.innerHTML=canhBao
+    +'<p class="mut">Không có mã nào đang hiệu lực khớp. Thử gõ tên bệnh thay vì mã, hoặc ngược lại.</p>';
+  o.innerHTML=canhBao
+    +`<p class="mut">${data.length>=GH?'Hiện '+GH+' mã đầu, gõ thêm cho gọn.':data.length+' mã.'}</p>`
     +data.map(dongIcd).join('');
 }
 
+// Sáu cột quy tắc của TT 06/2026 — đây là thứ chặn xuất toán, nên hiện ngay trên thẻ
+const CO=[
+  ['k_chinh', 'red', 'KHÔNG được dùng làm bệnh chính'],
+  ['k_dung',  'red', 'KHÔNG dùng — đã có mã 4–5 ký tự cụ thể hơn'],
+  ['k_kkhich','amb', 'Không khuyến khích làm bệnh chính'],
+  ['tu_vong', 'amb', 'Chỉ dùng mã hoá nguyên nhân tử vong'],
+  ['nu',      'bq',  'Chỉ/chủ yếu ở nữ'],
+  ['nam',     'bq',  'Chỉ/chủ yếu ở nam'],
+];
+
 const dongIcd=r=>`<div class="card">
   <h3 style="margin:0">${esc(r.ma)} — ${esc(r.ten)}</h3>
+  ${r.ten_en?`<div class="mut" style="margin-top:2px">${esc(r.ten_en)}</div>`:''}
   <div class="row" style="margin-top:6px">
-    ${r.nhom?`<span class="tag">${esc(r.nhom)}</span>`:''}
-    ${r.man_tinh?'<span class="tag bq">bệnh mãn tính</span>':''}
-    ${r.khong_bh?'<span class="tag red">BHYT không thanh toán</span>':''}
+    ${r.ten_nhom3?`<span class="tag">${esc(r.ten_nhom3)}</span>`:''}
+    ${CO.filter(([k])=>r[k]).map(([,m,t])=>`<span class="tag ${m}">${esc(t)}</span>`).join('')}
   </div>
-  ${r.ten_khac?`<div class="mut" style="margin-top:6px">Tên khác: ${esc(r.ten_khac)}</div>`:''}
+  ${r.huong_dan?`<div class="mut" style="margin-top:6px">${esc(r.huong_dan)}</div>`:''}
+  ${r.ten_chuong?`<div class="mut" style="margin-top:4px">Chương: ${esc(r.ten_chuong)}</div>`:''}
 </div>`;
 
 window.TRACUU={ve, veIcd};

@@ -20,21 +20,24 @@ const NGUON = [
   { ma_dm: 'quy_trinh_kt', ban: null, cap_nhat: null, so_dong: 0 },
 ];
 const ICD = [
-  { ma: 'K59.1', ten: 'Tiêu chảy chức năng', nhom: 'Bệnh khác của ruột', man_tinh: false, khong_bh: false, ten_khac: null, kd: 'k59.1 tieu chay chuc nang' },
-  { ma: 'I10', ten: 'Tăng huyết áp vô căn (nguyên phát)', nhom: 'Bệnh tăng huyết áp', man_tinh: true, khong_bh: false, ten_khac: 'Cao huyết áp', kd: 'i10 tang huyet ap vo can (nguyen phat) cao huyet ap' },
-  { ma: 'Z41.1', ten: 'Phẫu thuật thẩm mỹ', nhom: 'Khác', man_tinh: false, khong_bh: true, ten_khac: null, kd: 'z41.1 phau thuat tham my' },
+  { ma: 'I10', ten: 'Bệnh tăng huyết áp vô căn (nguyên phát)', ten_en: 'Essential (primary) hypertension', ten_nhom3: 'Bệnh tăng huyết áp vô căn', ten_chuong: 'Bệnh hệ tuần hoàn', huong_dan: null, k_chinh: false, k_kkhich: false, k_dung: false, tu_vong: false, nu: false, nam: false, kd: 'i10 i10 benh tang huyet ap vo can (nguyen phat)' },
+  { ma: 'O80', ten: 'Đẻ thường một thai', ten_en: 'Single spontaneous delivery', ten_nhom3: 'Đẻ thường', ten_chuong: 'Thai nghén, sinh đẻ và hậu sản', huong_dan: null, k_chinh: false, k_kkhich: false, k_dung: true, tu_vong: false, nu: true, nam: false, kd: 'o80 o80 de thuong mot thai' },
+  { ma: 'M49.31*', ten: 'Bệnh lý đốt sống do bệnh nhiễm trùng', ten_en: null, ten_nhom3: 'Bệnh đốt sống', ten_chuong: 'Bệnh hệ cơ xương khớp', huong_dan: null, k_chinh: true, k_kkhich: false, k_dung: false, tu_vong: false, nu: false, nam: false, kd: 'm49.31 benh ly dot song do benh nhiem trung' },
 ];
+const HUY = [{ ma: 'A90', ten: 'Sốt Dengue (Dengue cổ điển)', nhom: 'Sốt virus do tiết túc truyền' }];
 
 const stub = `
 window.lastQ=null; window.daMoThuoc=false;
-const NGUON=${JSON.stringify(NGUON)}, ICD=${JSON.stringify(ICD)};
+const NGUON=${JSON.stringify(NGUON)}, ICD=${JSON.stringify(ICD)}, HUY=${JSON.stringify(HUY)};
 function q(t){
   const f={loc:[]};
   const api={ select(){return api}, order(){return api}, limit(n){f.gh=n;return api},
     ilike(c,v){f.loc.push(['ilike',c,v.replace(/%/g,'')]);return api},
     eq(c,v){f.loc.push(['eq',c,v]);return api},
+    or(s){f.or=s;return api},
     then(res){
       if(t==='tra_cuu_nguon')return res({data:NGUON,error:null});
+      if(t==='icd10_huy'){ let h=HUY.slice(); if(f.or&&!/a90/i.test(f.or))h=[]; return res({data:h,error:null}) }
       let d=ICD.slice();
       f.loc.forEach(([op,c,v])=>{
         if(op==='ilike')d=d.filter(r=>String(r[c]||'').includes(String(v)));
@@ -90,27 +93,33 @@ window.BVAPP={sb:{from:q,rpc:()=>Promise.resolve({data:true,error:null})},
   await p.waitForFunction(() => /I10/.test(document.querySelector('#ikq').textContent), null, { timeout: 3000 });
   kiem(true, 'gõ không dấu "tang huyet ap" ra đúng I10');
   const q1 = await p.evaluate(() => window.lastQ);
-  kiem(q1.t === 'icd10' && q1.loc.some(x => x[0] === 'ilike' && x[1] === 'kd'), 'tìm bằng cột kd trên máy chủ');
+  kiem(q1.t === 'icd10_2026' && q1.loc.some(x => x[0] === 'ilike' && x[1] === 'kd'),
+    'tra trên danh mục TT 06/2026 (icd10_2026), tìm bằng cột kd trên máy chủ');
   const kq = await p.innerHTML('#ikq');
-  kiem(/bệnh mãn tính/.test(kq), 'mã mãn tính có nhãn "bệnh mãn tính"');
-  kiem(/Tên khác: Cao huyết áp/.test(kq), 'hiện tên gọi khác để tra bằng tên dân gian cũng ra');
+  kiem(/Essential \(primary\) hypertension/.test(kq), 'hiện kèm tên tiếng Anh của WHO');
 
-  // tra theo mã
-  await p.fill('#iq', 'k59.1'); await p.press('#iq', 'Enter');
-  await p.waitForFunction(() => /Tiêu chảy chức năng/.test(document.querySelector('#ikq').textContent), null, { timeout: 3000 });
-  kiem(true, 'tra bằng chính mã bệnh cũng ra, Enter cũng tra được');
+  // sáu cờ quy tắc của TT 06/2026 — tra rỗng để ra đủ các mã mẫu
+  await p.fill('#iq', ''); await p.click('#igo');
+  await p.waitForFunction(() => /O80/.test(document.querySelector('#ikq').textContent), null, { timeout: 3000 });
+  const kqc = await p.innerHTML('#ikq');
+  kiem(/KHÔNG dùng — đã có mã 4–5 ký tự cụ thể hơn/.test(kqc) && /Chỉ\/chủ yếu ở nữ/.test(kqc),
+    'hiện cờ quy tắc dùng mã (cột 24–29 của thông tư)');
+  kiem(/KHÔNG được dùng làm bệnh chính/.test(kqc), 'cảnh báo mã không được dùng làm bệnh chính');
 
-  // cảnh báo mã không được BHYT thanh toán
-  await p.fill('#iq', 'tham my'); await p.click('#igo');
-  await p.waitForFunction(() => /Z41\.1/.test(document.querySelector('#ikq').textContent), null, { timeout: 3000 });
-  kiem(/BHYT không thanh toán/.test(await p.innerHTML('#ikq')), 'mã ngoài phạm vi BHYT được cảnh báo rõ');
+  // mã đã huỷ phải được cảnh báo, không im lặng báo "không tìm thấy"
+  await p.fill('#iq', 'a90'); await p.press('#iq', 'Enter');
+  await p.waitForFunction(() => /ĐÃ HUỶ/.test(document.querySelector('#ikq').textContent), null, { timeout: 3000 });
+  const kq2 = await p.innerHTML('#ikq');
+  kiem(/A90/.test(kq2) && /Sốt Dengue/.test(kq2), 'gõ mã cũ A90 thì báo rõ mã đã huỷ kèm tên bệnh');
+  kiem(/06\/2026\/TT-BYT/.test(kq2) && /xuất toán/.test(kq2), 'nói rõ căn cứ huỷ và hậu quả nếu dùng tiếp');
 
-  // lọc chỉ mãn tính
-  await p.fill('#iq', ''); await p.check('#imt'); await p.click('#igo');
+  // lọc chỉ mã dùng được làm bệnh chính
+  await p.fill('#iq', ''); await p.check('#ibc'); await p.click('#igo');
   await p.waitForFunction(() => window.lastQ && window.lastQ.loc.some(x => x[0] === 'eq'), null, { timeout: 3000 });
   const q2 = await p.evaluate(() => window.lastQ);
-  kiem(q2.loc.some(x => x[0] === 'eq' && x[1] === 'man_tinh' && x[2] === true), 'lọc "chỉ bệnh mãn tính" gửi đúng điều kiện');
-  kiem(q2.n === 1, 'lọc mãn tính còn đúng 1 mã');
+  kiem(q2.loc.some(x => x[0] === 'eq' && x[1] === 'k_chinh' && x[2] === false)
+    && q2.loc.some(x => x[0] === 'eq' && x[1] === 'k_dung' && x[2] === false),
+    'lọc "chỉ mã dùng được làm bệnh chính" loại cả mã cấm lẫn mã có mã cụ thể hơn');
 
   // quay về đầu mối
   await p.click('#tcve');
