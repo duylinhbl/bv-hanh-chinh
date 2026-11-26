@@ -614,3 +614,44 @@ thêm luật chung `.tb td:first-child{width:30px}` bóp cột mã còn một ch
 1. Khoa Dược / KHTH gắn mã ICD cho từng thuốc trong app (chọn từ danh mục, không gõ tay).
 2. Kho 267 tờ HDSD (bảng `thuoc`) tạm để nguyên, chưa xoá — nếu khoa Dược xác nhận không dùng thì
    gỡ bảng và cron `thuoc-dong-bo` đi.
+
+---
+
+## v104 — Menu Tra cứu: 4 nhánh, mỗi nhánh ghi rõ nguồn (26/11/2026)
+
+Thuốc chỉ là một nhánh. Nút điều hướng đổi từ **Thuốc** thành **Tra cứu**, bên trong có 4 nhánh:
+
+| Nhánh | Trạng thái | Nguồn |
+|---|---|---|
+| **ICD-10** | 12.239 mã — **màn tra cứu mới làm** | QĐ 4469/QĐ-BYT 28/10/2020 (bản 2021, chờ thay) |
+| **Thuốc & BHYT** | 307 thuốc | Báo cáo DUC034 kỳ 28/08/2025–28/08/2026 |
+| **Phác đồ điều trị** | chưa có | chờ phòng KHTH |
+| **Quy trình & danh mục kỹ thuật** | chưa có | chờ phòng KHTH |
+
+### Bảng `tra_cuu_nguon`
+Mỗi danh mục một dòng: tên, **bản/căn cứ**, tệp nguồn, số mục, ngày cập nhật, ghi chú.
+Màn đầu mối và màn ICD-10 đều đọc từ đây, nên **không bao giờ có chuyện hiện số liệu mà không biết
+lấy ở đâu**. Danh mục chuyên môn không ghi nguồn thì không ai dám dùng — đây là lý do bảng này tồn
+tại, không phải để trang trí.
+
+Nhánh chưa có dữ liệu thì **không bấm vào được** và nói thẳng đang chờ ai, thay vì mở ra một màn
+trống làm người dùng tưởng app hỏng.
+
+### Màn tra cứu ICD-10 (mới)
+Trước đây 12.239 mã chỉ dùng để *chọn* khi gắn cho thuốc, chưa tra cứu được. Nay:
+- Tra bằng **mã** (`k59.1`) hoặc **tên bệnh**, gõ không dấu cũng ra.
+- Tra được cả bằng **tên gọi khác** — một mã ICD trong danh mục BYT có nhiều tên đồng nghĩa
+  (vd I10 còn gọi "cao huyết áp"), đã gom hết vào cột tìm.
+- Nhãn **bệnh mãn tính** (2.430 mã) — liên quan trực tiếp việc cấp thuốc 2 tháng.
+- Nhãn **BHYT không thanh toán** (169 mã) — cảnh báo trước khi chỉ định, tránh xuất toán.
+- Lọc riêng nhóm bệnh mãn tính.
+
+### Tệp mới
+`tracuu.js` (đầu mối + màn ICD-10), đã thêm vào `index.html` và danh sách cache của service worker.
+`tests/tra_cuu_menu.test.js`: **27 mục**. Tổng kiểm thử **253 mục**, tất cả đạt.
+
+### Chờ anh Linh
+1. Bản ICD-10 mới hơn bản 2021 — nạp lại bằng cùng một đường (JSON → GitHub → `net.http_get` →
+   upsert theo mã), đổi luôn dòng `tra_cuu_nguon.icd10`.
+2. Phác đồ điều trị của bệnh viện (phòng KHTH).
+3. Quy trình + danh mục kỹ thuật của bệnh viện (phòng KHTH).

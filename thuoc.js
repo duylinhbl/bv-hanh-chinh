@@ -29,7 +29,8 @@ async function ve(){
     if(error)return n.innerHTML='<p class="mut">Lỗi: '+esc(error.message)+'</p>';
     tong=count||0;
   }
-  n.innerHTML=`<div class="card"><h3>💊 Tra cứu thuốc bệnh viện</h3>
+  n.innerHTML=`${window.TRACUU?'<button class="sec" id="tlen" style="margin-bottom:10px">← Tra cứu</button>':''}
+  <div class="card"><h3>💊 Tra cứu thuốc bệnh viện</h3>
     <label for="tq">Tên thuốc, hoạt chất hoặc mã ATC <small class="mut">(gõ không dấu cũng ra)</small></label>
     <input id="tq" placeholder="vd: amlodipin, morphin, C09AA" value="${esc(st.q)}" autocomplete="off">
     <label for="tnhom">Nhóm</label>
@@ -42,6 +43,7 @@ async function ve(){
     <button class="full" id="tgo">Tra cứu</button>
     <p class="mut" style="margin-top:8px">Danh mục thuốc bệnh viện: <b>${tong}</b> thuốc.</p>
   </div><div id="tkq"></div>`;
+  if($('#tlen'))$('#tlen').onclick=()=>window.TRACUU.ve();
   $('#tnhom').value=st.nhom;
   const go=()=>{st.q=$('#tq').value;st.nhom=$('#tnhom').value;chay()};
   $('#tgo').onclick=go;
