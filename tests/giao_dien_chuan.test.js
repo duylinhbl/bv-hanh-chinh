@@ -73,4 +73,42 @@ kiem(!/<img(?![^>]*alt=)[^>]*>/.test(app) && !/<img(?![^>]*alt=)[^>]*>/.test(doc
 kiem(/loading="lazy"/.test(app), 'ảnh đính kèm tải trễ');
 kiem(/class="lg" src="logo.png" alt="" width="36" height="36"/.test(app), 'logo khai báo kích thước, không gây nhảy bố cục');
 
+// ---- Màu thương hiệu và tương phản (tính thẳng từ biến trong style.css) ----
+const bien = kh => {
+  const m = css.match(new RegExp('--' + kh + ':\\s*(#[0-9a-fA-F]{3,8})'));
+  return m ? m[1] : null;
+};
+const bienToi = kh => {
+  const khoi = css.slice(css.indexOf('@media (prefers-color-scheme:dark)'));
+  const m = khoi.match(new RegExp('--' + kh + ':\\s*(#[0-9a-fA-F]{3,8})'));
+  return m ? m[1] : null;
+};
+const sang = h => {
+  h = h.replace('#', ''); if (h.length === 3) h = [...h].map(c => c + c).join('');
+  const v = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255)
+    .map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+};
+const tuongPhan = (a, b) => { const [x, y] = [sang(a), sang(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) };
+
+kiem(bien('pri2') === '#0B4A36' && bien('pri') === '#0B6B4B' && bien('gold') === '#F2B544',
+  'dùng đúng màu thương hiệu bệnh viện (xanh đậm, xanh trung, vàng hổ phách)');
+kiem(/'Be Vietnam Pro'/.test(css) && /family=Be\+Vietnam\+Pro/.test(html), 'một họ chữ Be Vietnam Pro cho tất cả');
+kiem(!/--blue:|#7c3aed/.test(css), 'bỏ xanh dương và tím, chỉ còn thang màu của thương hiệu');
+kiem(!/background:linear-gradient\(90deg,rgba\(192,54,44/.test(css), 'bỏ gradient trang trí trên thẻ quá hạn');
+kiem(!/text-transform:uppercase/.test(css), 'không viết hoa toàn bộ cho nhãn');
+
+const cap = [
+  ['chữ trên nút xanh (nền sáng)', bien('pri-tx'), bien('pri')],
+  ['chữ trên nút xanh (nền tối)', bienToi('pri-tx'), bienToi('pri')],
+  ['chữ thường (nền sáng)', bien('tx'), bien('bg')],
+  ['chữ thường (nền tối)', bienToi('tx'), bienToi('bg')],
+  ['chữ mờ (nền sáng)', bien('mut'), bien('bg')],
+  ['chữ mờ (nền tối)', bienToi('mut'), bienToi('bg')],
+];
+cap.forEach(([ten, a, b]) => {
+  const v = a && b ? tuongPhan(a, b) : 0;
+  kiem(v >= 4.5, `tương phản ${ten} đạt 4.5:1 (được ${v.toFixed(2)})`);
+});
+
 ket('giao_dien_chuan');

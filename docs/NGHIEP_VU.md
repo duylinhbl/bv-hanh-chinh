@@ -483,3 +483,24 @@ Anh Linh yêu cầu áp [Web Interface Guidelines](https://vercel.com/design/gui
 Kiểm thử nâng lên **34 mục**.
 
 **Chưa làm:** virtualize danh sách dài (hiện chưa màn nào quá dài), preload/subset phông (app dùng phông hệ thống nên không cần), APCA cho tương phản (đang dựa mắt và bảng màu sẵn có).
+
+## v101 – Thiết kế lại theo chuẩn thương hiệu bệnh viện (26/11/2026)
+Chạy cả ba skill của bệnh viện: `thiet-ke-marketing-bvcsdt` (lấy chuẩn thương hiệu), `kiem-tra-giao-dien-marketing`, `chong-ai-slop-marketing`.
+
+**Màu: thay toàn bộ bảng màu tự chế bằng bảng màu thương hiệu.** Trước đây app dùng xanh #007a36/#055c2b do tui tự chọn hồi v1. Nay đúng chuẩn: xanh đậm `#0B4A36` (thanh đầu, tiêu đề), xanh trung `#0B6B4B` (nút, hành động), nền sáng `#F2F7F3`, mực `#12261F`, đường kẻ `#BFD8CB`, **một màu nhấn duy nhất** là vàng hổ phách `#F2B544`. Chế độ tối dựng tương ứng từ cùng bộ màu.
+
+**Chữ: một họ duy nhất — Be Vietnam Pro** (400/600/800, nạp từ Google Fonts có `preconnect` và `display=swap`, phông hệ thống làm dự phòng khi không có mạng). Trước đây là Segoe UI/system-ui, không phải phông thương hiệu và hiển thị tiếng Việt kém đều.
+
+**Bỏ các dấu hiệu "thiết kế do AI làm" (theo `chong-ai-slop-marketing`):**
+- Bỏ **gradient trang trí** trên thẻ quá hạn — viền trái đỏ đã mang đủ thông tin, gradient chỉ là trang trí.
+- Bỏ **xanh dương và tím** khỏi trạng thái việc; cả thang chuyển về xanh–vàng–đỏ của thương hiệu, và màu trạng thái luôn đi kèm chữ (không bao giờ chỉ dùng màu).
+- Bỏ **nhãn viết hoa toàn bộ** ở khối chi tiết thông báo.
+- Bo góc lồng nhau: thẻ con nhỏ hơn thẻ cha (`--rad` 14, `--rad-nho` 8).
+
+**Tương phản: thêm biến `--pri-tx`.** Chế độ tối dùng xanh nhạt `#3FA87B` làm nền nút mà chữ vẫn trắng → chỉ đạt 2,6:1, đọc rất mệt. Nay nền tối dùng chữ xanh đen `#06241A` trên nút, đạt **5,57:1**. Đo lại toàn bộ: nút 6,52 / 5,57 · chữ thường 14,65 / 15,70 · chữ mờ 4,98 / 8,18 · thanh đầu 10,26 — tất cả qua ngưỡng 4,5:1.
+
+**Kiểm thử lên 45 mục**, trong đó **6 bài tự tính tương phản** thẳng từ biến màu trong style.css ở cả hai chế độ. Ai đổi màu làm tụt tương phản là đỏ ngay, không phải ngồi đo tay.
+
+**Cố ý KHÔNG áp hai quy tắc của bộ skill marketing, vì đây là app vận hành chứ không phải poster:**
+- *"Không chia nội dung thành các thẻ giống hệt nhau"* — danh sách việc đúng là một dãy mục ngang hàng; ép mỗi thẻ một kiểu sẽ khó đọc hơn.
+- *"Không emoji làm biểu tượng"* — giữ emoji trên nhãn nút (💾 Lưu, 📄 Xem…). Nhân viên đã quen, thanh điều hướng vốn đã dùng biểu tượng SVG thật, và gỡ hàng loạt chỉ đổi chữ chứ không giúp người dùng.

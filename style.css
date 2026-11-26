@@ -1,9 +1,12 @@
-:root{color-scheme:light dark;--bg:#e3ebe5;--card:#fff;--tx:#12231a;--mut:#5d6f65;--pri:#007a36;--pri2:#055c2b;--soft:#dcefe2;--gold:#d9a521;--line:#cddad1;--red:#c0362c;--amb:#b45309;--grn:#067647;--blue:#1d6fb8;--sh:0 1px 2px rgba(10,40,24,.06);--hd:#055c2b;--rad:12px}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1511;--card:#15201a;--tx:#e8f2ec;--mut:#9bb0a4;--line:#243229;--pri:#35c36b;--pri2:#6fe09a;--soft:#12261a;--sh:none;--hd:#06391d}}
+/* Màu và chữ theo chuẩn thương hiệu Bệnh viện đa khoa Cao su Dầu Tiếng.
+   Một màu nhấn duy nhất: vàng hổ phách --gold, chỉ dùng cho thứ cần chú ý.
+   Các màu trạng thái (đỏ/vàng/xanh) là màu NGHĨA, không phải màu trang trí. */
+:root{color-scheme:light dark;--bg:#F2F7F3;--card:#fff;--tx:#12261F;--mut:#5A6F64;--pri:#0B6B4B;--pri2:#0B4A36;--soft:#E4EFE8;--gold:#F2B544;--line:#BFD8CB;--red:#B3261E;--amb:#8A5A12;--grn:#0B6B4B;--pri-tx:#fff;--sh:0 1px 2px rgba(11,74,54,.07);--hd:#0B4A36;--rad:14px;--rad-nho:8px}
+@media (prefers-color-scheme:dark){:root{--bg:#0C1713;--card:#132019;--tx:#E6F0EA;--mut:#9BB3A6;--line:#27372F;--pri:#3FA87B;--pri2:#6FD3A4;--pri-tx:#06241A;--soft:#13291F;--red:#F2938C;--amb:#E0B055;--grn:#4FBE8C;--sh:none;--hd:#0A2C21}}
 /* ===== Giao diện v62: gọn, rõ thứ bậc, ưu tiên nội dung; giữ nguyên bảng màu xanh lá ===== */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased}
 h1,h2,h3{letter-spacing:-.01em;text-wrap:balance}
 .card h3,.hero .hi b{text-wrap:balance}
 :focus-visible{outline:3px solid var(--pri);outline-offset:2px}
@@ -38,8 +41,8 @@ main{padding:16px;max-width:680px;margin:0 auto}
 .card[data-id]:active,.card[data-tb]:active,.card[data-ex]:active{background:var(--soft)}
 .card h3{margin:0 0 6px;font-size:16px;font-weight:600;line-height:1.35;color:var(--tx)}
 .card.v{border-left:4px solid var(--line)}
-.card.v.moi{border-left-color:var(--blue)}.card.v.dang_lam{border-left-color:var(--amb)}.card.v.cho_xac_nhan{border-left-color:#7c3aed}.card.v.da_dong{border-left-color:var(--grn)}
-.card.v.qua{border-left-color:var(--red);background:linear-gradient(90deg,rgba(192,54,44,.06),transparent 45%),var(--card)}
+.card.v.moi{border-left-color:var(--pri2)}.card.v.dang_lam{border-left-color:var(--gold)}.card.v.cho_xac_nhan{border-left-color:var(--amb)}.card.v.da_dong{border-left-color:var(--grn)}
+.card.v.qua{border-left-color:var(--red)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .mut{color:var(--mut);font-size:14px}
 .card .row+.mut{margin-top:6px}
@@ -57,7 +60,7 @@ textarea{min-height:92px;resize:vertical}
 input::placeholder,textarea::placeholder{color:var(--mut);opacity:.8}
 
 /* Nút */
-button{font:inherit;border:0;touch-action:manipulation;border-radius:10px;padding:12px 16px;background:var(--pri);color:#fff;font-weight:600;cursor:pointer;transition:background .12s,transform .06s}
+button{font:inherit;border:0;touch-action:manipulation;border-radius:10px;padding:12px 16px;background:var(--pri);color:var(--pri-tx);font-weight:600;cursor:pointer;transition:background .12s,transform .06s}
 button:hover{background:var(--pri2)}button:active{transform:scale(.98)}
 button.sec{background:var(--card);color:var(--pri2);border:1px solid var(--pri)}
 button.sec:hover{background:var(--soft)}
@@ -74,7 +77,7 @@ nav button.on{color:var(--pri2);font-weight:700}
 nav button.on svg{background:var(--soft)}
 nav button[data-t=moi]{color:var(--mut)}
 nav button[data-t=moi] i{display:flex;width:50px;height:50px;margin-top:-20px;border-radius:50%;background:var(--pri);align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,80,36,.35);border:4px solid var(--card)}
-nav button[data-t=moi] svg{padding:0;width:26px;height:26px;background:none;stroke:#fff}
+nav button[data-t=moi] svg{padding:0;width:26px;height:26px;background:none;stroke:var(--pri-tx)}
 nav button[data-t=moi] span.l{margin-top:0;color:var(--mut)}
 
 #toast{position:fixed;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));background:#1f2a24;color:#fff;padding:12px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9;text-align:center;max-width:480px;margin:auto;box-shadow:0 6px 20px rgba(0,0,0,.25)}
@@ -221,21 +224,21 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
 @media (min-width:1500px){.khl{columns:3}}
 
 /* Quy trình theo bước */
-.tag.bq{background:#e7f1fb;color:#1d4ed8}
+.tag.bq{background:var(--soft);color:var(--pri2)}
 .bsteps{display:flex;flex-wrap:wrap;gap:6px;padding:12px 14px}
 .bs{flex:1 1 150px;min-width:140px;display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);opacity:.55}
 .bs i{font-style:normal;font-weight:700;width:24px;height:24px;border-radius:50%;background:var(--line);color:var(--tx);display:flex;align-items:center;justify-content:center;font-size:13px}
 .bs span{font-weight:600;font-size:14px;line-height:1.3}
 .bs small{color:var(--mut);font-size:11.5px;line-height:1.35}
-.bs.xong{opacity:1;background:var(--soft);border-color:var(--pri)}.bs.xong i{background:var(--pri);color:#fff}
+.bs.xong{opacity:1;background:var(--soft);border-color:var(--pri)}.bs.xong i{background:var(--pri);color:var(--pri-tx)}
 .bs.bqua{opacity:.85}.bs.bqua i{background:#b45309;color:#fff}
-.bs.dang{opacity:1;border-color:var(--pri);border-width:2px;box-shadow:0 2px 8px rgba(0,80,36,.12)}.bs.dang i{background:var(--pri);color:#fff}
+.bs.dang{opacity:1;border-color:var(--pri);border-width:2px;box-shadow:0 2px 8px rgba(0,80,36,.12)}.bs.dang i{background:var(--pri);color:var(--pri-tx)}
 .bnow{border-left:4px solid var(--pri)}.bnow h3{margin:2px 0 4px}
 @media (min-width:1000px){.bs{flex:1 1 0}}
 
 /* Tra cứu: nút phân tầng (Lĩnh vực / Tìm trường / Bộ của BV) */
 .tcnav button{flex:1;min-width:0;font-size:13px;padding:9px 6px}
-.tcnav button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.tcnav button.on{background:var(--pri);color:var(--pri-tx);border-color:var(--pri)}
 nav button span{white-space:nowrap}
 
 /* ─── Chi tiết thông báo: tách mục cho dễ đọc, bớt chữ dồn cục ─── */
@@ -243,7 +246,7 @@ nav button span{white-space:nowrap}
 .tb-than{margin-top:12px;display:flex;flex-direction:column;gap:10px}
 .tb-chinh{margin:0;font-size:1.05rem;line-height:1.5;white-space:pre-wrap}
 .dl{display:flex;gap:12px;align-items:baseline;padding-top:10px;border-top:1px solid var(--line)}
-.dl-n{flex:0 0 108px;font-size:.82rem;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+.dl-n{flex:0 0 108px;font-size:.82rem;color:var(--mut);font-weight:600}
 .dl>span:last-child{flex:1;min-width:0;overflow-wrap:anywhere}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{background:var(--soft);color:var(--tx);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.88rem;white-space:nowrap}
@@ -257,7 +260,7 @@ nav button span{white-space:nowrap}
 }
 
 /* Nút dạng liên kết (mở tệp ngoài, vd tờ hướng dẫn sử dụng thuốc trên Drive) */
-a.nut{display:inline-flex;align-items:center;gap:6px;background:var(--pri);color:#fff;text-decoration:none;
+a.nut{display:inline-flex;align-items:center;gap:6px;background:var(--pri);color:var(--pri-tx);text-decoration:none;
   border-radius:10px;padding:10px 16px;font-weight:600;font-size:.95rem}
 a.nut:hover{filter:brightness(1.08)}
 
@@ -265,7 +268,7 @@ a.nut:hover{filter:brightness(1.08)}
 /* ===== Rà theo Web Interface Guidelines (Vercel) — v98 ===== */
 
 /* Bỏ qua thanh điều hướng, tới thẳng nội dung (chỉ hiện khi đi bằng bàn phím) */
-.boqua{position:absolute;left:-9999px;top:0;z-index:50;background:var(--pri);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;text-decoration:none;font-weight:600}
+.boqua{position:absolute;left:-9999px;top:0;z-index:50;background:var(--pri);color:var(--pri-tx);padding:10px 16px;border-radius:0 0 10px 0;text-decoration:none;font-weight:600}
 .boqua:focus{left:0}
 
 /* Nút đang xử lý: GIỮ NGUYÊN nhãn, chỉ thêm vòng xoay — đổi chữ làm người dùng mất chỗ bám */
@@ -295,3 +298,6 @@ nav{overscroll-behavior:contain}
 /* Thẻ bấm được phải tới được bằng bàn phím (app.js tự gắn role/tabindex sau mỗi lần vẽ) */
 [role="button"][tabindex]:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
 a,.tb tbody tr{touch-action:manipulation}
+
+/* Bo góc lồng nhau: phần tử con không bo to hơn cha */
+.card .card,.card .the-gia,.card .luu-y{border-radius:var(--rad-nho)}
