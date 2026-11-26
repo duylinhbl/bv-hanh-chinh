@@ -56,7 +56,7 @@ const the=r=>`<div class="card"><h3>${esc(r.ten)}</h3>
   <div class="mut" style="margin-top:6px">${esc(r.ten_tep)}</div></div>`;
 
 async function danhDau(id,bat){
-  const {error}=await A().sb.from('thuoc').update({bv_dung:bat?true:null}).eq('drive_id',id);
+  const {error}=await A().sb.from('thuoc').update({bv_dung:!!bat}).eq('drive_id',id);
   if(error)return A().toast('Lỗi: '+error.message);
   A().toast(bat?'Đã đánh dấu BV đang dùng':'Đã bỏ đánh dấu'); chay();
 }

@@ -504,3 +504,74 @@ Chạy cả ba skill của bệnh viện: `thiet-ke-marketing-bvcsdt` (lấy chu
 **Cố ý KHÔNG áp hai quy tắc của bộ skill marketing, vì đây là app vận hành chứ không phải poster:**
 - *"Không chia nội dung thành các thẻ giống hệt nhau"* — danh sách việc đúng là một dãy mục ngang hàng; ép mỗi thẻ một kiểu sẽ khó đọc hơn.
 - *"Không emoji làm biểu tượng"* — giữ emoji trên nhãn nút (💾 Lưu, 📄 Xem…). Nhân viên đã quen, thanh điều hướng vốn đã dùng biểu tượng SVG thật, và gỡ hàng loạt chỉ đổi chữ chứ không giúp người dùng.
+
+---
+
+## v102 — Tra cứu tờ hướng dẫn sử dụng thuốc: nạp dữ liệu thật (26/11/2026)
+
+**Đã chạy được**: menu 💊 Thuốc có **267 tờ hướng dẫn**, tra theo tên biệt dược hoặc hoạt chất, gõ
+không dấu cũng ra, bấm là mở thẳng tệp PDF gốc trên Drive.
+
+### Kho lấy ở đâu
+Kho PDF của khoa Dược (thư mục chia sẻ theo liên kết, xếp theo 23 thư mục chữ cái A–Z).
+Id thư mục lưu ở `bi_mat.thuoc_thu_muc`. App **chỉ giữ danh mục** (tên tệp + id Drive), không chép
+nội dung PDF — khoa Dược sửa tệp nào là app thấy ngay tệp đó, không bao giờ tồn tại hai phiên bản
+lệch nhau. Đây là lý do thiết kế, không phải để tiết kiệm dung lượng.
+
+> **Còn tạm**: kho đang trỏ vào thư mục gốc của khoa Dược, chưa phải bản sao của bệnh viện.
+> Bản anh Linh tải về Drive phòng đang ở dạng **một tệp .zip 818 MB** (`Khoa Dược/Tờ hướng dẫn sử
+> dụng thuốc.zip`) nên không dùng làm kho được: trong zip thì mỗi thuốc không có liên kết riêng để mở.
+> Muốn có bản sao của bệnh viện thì dán `apps-script/ChepKho.gs` — tài khoản phòng sẽ tự chép từng
+> tệp **bên phía Google** (không tải xuống, không tải lên), xong chỉ cần đổi `bi_mat.thuoc_thu_muc`.
+
+### Tách tên thuốc — chỉ còn MỘT bản, nằm trong CSDL
+Tên tệp của khoa Dược không theo một khuôn duy nhất. Thực tế có 6 kiểu:
+
+| Kiểu | Ví dụ |
+|---|---|
+| Hàm lượng trong ngoặc | `Kacerin (Cetirizin dihydroclorid 10mg).pdf` |
+| Hàm lượng sau ngoặc | `Telmisartan (Telmisartan) 40mg.pdf` |
+| Không có ngoặc | `Kidmin 200ml.pdf` |
+| Nối bằng gạch | `Misoprostol-STELLA-200mcg.pdf` |
+| Hai số, phẩy thập phân | `Morihepamin 7,58%-200ml.pdf` |
+| Chỉ có tên | `Combivent.pdf` |
+
+Trước đây bộ tách nằm trong TypeScript của Edge Function. Nay chuyển hẳn vào CSDL
+(`supabase/sql/thuoc.sql`: `khong_dau`, `tach_thuoc`, trigger `tr_thuoc_tu_tach`) và **xoá bản
+TypeScript**. Lý do: hai bản tách khác nhau sẽ lệch, mà lệch ở đây nghĩa là bác sĩ tra ra sai thuốc.
+Edge Function giờ chỉ gửi tên tệp thô, CSDL tự sinh `ten / hoat_chat / ham_luong / kd`.
+
+Kết quả trên 267 tệp thật: 150 tệp có hoạt chất, 205 tệp có hàm lượng, 56 tệp chỉ có tên
+(phần lớn là thuốc đông y và thuốc xịt — tên tệp vốn không ghi hàm lượng, không phải lỗi tách).
+
+### Làm mới danh mục
+Nút **Làm mới danh mục từ Drive** (chỉ quản trị thấy) gọi Edge Function `thuoc-dong-bo`, đi qua cầu
+nối Apps Script sẵn có (`dc_con` + `dc_ds` trong `DoiChieu.gs`) nên **không cần dán thêm gì**.
+Chạy thật mất 40 giây cho 23 thư mục / 267 tệp. Thêm cron `thuoc-dong-bo` 03:50 sáng thứ Hai
+(`50 20 * * 0` giờ UTC) để tự cập nhật khi khoa Dược thêm tờ mới.
+
+Hai chốt an toàn trong hàm quét:
+- Một **hạn chót duy nhất 120 giây** tính từ lúc nhận yêu cầu, thấp hơn mức nền tảng cắt.
+- Quét dở (có thư mục lỗi, quá hạn, hoặc vượt trần 400 tệp) thì **không gỡ** tệp khỏi danh mục —
+  nếu không, một lần quét hỏng sẽ xoá oan cả danh mục.
+
+Cột `bv_dung` do quản trị/BGĐ đánh dấu được giữ nguyên qua mỗi lần quét. **Khoa Dược phải đánh dấu
+`bv_dung` trước khi bác sĩ dùng**: kho này là danh mục thuốc của một nơi khác, không phải danh mục
+thuốc bệnh viện đang có.
+
+### Ba lỗi bắt được nhân tiện
+1. **`don_nhat_ky()` chết mỗi đêm** — xoá `push_log` theo cột `luc` trong khi bảng dùng `tao_luc`.
+   Hàm dừng ngay dòng đó nên các bảng phía sau chưa bao giờ được dọn. Đã sửa và chạy lại.
+2. **`thuoc` và `sao_luu_log` còn quyền ghi mặc định của `anon`** (bảng mới tạo hôm qua). RLS vẫn
+   chặn nên chưa ai ghi được, nhưng đây là lớp phòng vệ thứ hai bị hở. Đã thu hồi.
+3. Bảng tạm tôi tạo lúc nạp dữ liệu bị chính bài kiểm thử A1/A2/S2 bắt là chưa bật RLS và chưa nằm
+   trong sao lưu — đã xoá. Bộ kiểm thử làm đúng việc của nó.
+
+### Kiểm thử
+- `kiem_thu_thuoc()` trong CSDL: 12 mẫu tên tệp (gồm cả 9 mẫu của bài TypeScript cũ) + kiểm
+  không có tên trống + mọi thuốc đều có cột tra không dấu. Đã nối vào `kiem_thu_va_bao()` chạy đêm
+  → bộ kiểm thử đêm nay **33 mục**.
+- `tests/tra_thuoc.test.js` viết lại thành bài giao diện: **24 mục** (tra không dấu, tra theo hoạt
+  chất, lọc thuốc BV đang dùng, liên kết Drive có `rel=noopener`, người thường không thấy nút quản
+  trị, đánh dấu ghi `true` chứ không ghi `null`, danh mục rỗng báo đúng cách nạp).
+- Toàn bộ: **12 bộ, 214 mục, tất cả đạt.**
