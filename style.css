@@ -1,4 +1,4 @@
-:root{--bg:#e3ebe5;--card:#fff;--tx:#12231a;--mut:#5d6f65;--pri:#007a36;--pri2:#055c2b;--soft:#dcefe2;--gold:#d9a521;--line:#cddad1;--red:#c0362c;--amb:#b45309;--grn:#067647;--blue:#1d6fb8;--sh:0 1px 2px rgba(10,40,24,.06);--hd:#055c2b;--rad:12px}
+:root{color-scheme:light dark;--bg:#e3ebe5;--card:#fff;--tx:#12231a;--mut:#5d6f65;--pri:#007a36;--pri2:#055c2b;--soft:#dcefe2;--gold:#d9a521;--line:#cddad1;--red:#c0362c;--amb:#b45309;--grn:#067647;--blue:#1d6fb8;--sh:0 1px 2px rgba(10,40,24,.06);--hd:#055c2b;--rad:12px}
 @media (prefers-color-scheme:dark){:root{--bg:#0d1511;--card:#15201a;--tx:#e8f2ec;--mut:#9bb0a4;--line:#243229;--pri:#35c36b;--pri2:#6fe09a;--soft:#12261a;--sh:none;--hd:#06391d}}
 /* ===== Giao diện v62: gọn, rõ thứ bậc, ưu tiên nội dung; giữ nguyên bảng màu xanh lá ===== */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -241,11 +241,11 @@ nav button span{white-space:nowrap}
 .tb-ct h3{line-height:1.35;overflow-wrap:anywhere}
 .tb-than{margin-top:12px;display:flex;flex-direction:column;gap:10px}
 .tb-chinh{margin:0;font-size:1.05rem;line-height:1.5;white-space:pre-wrap}
-.dl{display:flex;gap:12px;align-items:baseline;padding-top:10px;border-top:1px solid var(--vien)}
+.dl{display:flex;gap:12px;align-items:baseline;padding-top:10px;border-top:1px solid var(--line)}
 .dl-n{flex:0 0 108px;font-size:.82rem;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
 .dl>span:last-child{flex:1;min-width:0;overflow-wrap:anywhere}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{background:var(--nen2,#eef3ee);border:1px solid var(--vien);border-radius:999px;padding:3px 10px;font-size:.88rem;white-space:nowrap}
+.chip{background:var(--soft);color:var(--tx);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.88rem;white-space:nowrap}
 .chip.an{display:none}
 .chip.them{color:var(--pri);border-style:dashed;text-decoration:none;cursor:pointer}
 .xacnhan{margin-top:14px;padding:11px 22px;font-size:1rem;width:auto}
@@ -259,3 +259,34 @@ nav button span{white-space:nowrap}
 a.nut{display:inline-flex;align-items:center;gap:6px;background:var(--pri);color:#fff;text-decoration:none;
   border-radius:10px;padding:10px 16px;font-weight:600;font-size:.95rem}
 a.nut:hover{filter:brightness(1.08)}
+
+
+/* ===== Rà theo Web Interface Guidelines (Vercel) — v98 ===== */
+
+/* Bỏ qua thanh điều hướng, tới thẳng nội dung (chỉ hiện khi đi bằng bàn phím) */
+.boqua{position:absolute;left:-9999px;top:0;z-index:50;background:var(--pri);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;text-decoration:none;font-weight:600}
+.boqua:focus{left:0}
+
+/* Nút đang xử lý: GIỮ NGUYÊN nhãn, chỉ thêm vòng xoay — đổi chữ làm người dùng mất chỗ bám */
+[aria-busy="true"]{pointer-events:none;opacity:.8}
+button[aria-busy="true"]::after,a.nut[aria-busy="true"]::after{content:"";display:inline-block;width:1em;height:1em;margin-left:.5em;vertical-align:-.15em;
+  border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:quay .7s linear infinite}
+@keyframes quay{to{transform:rotate(360deg)}}
+
+/* Số xếp cột phải thẳng hàng */
+.kpi b,.hero .kpi b,table td,table th,.tag,#dem,.dl span:last-child{font-variant-numeric:tabular-nums}
+
+/* Vùng chạm tối thiểu 44px cho liên kết nhỏ nằm lẫn trong chữ */
+.chip.them,.mut a,a.nho{display:inline-flex;align-items:center;min-height:44px;padding:0 4px}
+
+/* Windows: select phải tự đặt nền và màu chữ, không thì chữ trắng trên nền trắng */
+select,select option{background-color:var(--card);color:var(--tx)}
+
+/* Thanh dưới cố định: đừng để cuộn lan ra trang */
+nav{overscroll-behavior:contain}
+
+/* Tôn trọng người tắt hiệu ứng chuyển động */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  button[aria-busy="true"]::after{animation:none;border-right-color:currentColor;opacity:.5}
+}

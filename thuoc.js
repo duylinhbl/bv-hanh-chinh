@@ -62,7 +62,7 @@ async function danhDau(id,bat){
 }
 
 async function lamMoi(){
-  const b=$('#tlm'); b.disabled=true; b.textContent='Đang quét kho trên Drive…';
+  const b=A().ban($('#tlm'));
   try{
     const {data,error}=await A().sb.functions.invoke('thuoc-dong-bo',{body:{}});
     if(error)throw error;
@@ -70,7 +70,7 @@ async function lamMoi(){
     A().toast(`Đã cập nhật ${data.da_ghi} tờ hướng dẫn`+(data.da_xoa?`, gỡ ${data.da_xoa} tệp không còn`:''));
     tong=null; ve();
   }catch(e){
-    b.disabled=false; b.textContent='🔄 Làm mới danh mục từ Drive';
+    A().ban(b,false);
     A().toast('Lỗi: '+(e.message||e));
   }
 }

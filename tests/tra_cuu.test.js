@@ -41,7 +41,7 @@ function q(t){
     }};
   return api;
 }
-window.BVAPP={sb:{from:q},$:s=>document.querySelector(s),esc:s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),toast:m=>{window.lastToast=m},me:{id:'u1'}};
+window.BVAPP={sb:{from:q},$:s=>document.querySelector(s),esc:s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),toast:m=>{window.lastToast=m},ban:(b,on=true)=>{if(b){b.disabled=!!on;on?b.setAttribute('aria-busy','true'):b.removeAttribute('aria-busy')}return b},me:{id:'u1'}};
 `;
 
 (async () => {

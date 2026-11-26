@@ -449,3 +449,28 @@ Anh Linh đưa mã QR "TỜ HƯỚNG DẪN SỬ DỤNG THUỐC" của khoa Dư�
 - `apps-script/ChepKho.gs`: script chép cả kho về Drive (đếm trước bằng `demKho()`, chép có nối tiếp khi quá 6 phút, không chép lại tệp đã có), tự ghi `NGUON.txt` nêu nguồn, ngày chép và cảnh báo phải đối chiếu danh mục thuốc BV đang trúng thầu.
 
 **CÒN LẠI TRƯỚC KHI MỞ CHO BÁC SĨ:** (1) có đủ bộ PDF trong Drive của BV; (2) chia sẻ thư mục cho tài khoản chạy script; (3) đặt `bi_mat.thuoc_thu_muc`; (4) bấm Làm mới danh mục; (5) **khoa Dược đối chiếu danh mục thuốc trúng thầu và đánh dấu `bv_dung`** — cùng hoạt chất khác nhà sản xuất thì tờ hướng dẫn khác nhau về tá dược, cách trình bày liều và chống chỉ định.
+
+## v99 – Rà giao diện theo Web Interface Guidelines của Vercel (26/11/2026)
+Anh Linh yêu cầu áp [Web Interface Guidelines](https://vercel.com/design/guidelines) vào app. Đã đọc checklist rồi rà từng mục; dưới đây là những chỗ **thật sự sai** và cách sửa (mục nào app vốn đã đúng thì không nhắc).
+
+**Lỗi nhìn thấy được**
+- **Thẻ tên thành phần hỏng ở nền tối**: `.chip` dùng `var(--nen2,#eef3ee)` — biến `--nen2` không tồn tại nên rơi về màu sáng, thành chữ xanh nhạt trên nền trắng. `.dl` cũng gọi nhầm `var(--vien)` (tên đúng là `--line`) nên mất đường kẻ. Đây đúng kiểu lỗi guideline cảnh báo: màu chỉ đúng ở một chế độ. Sửa sang `--soft` / `--line`, đã dựng ảnh thử ở cả hai chế độ để xác nhận.
+
+**Nút đang xử lý giữ nguyên nhãn** — trước đây 12 nút đổi chữ thành "Đang lưu…", "Đang ghi…", làm nút đổi kích thước và người dùng mất chỗ bám. Thêm hàm dùng chung `ban(nút, bật)` trong app.js (xuất qua `BVAPP.ban` cho các mô-đun): đặt `aria-busy`, chặn bấm tiếp, CSS tự thêm vòng xoay bên cạnh nhãn gốc. Kiểm thử có bài chặn việc đổi nhãn quay lại.
+
+**Nút Back của điện thoại** — trước đây bấm Back trên Android là **thoát hẳn app**. Nay đổi tab có `history.pushState` kèm hash, có `popstate` để quay lại tab trước; mở app bằng link có `#tb` thì vào đúng tab đó.
+
+**Những mục khác đã áp**
+- `color-scheme: light dark` (CSS + thẻ meta) và `theme-color` riêng cho nền tối — ô nhập, thanh cuộn, thanh trạng thái theo đúng chế độ.
+- `@media (prefers-reduced-motion: reduce)` tắt hiệu ứng cho người bật chế độ giảm chuyển động.
+- Liên kết **"Bỏ qua, tới nội dung"** cho người đi bằng bàn phím (ẩn tới khi được focus).
+- Vùng chạm 44px cho các liên kết nhỏ nằm lẫn trong chữ (`+8 người`, `Hiện ra`).
+- `font-variant-numeric: tabular-nums` cho số liệu, bảng và nhãn để xếp cột thẳng hàng.
+- `select` đặt rõ nền và màu chữ (Windows hay ra chữ trắng trên nền trắng).
+- `overscroll-behavior: contain` cho thanh điều hướng cố định.
+- Biểu mẫu đăng nhập: `label for`, `name`, `inputmode`, `enterkeyhint`, `spellcheck=false`, placeholder là ví dụ giá trị, **Enter ở ô mật khẩu là đăng nhập**, Enter ở ô số điện thoại nhảy xuống ô mật khẩu, báo lỗi có `role="alert"`.
+- Nút chỉ có biểu tượng (`✕`) được gắn `aria-label`.
+
+**Kiểm thử `tests/giao_dien_chuan.test.js` (27 mục)** canh các quy tắc này, trong đó có bài quét toàn bộ mã tìm nút đổi nhãn khi chạy. Sửa làm hỏng một quy tắc là bài đỏ ngay, không phải phát hiện bằng mắt.
+
+**Chưa làm:** virtualize danh sách dài (hiện chưa màn nào quá dài), preload/subset phông (app dùng phông hệ thống nên không cần), APCA cho tương phản (đang dựa mắt và bảng màu sẵn có).

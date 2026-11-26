@@ -84,7 +84,7 @@ function chiTiet(r){
   const cu=$('#tcct'); if(cu)cu.remove();
   const n=$('#nd');
   n.insertAdjacentHTML('afterbegin',`<div class="card" id="tcct" style="border-color:var(--pri)">
-    <div class="row" style="justify-content:space-between"><b>${esc(r.ten||r.truong||'(không có tên)')}</b><a href="#" id="tcdong">✕</a></div>
+    <div class="row" style="justify-content:space-between"><b>${esc(r.ten||r.truong||'(không có tên)')}</b><a href="#" id="tcdong" aria-label="Đóng chi tiết" title="Đóng">✕</a></div>
     ${d('Mã chuẩn ngành',r.ma_cn)}${d('Mã CDE',r.cde)}${d('Định nghĩa',r.dinh_nghia)}${d('Ngữ cảnh sử dụng',r.ngu_canh)}
     ${d('Tên trường kỹ thuật',r.truong)}${d('Kiểu dữ liệu',r.kieu+(r.dai?' ('+r.dai+')':''))}${d('Định dạng',r.dinh_dang)}
     ${d('Lĩnh vực',tenLV(r.lv))}${d('Cơ sở dữ liệu',r.csdl)}${d('Nhóm',r.nhom)}${d('Căn cứ pháp lý',r.can_cu)}${d('Ghi chú',r.ghi_chu)}
@@ -94,14 +94,14 @@ function chiTiet(r){
   $('#tcct').scrollIntoView({block:'start'});
   $('#tcdong').onclick=e=>{e.preventDefault();$('#tcct').remove()};
   $('#tcsao').onclick=async()=>{
-    const b=$('#tcsao'); b.disabled=true;
+    const b=A().ban($('#tcsao'));
     try{
       if(ct){ const {error}=await A().sb.from('tu_dien_chon').delete().eq('nguoi_id',A().me.id).eq('dl_id',r.id);
         if(error)throw error; CHON.delete(r.id); A().toast('Đã bỏ khỏi bộ của bệnh viện') }
       else{ const {error}=await A().sb.from('tu_dien_chon').upsert({nguoi_id:A().me.id,dl_id:r.id,ghi_chu:$('#tcgc').value.trim()||null});
         if(error)throw error; CHON.set(r.id,$('#tcgc').value.trim()); A().toast('Đã lưu vào bộ của bệnh viện') }
       ve();
-    }catch(e){ b.disabled=false; A().toast('Lỗi: '+(e.message||e)) }
+    }catch(e){ A().ban(b,false); A().toast('Lỗi: '+(e.message||e)) }
   };
 }
 

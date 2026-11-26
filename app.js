@@ -15,7 +15,7 @@ const duoiTep=n=>((n||'').split('.').pop()||'').toLowerCase();
 const kiemTep=f=>!f?null:!TEP_DUOI.includes(duoiTep(f.name))?'Chỉ nhận file Word (.doc, .docx), Excel (.xls, .xlsx) hoặc PDF':f.size>TEP_MAX?'File quá 10 MB':null;
 const bieuTuongTep=n=>/^xls/.test(duoiTep(n))?'📊':duoiTep(n)==='pdf'?'📕':/^(jpe?g|png|webp)$/.test(duoiTep(n))?'🖼':'📄';
 async function linkTep(path,ten){const r=await sb.storage.from('anh').createSignedUrl(path,3600,{download:ten||true});return r.data?.signedUrl||null}
-window.BVAPP={xoaMuc,sb,$,esc,fmt,toast,troLy,chiTiet,khungSoan,veTab(t){tab=t;ve()},get me(){return me}};
+window.BVAPP={xoaMuc,sb,$,esc,fmt,toast,troLy,chiTiet,khungSoan,ban,veTab(t){doiTab(t)},get me(){return me}};
 function toast(m){const t=$('#toast');t.textContent=m;t.className='on';setTimeout(()=>t.className='',2600)}
 const tag=s=>`<span class="tag ${s==='da_dong'?'grn':s==='cho_xac_nhan'?'amb':''}">${TT[s]||s}</span>`;
 
@@ -72,13 +72,16 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)day()});
 const email=p=>p.replace(/\D/g,'')+'@bv.local';
 function manHinhDangNhap(){
   app.innerHTML=`<div class="login"><img class="lg" src="logo.png" alt=""><h1>Bệnh viện Đa khoa Cao su Dầu Tiếng</h1><div class="mut">Quản lý hành chính</div>
-  <label>Số điện thoại</label><input id="sdt" inputmode="tel" autocomplete="username">
-  <label>Mật khẩu</label><input id="mk" type="password" autocomplete="current-password">
-  <button class="full" id="vao">🔑 Đăng nhập</button><p class="mut" id="loi"></p></div>`;
+  <label for="sdt">Số điện thoại</label><input id="sdt" name="sdt" inputmode="tel" autocomplete="username" spellcheck="false" enterkeyhint="next" placeholder="vd: 0909…">
+  <label for="mk">Mật khẩu</label><input id="mk" name="mk" type="password" autocomplete="current-password" enterkeyhint="go">
+  <button class="full" id="vao">🔑 Đăng nhập</button><p class="mut" id="loi" role="alert"></p></div>`;
+  // Enter ở ô mật khẩu là đăng nhập luôn, khỏi phải với tay bấm nút
+  $('#mk').onkeydown=e=>{if(e.key==='Enter')$('#vao').click()};
+  $('#sdt').onkeydown=e=>{if(e.key==='Enter')$('#mk').focus()};
   $('#vao').onclick=async()=>{
-    $('#vao').disabled=true;$('#loi').textContent='';
+    ban($('#vao'));$('#loi').textContent='';
     const {error}=await sb.auth.signInWithPassword({email:email($('#sdt').value),password:$('#mk').value});
-    $('#vao').disabled=false;
+    ban($('#vao'),false);
     if(error)$('#loi').textContent='Sai số điện thoại hoặc mật khẩu';else khoiDong();
   };
 }
@@ -97,21 +100,37 @@ function manHinhDoiMK(){
 }
 
 // ---- khung chính ----
+// Nút đang xử lý thì GIỮ NGUYÊN nhãn và thêm vòng xoay (aria-busy), không đổi chữ:
+// đổi chữ làm người dùng mất chỗ bám và nút nhảy kích thước.
+function ban(b,on=true){ if(!b)return b; b.disabled=!!on; if(on)b.setAttribute('aria-busy','true'); else b.removeAttribute('aria-busy'); return b }
+
 function khung(){
   const lanh=me.vai_tro!=='nhan_vien';
   // Menu Tra cứu nay là TRA CỨU THUỐC (thuoc.js) — tờ hướng dẫn sử dụng do khoa Dược quản lý,
   // đúng thứ bác sĩ và điều dưỡng cần hằng ngày.
   // Tra cứu từ điển dữ liệu y tế (tc.js, bảng tu_dien_*) vẫn còn nguyên nhưng KHÔNG gắn vào menu:
   // nội dung đó thuộc mảng y tế - CNTT. Muốn mở lại thì trỏ 'tc' sang window.TRACUU.ve.
-  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v97</small></header>
+  app.innerHTML=`<header><img class="lg" src="logo.png" alt=""><span class="ten">${esc(me.ho_ten)}<small>${esc(me.chuc_vu||'')}</small></span><small><span id="hang"></span> v99</small></header>
   <main id="nd"></main>
   <nav><button data-t="toi"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><span>Việc</span></button>${lanh?`<button data-t="giao"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Giao</span></button>`:''}<button data-t="ct"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Lịch</span></button><button data-t="lt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Trực</span></button>${TRA_CUU?`<button data-t="tc"><svg viewBox="0 0 24 24"><path d="M10.5 3.5h3a4 4 0 014 4v9a4 4 0 01-4 4h-3a4 4 0 01-4-4v-9a4 4 0 014-4z"/><path d="M6.5 12h11"/></svg><span>Thuốc</span></button>`:''}<button data-t="tb"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Tin<span id="dem" class="tag red" style="display:none;margin-left:3px;padding:0 6px"></span></span></button><button data-t="moi"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.6"/></svg></i><span class="l">Giao việc</span></button><button data-t="tk"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Tôi</span></button></nav>`;
-  document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ve()});
+  document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>doiTab(b.dataset.t));
+  const h=(location.hash||'').slice(1); if(h&&h!==tab&&['toi','giao','ct','lt','tc','tb','moi','tk'].includes(h))tab=h;
   ve();day();demTB();sb.channel('tb').on('postgres_changes',{event:'*',schema:'public',table:'thong_bao_nguoi_nhan',filter:'nguoi_id=eq.'+me.id},()=>{demTB();if(tab==='tb')dsTB();else toast('Có thông báo mới')}).subscribe();
 }
 const ghiLoi=(m,ct)=>{try{if(!me||!me.id)return;const k=String(m).slice(0,200);if(ghiLoi.last===k)return;ghiLoi.last=k;sb.from('loi_app').insert({nguoi_id:me.id,ver:((document.querySelector('script[src*="app.js"]')||{}).src||'').split('v=')[1]||null,thong_diep:k,chi_tiet:String(ct||'').slice(0,1200)}).then(()=>{},()=>{})}catch(e){}};
 window.addEventListener('unhandledrejection',e=>{const n=$('#nd');const m=e.reason&&e.reason.message||e.reason;if(n)n.innerHTML='<p class="mut">Lỗi: '+esc(m)+'</p>';ghiLoi('promise: '+m,e.reason&&e.reason.stack)});
 window.addEventListener('error',e=>ghiLoi('js: '+e.message,(e.filename||'')+':'+e.lineno));
+// Đổi tab thì ghi vào lịch sử trình duyệt. Trước đây bấm Back trên Android là THOÁT HẲN app.
+function doiTab(t,tuLichSu){
+  tab=t;
+  if(!tuLichSu){ try{ history.pushState({tab:t},'','#'+t) }catch(e){} }
+  ve();
+}
+window.addEventListener('popstate',e=>{
+  if(!me)return;
+  const t=(e.state&&e.state.tab)||(location.hash||'').slice(1)||'toi';
+  if(t!==tab){ tab=t; ve() }
+});
 function ve(){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tab==='tc'&&!TRA_CUU)tab='toi';
@@ -261,7 +280,7 @@ function khungAI(ov,viecId,path,ten){
   const them=(vai,tx)=>{const d=document.createElement('div');d.className='aib '+(vai==='user'?'u':'m');const t=document.createElement('div');t.className='ait';t.textContent=tx;d.appendChild(t);
     if(vai!=='user'){const a=document.createElement('div');a.className='aia';a.innerHTML='<button class="sec">⬇ Tải Word</button> <button class="sec">📋 Chép</button>';
       const [w,c]=a.querySelectorAll('button');
-      w.onclick=async()=>{w.disabled=true;w.textContent='Đang tạo…';const r=await goiAI({...base,action:'xuat_word',noi_dung:tx,ten_file:'Soan thao AI - '+(ten||'').replace(/\.\w+$/,'')});w.disabled=false;w.textContent='⬇ Tải Word';if(r.url)taiVe(r.url,r.ten||'Soan thao AI.docx');else toast(r.loi||'Không tạo được file')};
+      w.onclick=async()=>{ban(w);const r=await goiAI({...base,action:'xuat_word',noi_dung:tx,ten_file:'Soan thao AI - '+(ten||'').replace(/\.\w+$/,'')});ban(w,false);if(r.url)taiVe(r.url,r.ten||'Soan thao AI.docx');else toast(r.loi||'Không tạo được file')};
       c.onclick=async()=>{try{await navigator.clipboard.writeText(tx);toast('Đã chép')}catch(_){toast('Máy không cho chép tự động')}};
       d.appendChild(a)}
     m.appendChild(d);m.scrollTop=m.scrollHeight;return d};
@@ -485,7 +504,7 @@ async function troLy(viecId){
     $('#tlxem').onclick=()=>xemTep(null,r.ten,null,r.url);
     $('#tltai').onclick=()=>taiVe(r.url,r.ten);
     $('#tlsuab').onclick=()=>{const t=$('#tlsua').value.trim();if(!t)return toast('Gõ chỗ cần sửa');soan(t)};
-    $('#tlluu').onclick=async()=>{const b=$('#tlluu');b.disabled=true;b.textContent='Đang lưu…';
+    $('#tlluu').onclick=async()=>{const b=ban($('#tlluu'));
       try{const bl=await (await fetch(r.url)).blob();const f=new File([bl],r.ten,{type:TEP_MIME.docx});
         const ht=$('#tlht')&&$('#tlht').checked;
         await qAdd({ma_khach:uid(),viec_id:viecId,trang_thai:ht?'cho_xac_nhan':null,ghi_chu:'Bản soạn từ mẫu "'+r.mau+'" (AI hỗ trợ, người làm đã đọc lại)',anh:null,tep:f,tep_ten:r.ten,gio_bam:new Date().toISOString(),vi_tri_loi:'Không lấy vị trí khi lưu văn bản'});
@@ -533,7 +552,7 @@ async function khungSoan(k,ov,viecId,path,aiKQ){
     <div data-cf style="display:none;margin-top:6px"><textarea rows="2" placeholder="Chỗ nào chưa vừa ý? VD: thêm căn cứ Quy chế chi tiêu, đổi mức chi thành 2.500.000 đ" style="width:100%"></textarea><button data-cg style="width:100%">Chỉnh &amp; soạn lại</button></div>`;
     d.querySelector('[data-x]').onclick=()=>xem(r);
     d.querySelector('[data-c]').onclick=()=>{const f=d.querySelector('[data-cf]');f.style.display=f.style.display==='none'?'block':'none'};
-    d.querySelector('[data-cg]').onclick=async e=>{const t=d.querySelector('textarea').value.trim();if(!t)return toast('Ghi chỗ cần chỉnh');const b=e.target;b.disabled=true;b.textContent='Đang chỉnh…';
+    d.querySelector('[data-cg]').onclick=async e=>{const t=d.querySelector('textarea').value.trim();if(!t)return toast('Ghi chỗ cần chỉnh');const b=ban(e.target);
       const x=await goiVB({action:'soan',viec_id:viecId,mau_ma:r.mau,file_path:path,van_ban_cu:r.id,ket_qua_ai:layKQ(),yeu_cau:'CHỈNH SỬA văn bản đã soạn theo ý sau: '+t});
       if(x.loi){b.disabled=false;b.textContent='Chỉnh & soạn lại';return toast(x.loi)}
       const n={id:x.id,ten:x.ten,mau:r.mau,luu:false,text:x.text};DS.splice(DS.indexOf(r),1,n);veVB(n);kq.insertBefore(n.el,d);d.remove();
@@ -554,7 +573,7 @@ async function khungSoan(k,ov,viecId,path,aiKQ){
     $('#vtt').textContent=(r.canh_bao?'⚠ '+r.canh_bao+'\n':'')+'✅ Đã soạn xong. Bấm "👁 Xem" kiểm tra, chưa vừa ý thì "✏️ Chỉnh lại", ổn thì bấm 💾 Lưu.';
     $('#vtt').style.whiteSpace='pre-line';xem(o)};
   $('#vluu').onclick=async()=>{
-    const b=$('#vluu');b.disabled=true;b.textContent='Đang lưu…';let nd=0,loiN=0,canh='';
+    const b=ban($('#vluu'));let nd=0,loiN=0,canh='';
     for(const r of DS.filter(d=>!d.luu)){const x=await luuMot(r);if(x){x.drive?nd++:canh=x.canh;veVB(r)}else loiN++}
     capNhatNut();
     $('#vtt').textContent=loiN?'⚠ Có văn bản chưa lưu được, bấm Lưu lần nữa.':nd?'✅ Đã lưu vào thư mục Drive của loại công việc. Xem lại xong thì bấm ✔ Kết thúc việc.':'✅ Đã lưu trong app. Chưa đưa được vào Drive'+(canh?': '+dichLoi(canh):'')+'. Tải Word về để tự cất nếu cần.'};
@@ -679,8 +698,8 @@ async function bangVB(v,laGiao){
   const tl=nd.querySelector('.timeline');tl?nd.insertBefore(c,tl):nd.appendChild(c);
   const lamMoi=async()=>{const {data}=await sb.from('van_ban_viec').select('id,mau_ma,ten_file,drive_url,tao_luc,luu_luc').eq('viec_id',id).order('tao_luc',{ascending:false});$('#vds').innerHTML=ve_ds(data);gan2()};
   const gan2=()=>{
-    c.querySelectorAll('[data-vt]').forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await goiVB({action:'tai',van_ban_id:b.dataset.vt});b.disabled=false;r.url?taiVe(r.url,b.dataset.vn):toast(r.loi||'Lỗi')});
-    c.querySelectorAll('[data-vl]').forEach(b=>b.onclick=async()=>{b.disabled=true;b.textContent='Đang lưu…';const r=await goiVB({action:'luu',van_ban_id:b.dataset.vl});if(r.loi){b.disabled=false;b.textContent='💾 Lưu Drive';return toast(r.loi)}toast('Đã lưu vào Drive: '+(r.thu_muc||''));lamMoi()})};
+    c.querySelectorAll('[data-vt]').forEach(b=>b.onclick=async()=>{ban(b);const r=await goiVB({action:'tai',van_ban_id:b.dataset.vt});ban(b,false);r.url?taiVe(r.url,b.dataset.vn):toast(r.loi||'Lỗi')});
+    c.querySelectorAll('[data-vl]').forEach(b=>b.onclick=async()=>{ban(b);const r=await goiVB({action:'luu',van_ban_id:b.dataset.vl});if(r.loi){ban(b,false);return toast(r.loi)}toast('Đã lưu vào Drive: '+(r.thu_muc||''));lamMoi()})};
   gan2();
   $('#vlcv').onchange=async()=>{const {error}=await sb.from('viec').update({loai_cv:$('#vlcv').value}).eq('id',id);toast(error?'Không đổi được: '+error.message:'Đã đổi loại công việc');if(!error)v.loai_cv=$('#vlcv').value};
   if($('#vket'))$('#vket').onclick=async()=>{
@@ -870,9 +889,9 @@ async function formTB(){
   $('#lui').onclick=dsTB;$('#pv').onchange=()=>$('#ks').style.display=$('#pv').value==='chon'?'block':'none';
   $('#ph').onclick=async()=>{
     const toan=$('#pv').value==='all', ids=[...document.querySelectorAll('#ks input:checked')].map(x=>x.value);
-    $('#ph').disabled=true;
+    ban($('#ph'));
     const {error}=await sb.rpc('phat_thong_bao',{p_tieu_de:$('#tt').value,p_noi_dung:$('#nd2').value,p_khan:$('#kh').checked,p_nhac_gio:$('#kh').checked?2:24,p_toan_vien:toan,p_khoa:ids});
-    $('#ph').disabled=false;if(error)return $('#loi').textContent=error.message;
+    ban($('#ph'),false);if(error)return $('#loi').textContent=error.message;
     toast('Đã phát thông báo');dsTB();
   };
 }
@@ -915,7 +934,7 @@ async function theBatPush(){
   const msg={ios:'Trên iPhone: bấm nút Chia sẻ → "Thêm vào Màn hình chính", rồi mở app từ biểu tượng đó để bật thông báo.',chan:'Thông báo đang bị chặn. Vào Cài đặt của trình duyệt/máy để cho phép lại.',khong:'Máy này chưa hỗ trợ thông báo đẩy.'}[st];
   return `<div class="banner">${msg?esc(msg):'<b>Bật thông báo</b> để máy báo ngay khi có việc, lịch trực, lịch họp.'}${st==='tat'?'<div><button id="bpush" style="margin-top:8px">🔔 Bật thông báo trên máy này</button></div>':''}</div>`;
 }
-function ganNutPush(){const b=$('#bpush');if(b)b.onclick=async()=>{b.disabled=true;try{await batPush();toast('Đã bật thông báo');ve()}catch(e){toast(e.message||'Không bật được');b.disabled=false}}}
+function ganNutPush(){const b=$('#bpush');if(b)b.onclick=async()=>{ban(b);try{await batPush();toast('Đã bật thông báo');ve()}catch(e){toast(e.message||'Không bật được');ban(b,false)}}}
 function diDen(u){
   try{const q=new URL(u,location.href).searchParams;
     if(q.get('tb')){tab='tb';ve();chiTietTB(q.get('tb'))}
