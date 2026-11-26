@@ -244,6 +244,20 @@ nav button span{white-space:nowrap}
 /* ─── Chi tiết thông báo: tách mục cho dễ đọc, bớt chữ dồn cục ─── */
 .tb-ct h3{line-height:1.35;overflow-wrap:anywhere}
 .tb-than{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+
+/* Bảng mã ICD-10 của màn Thuốc: cột mã hẹp nhưng không bị luật chung bóp còn 30px,
+   cột Chỉ định ăn hết chỗ còn lại, cột nút vừa đúng chữ "Gỡ". */
+table.tb-icd{table-layout:fixed}
+.tb-icd td:first-child,.tb-icd th:first-child{width:5.6em;color:var(--tx)}
+.tb-icd td:first-child{white-space:normal}
+.tb-icd td:first-child,.tb-icd th:first-child{padding-right:10px}
+.tb-icd td:first-child .tag{display:inline-block;margin-top:3px;font-size:11px;padding:1px 6px}
+.tb-icd td:last-child,.tb-icd th:last-child{width:3.4em;white-space:normal;text-align:right}
+.tb-icd td:nth-child(2){overflow-wrap:anywhere}
+.tb-icd tbody tr{cursor:default}
+.tb-icd tbody tr:hover{background:none}
+/* nhãn chỉ dành cho trình đọc màn hình */
+.chi-doc{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .tb-chinh{margin:0;font-size:1.05rem;line-height:1.5;white-space:pre-wrap}
 .dl{display:flex;gap:12px;align-items:baseline;padding-top:10px;border-top:1px solid var(--line)}
 .dl-n{flex:0 0 108px;font-size:.82rem;color:var(--mut);font-weight:600}

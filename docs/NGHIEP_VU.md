@@ -575,3 +575,42 @@ thuốc bệnh viện đang có.
   chất, lọc thuốc BV đang dùng, liên kết Drive có `rel=noopener`, người thường không thấy nút quản
   trị, đánh dấu ghi `true` chứ không ghi `null`, danh mục rỗng báo đúng cách nạp).
 - Toàn bộ: **12 bộ, 214 mục, tất cả đạt.**
+
+---
+
+## v103 — Tra cứu thuốc đổi hướng: thông tin thuốc BV + mã ICD-10 thanh toán (26/11/2026)
+
+**Bỏ hướng tờ HDSD.** 267 tờ PDF của kho khoa Dược là bản scan, đọc trên điện thoại không ra gì.
+Hướng mới (theo mẫu anh Linh đưa): tra một thuốc ra **thông tin cơ bản + bảng mã ICD-10 được BHYT
+thanh toán**.
+
+### Ba bảng
+| Bảng | Nội dung | Nguồn |
+|---|---|---|
+| `dm_thuoc` | 307 thuốc BV đang dùng | Báo cáo DUC034 của khoa Dược, kỳ 28/08/2025–28/08/2026 |
+| `icd10` | **12.239 mã** còn hiệu lực, kèm cờ *mãn tính* (2.430) và *không BHYT* (169) | `ICD.1_6_2021` trong Drive — 36.689 dòng gốc, gom các tên đồng nghĩa về cùng một mã để tra bằng tên nào cũng ra |
+| `thuoc_icd` | Mã ICD gắn cho từng thuốc | **Người của bệnh viện gắn**, có cột người gắn / người duyệt / ngày |
+
+### Điều KHÔNG làm
+**AI không sinh cặp thuốc–ICD.** Gắn sai thì hoặc bác sĩ kê sai chỉ định, hoặc BHXH xuất toán —
+cả hai đều là tiền và chuyên môn của bệnh viện. Bảng `thuoc_icd` để trống cho khoa Dược / phòng
+KHTH gắn và ký. Màn chi tiết ghi rõ dòng *"Không thay thế chỉ định của bác sĩ điều trị"*.
+
+### Chốt an toàn mới thêm
+- **Khoá ngoại `thuoc_icd.ma_icd → icd10.ma`**: trước đó không có gì ngăn một mã bịa lọt vào.
+  Giờ gõ sai mã là CSDL chặn, không chỉ dựa vào giao diện.
+- **Trigger `tr_thuoc_icd_chuan`**: tự viết hoa, bỏ khoảng trắng trong mã trước khi kiểm tra,
+  nên " k59.1 " vẫn vào đúng K59.1 thay vì báo lỗi khó hiểu.
+- Đã kiểm thử (chạy rồi tự huỷ): mã bịa `ZZ99.9` bị chặn ✓, ` k59.1 ` tự chuẩn hoá ✓.
+
+### Lỗi giao diện đã sửa
+Bảng mã ICD vỡ trên điện thoại: `<tbody>` bị gắn nhầm lớp `.tb-than` (lớp này dành cho DIV danh
+sách thẻ trong app.js) nên thân bảng thành flex column, header một đằng thân bảng một nẻo; cộng
+thêm luật chung `.tb td:first-child{width:30px}` bóp cột mã còn một chữ mỗi dòng. Thêm lớp
+`.tb-icd` cố định bề rộng cột và bỏ `.tb-than` khỏi tbody. Thêm 3 bài kiểm thử chặn lỗi tái diễn
+(bộ `giao_dien_chuan` lên **48 mục**, tổng **226 mục**).
+
+### Còn lại
+1. Khoa Dược / KHTH gắn mã ICD cho từng thuốc trong app (chọn từ danh mục, không gõ tay).
+2. Kho 267 tờ HDSD (bảng `thuoc`) tạm để nguyên, chưa xoá — nếu khoa Dược xác nhận không dùng thì
+   gỡ bảng và cron `thuoc-dong-bo` đi.

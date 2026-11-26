@@ -117,8 +117,8 @@ const nutVe=()=>'<button class="sec" id="tve" style="margin-bottom:10px">← V�
 
 function bangIcd(ds,ten){
   if(!ds.length) return '<p class="mut">Chưa gắn mã nào. '+(/* nhắc đúng người */'Khoa Dược hoặc phòng KHTH gắn mã ở nút bên dưới.')+'</p>';
-  return `<table class="tb"><thead><tr><th style="width:5.5em">Mã ICD-10</th><th>Chỉ định</th>${quyen?'<th></th>':''}</tr></thead>
-  <tbody class="tb-than">${ds.map(x=>`<tr>
+  return `<table class="tb tb-icd"><thead><tr><th>Mã ICD-10</th><th>Chỉ định</th>${quyen?'<th><span class="chi-doc">Thao tác</span></th>':''}</tr></thead>
+  <tbody>${ds.map(x=>`<tr>
     <td><b>${esc(x.ma_icd)}</b>${x.duyet?' <span class="tag grn">đã duyệt</span>':''}</td>
     <td>${esc(x.chi_dinh||ten[x.ma_icd]||'')}
       <div class="mut" style="font-size:.86em;margin-top:2px">${esc(x.nguon)}${x.nguoi_gan&&x.nguoi_gan.ho_ten?' · '+esc(x.nguoi_gan.ho_ten):''} · ${esc(ngay(x.gan_luc))}</div></td>

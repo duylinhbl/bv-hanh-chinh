@@ -111,4 +111,16 @@ cap.forEach(([ten, a, b]) => {
   kiem(v >= 4.5, `tương phản ${ten} đạt 4.5:1 (được ${v.toFixed(2)})`);
 });
 
+// ---- Bảng không bị vỡ bố cục ----
+// .tb-than là lớp cho DIV danh sách thẻ (app.js), KHÔNG phải cho <tbody>:
+// gắn nhầm thì tbody thành flex column, header một đằng thân bảng một nẻo.
+const moiJs = ['app.js','kh.js','thuoc.js','tc.js','lich.js','ct.js']
+  .filter(f => fs.existsSync(path.join(root, f))).map(doc);
+kiem(!moiJs.some(s => /<tbody[^>]*class="[^"]*tb-than/.test(s)),
+  'không gắn .tb-than lên <tbody> (biến thân bảng thành flex, vỡ cột)');
+kiem(/table\.tb-icd\{table-layout:fixed\}/.test(css),
+  'bảng mã ICD-10 cố định bề rộng cột, không để cột nút nuốt chỗ của Chỉ định');
+kiem(/\.chi-doc\{position:absolute/.test(css),
+  'có lớp nhãn chỉ dành cho trình đọc màn hình');
+
 ket('giao_dien_chuan');
